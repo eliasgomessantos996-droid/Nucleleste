@@ -1,0 +1,3 @@
+{% extends 'base.html' %}
+{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/bh.css') }}">{% block head_bh %}{% endblock %}{% endblock %}
+{% block scripts %}{% if not bh_poll_url %}<script src="{{ url_for('static', filename='js/bh.js') }}"></script>{% endif %}{% block scripts_bh %}{% endblock %}{% endblock %}

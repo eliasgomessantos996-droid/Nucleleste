@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+{% block titulo %}Caixa{% endblock %}
+{% block conteudo %}
+<div class="cabecalho">
+  <div><h1>Caixa</h1><p class="sub">Atendimentos dos convênios que vão para o caixa (Particular, SMS, Mais Med). Informe valor, forma de pagamento e nota fiscal.</p></div>
+  <div class="acoes"><a class="btn" href="{{ url_for('atend.caixa', de=de, ate=ate, usuario=usuario, status=status, imprimir=1) }}">Imprimir</a></div>
+</div>
+<form class="cartao filtros" method="get">
+  <div><label>De</label><input type="date" name="de" value="{{ de }}"></div>
+  <div><label>Até</label><input type="date" name="ate" value="{{ ate }}"></div>
+  <div><label>Usuário</label><select name="usuario"><option value="">Todos</option>{% for u in usuarios %}<option {% if u == usuario %}selected{% endif %}>{{ u }}</option>{% endfor %}</select></div>
+  <div><label>Status</label><select name="status"><option value="">Todos</option>{% for s in status_lista %}<option {% if s == status %}selected{% endif %}>{{ s }}</option>{% endfor %}</select></div>
+  <div><button class="btn" type="submit">Filtrar</button></div>
+</form>
+<div class="indicadores">
+  {% for st, t in totais.items() %}<div class="indicador"><div class="n">R$ {{ t[1]|moeda }}</div><div class="t">{{ t[0] }} lançamento(s) {{ st|lower }}</div></div>{% endfor %}
+</div>
+<div class="tabela-wrap"><table class="tabela">
+  <thead><tr><th>Data</th><th>Cliente</th><th>Procedimento</th><th>Convênio</th><th>Usuário</th><th>Forma</th><th>NF</th><th class="num">Valor</th><th>Status</th><th></th></tr></thead>
+  <tbody>
+  {% for r in rows %}
+    <tr><td>{{ r.data|data_br }}</td><td>{{ r.cliente }}</td><td>{{ r.procedimento }}</td><td>{{ r.convenio }}</td><td>{{ r.usuario or '' }}</td>
+      <td>{{ r.forma_pagamento or '' }}{% if r.forma_pagamento2 %} + {{ r.forma_pagamento2 }}{% endif %}</td><td>{{ r.nota_fiscal or '' }}</td><td class="num">{{ r.valor|moeda }}</td>
+      <td><span class="etiqueta {{ (r.status or '')|lower }}">{{ r.status }}</span></td>
+      <td class="num"><button class="btn sec peq" type="button" data-dialogo="dlg-caixa" data-cid="{{ r.id }}" data-cliente="{{ r.cliente }}"
+        data-valor="{{ r.valor|moeda }}" data-forma="{{ r.forma_pagamento or '' }}" data-nf="{{ r.nota_fiscal or '' }}" data-status="{{ r.status }}" data-obs="{{ r.obs or '' }}">Editar</button></td></tr>
+  {% else %}<tr><td colspan="10" class="vazio">Nenhum lançamento no período.</td></tr>{% endfor %}
+  </tbody>
+</table></div>
+<dialog id="dlg-caixa">
+  <form method="post" id="form-caixa">
+    {{ csrf_input }}<input type="hidden" name="voltar" value="{{ request.full_path }}"><input type="hidden" data-campo="cid" id="caixa-id">
+    <h2 style="margin-top:0">Lançamento de caixa</h2>
+    <p><strong data-campo="cliente"></strong></p>
+    <div class="grade">
+      <div class="c6"><label>Valor (R$)</label><input type="text" name="valor" data-campo="valor"></div>
+      <div class="c6"><label>Status</label><select name="status" data-campo="status">{% for s in status_lista %}<option>{{ s }}</option>{% endfor %}</select></div>
+      <div class="c6"><label>Forma de pagamento</label><select name="forma_pagamento" data-campo="forma"><option value=""></option>{% for fp in formas %}<option>{{ fp }}</option>{% endfor %}</select></div>
+      <div class="c6"><label>Nota fiscal</label><input type="text" name="nota_fiscal" data-campo="nf"></div>
+      <div class="c12"><label>Observação</label><input type="text" name="obs" data-campo="obs"></div>
+    </div>
+    <div class="acoes"><button class="btn" type="submit">Salvar</button><button class="btn sec" type="button" data-fechar>Cancelar</button></div>
+  </form>
+</dialog>
+{% endblock %}
+{% block scripts %}
+<script>
+document.getElementById('form-caixa').addEventListener('submit', function () {
+  this.action = '/caixa/' + document.getElementById('caixa-id').value;
+});
+</script>
+{% endblock %}

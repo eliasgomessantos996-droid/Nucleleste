@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+{% block titulo %}Exames realizados{% endblock %}
+{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/exames.css') }}">{% endblock %}
+{% block conteudo %}
+<div class="cabecalho">
+  <div><h1>Exames realizados</h1><p class="sub">Controle de realização dos exames (rádio-fármaco, lote, atividade, horários), como na planilha. Período: <strong>{{ titulo_periodo }}</strong> · {{ total }} exame(s).</p></div>
+  <div class="acoes">
+    <button class="btn sec" type="button" data-dialogo="dlg-dia">Trazer atendimentos do dia</button>
+    <a class="btn sec" href="{{ url_for('lanc.imprimir', **f) }}" target="_blank">Imprimir</a>
+    <a class="btn sec" href="{{ url_for('lanc.exportar', **f) }}">Exportar CSV</a>
+  </div>
+</div>
+
+<nav class="ex-tipos" style="margin-bottom:10px">
+  <a class="ex-tipo ativo" href="{{ url_for('lanc.lista') }}">Exames realizados</a>
+  <a class="ex-tipo" href="{{ url_for('lanc.do_dia') }}">Atendimentos do dia</a>
+</nav>
+
+<form class="cartao filtros" method="get">
+  <div><label>Mês</label><select name="mes">
+    <option value="todos" {% if f.mes == 'todos' %}selected{% endif %}>Todos os períodos</option>
+    {% if f.mes != 'todos' and f.mes not in meses %}<option value="{{ f.mes }}" selected>{{ f.mes[5:] }}/{{ f.mes[:4] }}</option>{% endif %}
+    {% for m in meses %}<option value="{{ m }}" {% if m == f.mes %}selected{% endif %}>{{ m[5:] }}/{{ m[:4] }}</option>{% endfor %}</select></div>
+  <div><label>Data de</label><input type="date" name="de" value="{{ f.de }}"></div>
+  <div><label>até</label><input type="date" name="ate" value="{{ f.ate }}"></div>
+  <div class="largo"><label>Paciente, código ou lote</label><input type="search" name="q" value="{{ f.q }}" placeholder="Nome, código do exame ou lote"></div>
+  <div><label>Convênio</label><select name="convenio"><option value="">Todos</option>{% for c in convenios %}<option {% if c == f.convenio %}selected{% endif %}>{{ c }}</option>{% endfor %}</select></div>
+  <div><label>Médico</label><input type="text" name="medico" value="{{ f.medico }}" placeholder="Parte do nome"></div>
+  <input type="hidden" name="tipo" value="{{ f.tipo }}">
+  <div><button class="btn" type="submit">Filtrar</button></div>
+</form>
+
+<div class="ex-tipos">
+  <a class="ex-tipo {% if not f.tipo %}ativo{% endif %}" href="{{ url_for('lanc.lista', **dict(f, tipo='')) }}">Todos os tipos</a>
+  {% for t in tipos %}<a class="ex-tipo {% if f.tipo == t.chave %}ativo{% endif %}" {% if t.cor %}style="--c:{{ t.cor }};--t:{{ t.texto }}"{% endif %} href="{{ url_for('lanc.lista', **dict(f, tipo=t.chave)) }}">{{ t.rotulo }} <b>{{ t.n }}</b></a>{% endfor %}
+</div>
+<div class="ajuda" style="margin:-4px 0 8px">Cores como na planilha: cada tipo de exame tem a sua cor. <label class="inline" style="margin:0 0 0 10px"><input type="checkbox" id="chk-marcador"> mostrar só um marcador colorido na linha</label></div>
+
+<div class="tabela-wrap"><table class="tabela ex-tabela" id="tab-ex">
+  <thead><tr><th>Nº</th><th>Data</th><th>Código</th><th>Paciente</th><th>Idade</th><th class="num">Peso</th><th class="num">Alt.</th><th>Convênio</th><th>Médico solicitante</th><th>CID</th>
+    <th>Rádio</th><th class="num">Eluição</th><th>Fármaco</th><th>Lote</th><th class="num">Prescr.</th><th class="num">Admin.</th><th>Exame</th><th>Injeção</th><th>Exame</th><th>Resp.</th><th></th></tr></thead>
+  <tbody>
+  {% for it in itens %}{% set r = it.r %}
+    <tr class="ex-linha" {% if it.cor %}style="--c:{{ it.cor }};--t:{{ it.texto }}"{% endif %} title="{{ it.tipo_rotulo }}">
+      <td>{{ r.numero or '' }}</td><td>{{ r.data|data_br }}</td><td>{{ r.codigo or '' }}</td>
+      <td class="quebra"><strong>{{ r.paciente }}</strong>{% if r.cliente_id %} <a href="{{ url_for('cad.cliente_editar', cid=r.cliente_id) }}" title="Cadastro do cliente" style="font-weight:400">↗</a>{% endif %}{% if r.obs %}<span class="ex-obs">{{ r.obs }}</span>{% endif %}</td>
+      <td>{{ it.idade }}</td><td class="num">{{ '%g'|format(r.peso) if r.peso is not none else '' }}</td><td class="num">{{ '%g'|format(r.altura) if r.altura is not none else '' }}</td>
+      <td>{{ r.convenio or '' }}</td><td class="quebra">{{ r.medico or '' }}</td><td>{{ r.cid or '' }}</td>
+      <td>{{ r.radio or '' }}</td><td class="num">{{ r.eluicao or '' }}</td><td>{{ r.farmaco or '' }}</td><td>{{ r.lote or '' }}</td>
+      <td class="num">{{ r.ativ_prescrita or '' }}</td><td class="num">{{ r.ativ_administrada or '' }}</td><td><strong>{{ r.exame or '' }}</strong></td>
+      <td>{{ r.hora_injecao or '' }}</td><td>{{ r.hora_exame or '' }}</td><td>{{ r.responsavel or '' }}</td>
+      <td class="num"><a class="btn peq" href="{{ url_for('lanc.editar', rid=r.id) }}">Editar</a></td>
+    </tr>
+  {% else %}<tr><td colspan="22" class="vazio">Nenhum exame no período.{% if not n_realizacoes %} A planilha EXAMES.xlsx ainda não foi importada — peça ao administrador em “Cores dos exames”.{% endif %}</td></tr>{% endfor %}
+  </tbody>
+</table></div>
+{% if total > limite %}<p class="ajuda" style="margin-top:6px">Mostrando os {{ limite }} mais recentes de {{ total }}. Refine o período ou o filtro (a exportação e a impressão trazem tudo).</p>{% endif %}
+
+<dialog id="dlg-dia">
+  <form method="post" action="{{ url_for('lanc.atendimentos_dia') }}">
+    {{ csrf_input }}
+    <h2 style="margin-top:0">Trazer atendimentos do dia</h2>
+    <p class="ajuda">Cria uma linha para cada atendimento lançado na recepção nesse dia (paciente, convênio, médico e exame já preenchidos). Depois é só completar rádio-fármaco, lote, atividade e horários.</p>
+    <label class="obrig">Data dos atendimentos</label><input type="date" name="data" value="{{ hoje }}" required>
+    <div class="acoes"><button class="btn" type="submit">Trazer</button><button class="btn sec" type="button" data-fechar>Cancelar</button></div>
+  </form>
+</dialog>
+{% endblock %}
+{% block scripts %}
+<script>
+(function () {
+  const tab = document.getElementById('tab-ex'), chk = document.getElementById('chk-marcador');
+  const aplica = (v) => { tab.classList.toggle('ex-marcador', v); chk.checked = v; };
+  try { aplica(localStorage.getItem('nl_ex_marcador') === '1'); } catch (e) { aplica(false); }
+  chk.addEventListener('change', () => { aplica(chk.checked); try { localStorage.setItem('nl_ex_marcador', chk.checked ? '1' : '0'); } catch (e) {} });
+})();
+</script>
+{% endblock %}

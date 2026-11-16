@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+{% block titulo %}Pastas{% endblock %}
+{% block conteudo %}
+<h1>Pastas</h1>
+<p class="sub">Atalhos para as pastas da rede (laudos, fotos, PDFs). O botão “Abrir” abre a pasta no Explorador de Arquivos <strong>deste computador</strong>.</p>
+<div class="cartao" id="aviso-pastas" style="background:#f4f9f6">
+  <strong>Primeira vez neste computador?</strong> Para o botão “Abrir” funcionar, é preciso liberá-lo <strong>uma única vez</strong> em cada computador:
+  <ol style="margin:8px 0 6px 18px;padding:0">
+    <li>Clique em <a class="btn sec peq" href="{{ url_for('admin.pastas_reg') }}" download data-pastas-config>Configurar este computador</a> e abra o arquivo baixado (confirme “Sim”).</li>
+    <li>Depois clique em “Abrir” numa pasta e, se o navegador perguntar, marque “Sempre permitir” e confirme.</li>
+  </ol>
+  <span class="ajuda">A configuração só vale para o seu usuário do Windows e só abre pastas (nunca executa arquivos). Se o botão não abrir nada, use “Copiar caminho” e cole no Explorador.</span>
+</div>
+<div class="tabela-wrap"><table class="tabela">
+  <thead><tr><th>Atalho</th><th>Caminho</th><th></th></tr></thead>
+  <tbody>{% for p in lista %}<tr><td><strong>{{ p.nome }}</strong></td><td><code>{{ p.caminho }}</code></td>
+    <td class="num" style="white-space:nowrap">
+      <a class="btn peq" href="{{ protocolo }}:{{ p.caminho|urlencode }}" data-abrir-pasta>Abrir</a>
+      <button class="btn sec peq" type="button" data-copiar="{{ p.caminho }}">Copiar caminho</button>
+    </td></tr>{% else %}<tr><td colspan="3" class="vazio">Nenhum atalho configurado.</td></tr>{% endfor %}</tbody>
+</table></div>
+
+{% if usuario.admin %}
+<h2>Editar atalhos</h2>
+<form class="cartao" method="post">
+  {{ csrf_input }}
+  <div id="linhas">
+  {% for p in lista + [{'nome': '', 'caminho': ''}, {'nome': '', 'caminho': ''}] %}
+    <div class="grade" style="margin-bottom:8px"><div class="c4"><input type="text" name="nome" value="{{ p.nome }}" placeholder="Nome"></div>
+      <div class="c8"><input type="text" name="caminho" value="{{ p.caminho }}" placeholder="Caminho (ex.: Z:\RECEPÇÃO\LAUDOS)"></div></div>
+  {% endfor %}
+  </div>
+  <p class="ajuda">Deixe o nome em branco para remover um atalho. Ao incluir pastas em um <strong>servidor novo</strong> (\\nome-do-servidor\...), peça aos usuários para refazer o “Configurar este computador” — ele só libera os servidores que já estavam cadastrados.</p>
+  <div class="acoes"><button class="btn" type="submit">Salvar atalhos</button></div>
+</form>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,42 @@
+{% extends 'enfermagem/_base.html' %}
+{% from '_ic.html' import ic %}
+{% block titulo %}Equipamentos médicos{% endblock %}
+{% block titulo_e %}Equipamentos médicos{% endblock %}
+{% block sub_e %}Cardioversor/desfibrilador, monitor multiparamétrico, ECG, oxímetro, bomba de infusão e aspirador: teste diário em checklist, manutenção/calibração com laudo em PDF e aviso quando o teste não é feito até {{ hora }}.{% endblock %}
+{% block corpo_e %}
+<div class="enf-areas">
+  {% for e in lista %}
+  <article class="enf-area enf-equip {{ 'vermelho' if e.vermelho else 'verde' }}">
+    <span class="enf-area-ico">{{ ic('gauge', 26) }}</span><strong>{{ e.nome }}</strong><small>{{ e.tipo }}{% if e.patrimonio %} · pat. {{ e.patrimonio }}{% endif %}{% if e.local %} · {{ e.local }}{% endif %}</small>
+    <span class="enf-chip {{ 'vermelho' if e.vermelho else 'verde' }}">{% if e.teste_atrasado %}teste de hoje atrasado{% elif e.teste_hoje and not e.teste_hoje.ok %}teste com falha{% elif e.manutencao == 'vencido' %}manutenção vencida{% else %}em dia{% endif %}</span>
+    <small>Manutenção: {{ e.ultima_manutencao|data_br if e.ultima_manutencao else '—' }} → próxima {{ e.proxima_manutencao|data_br if e.proxima_manutencao else '—' }}{% if e.manutencao == 'vence' %} ({{ e.dias_manut }} d){% endif %}</small>
+    {% if e.laudo_id %}<small><a href="{{ url_for('enf.equipamento_laudo', eid=e.id) }}" target="_blank" rel="noopener">{{ ic('file-text', 14) }} laudo (PDF)</a> · <a href="{{ url_for('enf.equipamento_laudo', eid=e.id, baixar=1) }}">baixar</a></small>{% endif %}
+    {% if e.teste_diario %}
+    <details class="q-editar"><summary>{{ ic('clipboard-check', 14) }} Registrar o teste de hoje{% if e.teste_hoje %} (já feito){% endif %}</summary>
+      <form method="post" action="{{ url_for('enf.teste_registrar', eid=e.id) }}" class="enf-form">{{ csrf_input }}
+        {% if e.tipo == 'Cardioversor/desfibrilador' %}{% for k, rot in cheques %}<label class="q-check"><input type="checkbox" name="t_{{ k }}" value="1"> {{ rot }}</label>{% endfor %}
+        {% else %}<label class="q-check"><input type="checkbox" name="t_funcionando" value="1"> Funcionando normalmente</label>{% endif %}
+        <input type="text" name="obs" placeholder="Observação"><button class="btn peq" type="submit">Registrar e abrir a ficha</button></form></details>
+    {% for t in e.testes %}{% if loop.first %}<small>Últimos testes:</small>{% endif %}<small>{{ t.data_hora[8:10] }}/{{ t.data_hora[5:7] }} {{ t.data_hora[11:16] }} · {{ t.profissional }} · {{ 'ok' if t.ok else 'FALHA' }} · <a href="{{ url_for('enf.teste_ficha', tid=t.id) }}" target="_blank">ficha</a></small>{% endfor %}
+    {% endif %}
+    <details class="q-editar"><summary>Editar</summary>
+      <form method="post" action="{{ url_for('enf.equipamento_salvar') }}" enctype="multipart/form-data" class="enf-form">{{ csrf_input }}<input type="hidden" name="id" value="{{ e.id }}">
+        <input type="text" name="nome" value="{{ e.nome }}" required><select name="tipo">{% for t in tipos %}<option {{ 'selected' if e.tipo == t }}>{{ t }}</option>{% endfor %}</select>
+        <input type="text" name="patrimonio" value="{{ e.patrimonio }}" placeholder="Patrimônio"><input type="text" name="local" value="{{ e.local }}" placeholder="Local">
+        <label class="q-check"><input type="checkbox" name="teste_diario" value="1" {{ 'checked' if e.teste_diario }}> exige teste diário</label>
+        <label>Última manutenção<input type="date" name="ultima_manutencao" value="{{ e.ultima_manutencao or '' }}"></label><label>Próxima<input type="date" name="proxima_manutencao" value="{{ e.proxima_manutencao or '' }}"></label>
+        <label>Laudo (PDF)<input type="file" name="laudo" accept="application/pdf"></label><button class="btn peq" type="submit">Salvar</button></form></details>
+  </article>
+  {% else %}<div class="cartao"><p class="vazio" style="margin:0">Nenhum equipamento cadastrado.</p></div>{% endfor %}
+</div>
+<form class="cartao enf-form enf-nao-imprime" method="post" action="{{ url_for('enf.equipamento_salvar') }}" enctype="multipart/form-data">
+  {{ csrf_input }}<h2>Cadastrar equipamento</h2>
+  <div class="q-linha3"><label>Nome<input type="text" name="nome" required maxlength="100" placeholder="Ex.: Desfibrilador da sala 2"></label>
+    <label>Tipo<select name="tipo">{% for t in tipos %}<option>{{ t }}</option>{% endfor %}</select></label><label>Patrimônio<input type="text" name="patrimonio" maxlength="40"></label></div>
+  <div class="q-linha3"><label>Onde fica<input type="text" name="local" maxlength="80"></label><label>Última manutenção/calibração<input type="date" name="ultima_manutencao"></label><label>Próxima<input type="date" name="proxima_manutencao"></label></div>
+  <label class="q-check"><input type="checkbox" name="teste_diario" value="1"> exige teste diário (o cardioversor sempre exige)</label>
+  <label>Laudo da manutenção ou calibração (PDF)<input type="file" name="laudo" accept="application/pdf"></label>
+  <button class="btn" type="submit">Cadastrar</button>
+</form>
+{% if gestao %}<form class="cartao enf-form enf-nao-imprime" method="post" action="{{ url_for('enf.equipamento_hora') }}">{{ csrf_input }}<div class="enf-form-inline"><label>Horário limite do teste diário<input type="time" name="hora" value="{{ hora }}"></label><button class="btn sec" type="submit">Salvar horário</button></div></form>{% endif %}
+{% endblock %}

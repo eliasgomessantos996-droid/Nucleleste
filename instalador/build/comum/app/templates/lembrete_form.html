@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% block titulo %}{{ 'Editar lembrete' if lid else 'Novo lembrete' }}{% endblock %}
+{% block conteudo %}
+<div class="cabecalho">
+  <div><h1>{{ 'Editar lembrete' if lid else 'Novo lembrete' }}</h1><p class="sub">Um item por linha. Cada item vira uma caixinha na janela de lembretes.</p></div>
+  <div class="acoes"><a class="btn sec" href="{{ url_for('lem.painel') }}">Voltar</a></div>
+</div>
+<form method="post" action="{{ url_for('lem.salvar') }}" class="cartao" autocomplete="off">
+  {{ csrf_input }}<input type="hidden" name="id" value="{{ lid or '' }}">
+  <div class="grade">
+    <div class="c12"><label class="obrig" for="lem-titulo">Título</label>
+      <input type="text" id="lem-titulo" name="titulo" value="{{ dados.titulo }}" maxlength="120" required placeholder="Ex.: Conferir antes de abrir a clínica"></div>
+    <div class="c12"><label class="obrig" for="lem-itens">Itens (um por linha, até 30; cada um até 200 caracteres)</label>
+      <textarea id="lem-itens" name="itens" rows="8" required placeholder="Ligar o aparelho&#10;Conferir o estoque de seringas&#10;Trocar o papel da impressora">{{ dados.itens }}</textarea></div>
+    <div class="c6"><label for="lem-inicio">Data de início</label>
+      <input type="date" id="lem-inicio" name="data_inicio" value="{{ dados.data_inicio }}">
+      <small class="sub">Antes desta data o lembrete não aparece.</small></div>
+    <div class="c6"><label class="marcar-linha"><input type="checkbox" name="reset_diario" value="1" {% if dados.reset_diario %}checked{% endif %}> Zerar as marcações todo dia</label>
+      <small class="sub">Todo dia as caixinhas voltam desmarcadas.</small></div>
+    {% if gestao %}
+    <div class="c12"><label class="marcar-linha"><input type="checkbox" name="para_todos" value="1" {% if dados.para_todos %}checked{% endif %}> Mostrar para todos os usuários</label>
+      <small class="sub">Aparece para todos. Cada usuário guarda as próprias marcações. Só a gestão altera este lembrete depois.</small></div>
+    {% endif %}
+  </div>
+  <div class="acoes"><button class="btn" type="submit">Salvar</button><a class="btn sec" href="{{ url_for('lem.painel') }}">Cancelar</a></div>
+</form>
+{% endblock %}

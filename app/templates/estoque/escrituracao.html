@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% from '_ic.html' import ic %}
+{% block titulo %}Escrituração · Estoque{% endblock %}
+{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/estoque.css') }}">{% endblock %}
+{% block conteudo %}
+<div class="cabecalho">
+  <div><h1>{{ ic('file-text', 22) }} Escrituração do estoque</h1>
+    <p class="sub">Livro de movimentação por item: saldo inicial, cada movimento do período e saldo final. {{ blocos|length }} item(ns) no filtro.</p></div>
+  <div class="acoes">
+    <a class="btn sec" href="{{ url_for('est.escrituracao_xlsx', de=de, ate=ate, item=item_id, tipo=tipo) }}">Excel</a>
+    <a class="btn" href="{{ url_for('est.escrituracao_pdf', de=de, ate=ate, item=item_id, tipo=tipo) }}" target="_blank">PDF</a>
+  </div>
+</div>
+
+<form class="cartao filtros" method="get">
+  <div><label for="e-de">De</label><input id="e-de" type="date" name="de" value="{{ de }}"></div>
+  <div><label for="e-ate">Até</label><input id="e-ate" type="date" name="ate" value="{{ ate }}"></div>
+  <div class="largo"><label for="e-item">Item</label><select id="e-item" name="item"><option value="">Todos os itens</option>
+    {% for i in itens %}<option value="{{ i.id }}" {% if item_id == i.id %}selected{% endif %}>{{ i.nome }}{% if not i.ativo %} (desativado){% endif %}</option>{% endfor %}</select></div>
+  <div><label for="e-tipo">Tipo</label><select id="e-tipo" name="tipo"><option value="">Todos</option>
+    {% for t in tipos %}<option value="{{ t }}" {% if tipo == t %}selected{% endif %}>{{ t|capitalize }}</option>{% endfor %}</select></div>
+  <div><button class="btn" type="submit">Filtrar</button></div>
+</form>
+
+{% for b in blocos %}
+<h2 class="est-secao"><a href="{{ url_for('est.historico', iid=b.id) }}">{{ b.nome }}</a> <small>{{ b.tipo|capitalize }} · {{ b.unidade }}</small>
+  <span class="etiqueta {{ 'pago' if b.confere else 'cancelado' }}">{{ 'Confere' if b.confere else 'Não confere' }}</span></h2>
+<div class="tabela-wrap"><table class="tabela">
+  <thead><tr><th>Data e hora</th><th>Documento / nota</th><th>Tipo</th><th>Motivo / fornecedor</th><th class="num">Entrada</th><th class="num">Saída</th><th class="num">Saldo após</th><th class="num">Valor unit. (R$)</th><th>Usuário</th></tr></thead>
+  <tbody>
+    <tr class="est-saldo"><td colspan="6"><strong>Saldo inicial</strong></td><td class="num"><strong>{{ b.inicial|est_qtd }}</strong></td><td></td><td></td></tr>
+  {% for l in b.linhas %}
+    <tr><td>{{ l.data_hora|est_dh }}</td><td>{{ l.documento }}</td><td>{{ l.tipo }}</td><td>{{ l.motivo }}</td>
+      <td class="num">{{ l.entrada|est_qtd if l.entrada else '' }}</td><td class="num">{{ l.saida|est_qtd if l.saida else '' }}</td>
+      <td class="num">{{ l.saldo|est_qtd }}</td><td class="num">{{ l.valor|moeda }}</td><td>{{ l.usuario }}</td></tr>
+  {% endfor %}
+    <tr class="est-saldo"><td colspan="4"><strong>Saldo final · totais do período</strong></td>
+      <td class="num"><strong>{{ b.entradas|est_qtd if b.entradas else '0' }}</strong></td><td class="num"><strong>{{ b.saidas|est_qtd if b.saidas else '0' }}</strong></td>
+      <td class="num"><strong>{{ b.final|est_qtd }}</strong></td><td></td><td></td></tr>
+  </tbody>
+</table></div>
+{% else %}
+<div class="cartao vazio">Nenhum item com movimentação ou saldo no período.</div>
+{% endfor %}
+{% endblock %}

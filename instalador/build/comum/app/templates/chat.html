@@ -1,0 +1,123 @@
+{% extends 'base.html' %}
+{% from '_ic.html' import ic %}
+{% block titulo %}Mensagens{% endblock %}
+{% macro editor_canal(c=None) %}
+<form method="post" action="{{ url_for('chat.canal_salvar') }}" class="chat-canal-editor">
+  {{ csrf_input }}<input type="hidden" name="canal" value="{{ c.id if c else 0 }}">
+  <label>Nome do grupo<input type="text" name="nome" maxlength="80" required value="{{ c.nome if c else '' }}"></label>
+  <fieldset><legend>Pessoas com acesso à Agenda</legend>
+    {% for p in destinatarios %}<label class="inline"><input type="checkbox" name="membros" value="{{ p.id }}" {{ 'checked' if c and p.id in c.membros }}> {{ p.nome }}</label>
+    {% else %}<p class="sub">Não há outras pessoas ativas com acesso à Agenda.</p>{% endfor %}
+  </fieldset>
+  <button type="submit" class="btn sec">{{ ic('check') }} Salvar grupo</button>
+</form>
+{% endmacro %}
+{% block conteudo %}
+<div class="cabecalho">
+  <div><h1>Mensagens</h1><p class="sub">Converse com qualquer pessoa da equipe e com a gestão. Se a pessoa estiver ausente, ela vê a mensagem assim que abrir o sistema.</p></div>
+  <div class="acoes"><button class="btn sec" type="button" data-chat-notificar hidden>🔔 Ativar avisos do navegador</button></div>
+</div>
+
+<div class="chat {{ 'tem-conversa' if atual or canal_atual }}" data-chat-pagina data-com="{{ atual.id if atual else '' }}" data-hoje="{{ hoje }}"
+     data-ultimo="{{ ultimo_id }}" data-primeiro="{{ primeiro_id }}" data-nome="{{ atual.nome if atual else '' }}"
+     data-leitura="{{ 1 if atual and atual.sistema else 0 }}" data-lidas-n="{{ lidas_n or 0 }}">
+  <aside class="chat-lista" aria-label="Conversas">
+    {% if pode_transmitir %}
+    <div class="chat-canais">
+      <strong>{{ ic('users') }} Grupos de transmissão</strong>
+      <div class="chat-canais-itens">{% for c in canais %}<a class="chat-canal-item {{ 'ativo' if canal_atual and canal_atual.id == c.id }}" href="{{ url_for('chat.conversa', canal=c.id) }}">{{ c.nome }} <small>{{ c.membros|length }} pessoa(s)</small></a>{% endfor %}</div>
+      <details><summary>{{ ic('clipboard-plus') }} Criar grupo</summary>{{ editor_canal() }}</details>
+    </div>
+    {% endif %}
+    <div class="chat-busca"><input type="search" placeholder="Buscar pessoa" aria-label="Buscar pessoa" data-chat-filtro></div>
+    <ul data-chat-contatos>
+      {% for c in contatos %}
+      <li data-nome="{{ c.nome }}">
+        <a class="chat-item {{ 'ativo' if atual and atual.id == c.id }}" href="{{ url_for('chat.conversa', com=c.id) }}">
+          <span class="chat-avatar cor{{ c.cor }}">{% if c.avatar %}<img class="chat-avatar-img" src="{{ c.avatar }}" alt="">{% else %}{{ c.iniciais }}{% endif %}<span class="chat-bolinha{{ ' online' if c.online }}" data-presenca="{{ c.id }}" title="{{ 'Online' if c.online else 'Offline · visto por último ' ~ c.visto }}"></span></span>
+          <span class="chat-item-corpo"><strong>{{ c.nome }}{% if c.gestao %} <em class="chat-tag">Gestão</em>{% endif %}</strong>
+            <small>{% if c.ultima_minha %}Você: {% endif %}{{ c.previa or 'Toque para conversar' }}</small></span>
+          <span class="chat-item-meta"><time>{{ c.ultima_em }}</time><span class="selo-menu" {{ 'hidden' if not c.nao_lidas }}>{{ c.nao_lidas }}</span></span>
+        </a>
+      </li>
+      {% else %}<li class="chat-vazio">Não há outros usuários ativos no sistema.</li>{% endfor %}
+    </ul>
+  </aside>
+
+  <section class="chat-painel" aria-label="Conversa">
+    {% if canal_atual %}
+    <header class="chat-topo">
+      <a class="chat-voltar" href="{{ url_for('chat.conversa') }}" aria-label="Voltar para as conversas">{{ ic('undo-2') }}</a>
+      {{ ic('users', 28) }}<div><strong>{{ canal_atual.nome }}</strong><small>Grupo de transmissão da gestão</small></div>
+    </header>
+    <div class="chat-canal-painel">
+      <svg class="chat-canal-desenho" viewBox="0 0 100 60" width="100" height="60" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="2"><path d="M20 30h40M60 30l22-18M60 30l22 18"/><rect x="4" y="20" width="24" height="20" rx="4"/><circle cx="86" cy="10" r="7"/><circle cx="86" cy="50" r="7"/><circle cx="60" cy="30" r="4"/></g></svg>
+      <p>Cada pessoa recebe uma mensagem individual sua e pode responder na conversa com você. Pessoas desativadas ou sem acesso à Agenda não recebem.</p>
+      <form method="post" action="{{ url_for('chat.canal_enviar', cid=canal_atual.id) }}" class="chat-canal-envio">
+        {{ csrf_input }}<label for="canal-corpo">Mensagem para o grupo</label>
+        <textarea id="canal-corpo" name="corpo" rows="5" maxlength="2000" required></textarea>
+        <button type="submit" class="btn">{{ ic('send') }} Enviar para todos</button>
+      </form>
+      <details><summary>{{ ic('users') }} Editar nome e membros</summary>{{ editor_canal(canal_atual) }}</details>
+      <form method="post" action="{{ url_for('chat.canal_excluir', cid=canal_atual.id) }}" data-confirmar="Excluir este grupo de transmissão? As mensagens já enviadas serão mantidas.">
+        {{ csrf_input }}<button type="submit" class="btn perigo">{{ ic('x') }} Excluir grupo</button>
+      </form>
+    </div>
+    {% elif atual %}
+    <header class="chat-topo">
+      <a class="chat-voltar" href="{{ url_for('chat.conversa') }}" aria-label="Voltar para as conversas">←</a>
+      <span class="chat-avatar cor{{ atual.cor }}">{% if atual.avatar %}<img class="chat-avatar-img" src="{{ atual.avatar }}" alt="">{% else %}{{ atual.iniciais }}{% endif %}</span>
+      <div><strong>{{ atual.nome }}</strong>{% if atual.gestao %} <em class="chat-tag">Gestão</em>{% endif %}
+        <small data-chat-estado class="chat-estado{{ ' online' if atual.online }}">{% if atual.online %}● online{% else %}● offline{% if atual.visto %} · visto por último {{ atual.visto }}{% endif %}{% endif %}</small></div>
+      <button type="button" class="chat-buscar-abrir" data-chat-buscar-abrir title="Pesquisar nesta conversa (Ctrl+F)" aria-label="Pesquisar nesta conversa">🔍</button>
+    </header>
+    <div class="chat-busca-conv" id="chat-busca-conv" hidden>
+      <input type="search" placeholder="Pesquisar nesta conversa" aria-label="Pesquisar nesta conversa" autocomplete="off">
+      <div class="chat-busca-resultados" data-busca-resultados></div>
+    </div>
+    <div class="chat-fio" id="chat-fio" aria-live="polite"></div>
+    <div class="chat-resposta" id="chat-resposta" hidden>
+      <span>↩ Respondendo a <em data-resp-texto></em></span>
+      <button type="button" data-resp-fechar aria-label="Cancelar resposta">×</button>
+    </div>
+    <form class="chat-form" id="chat-form" action="{{ url_for('chat.enviar') }}" method="post" autocomplete="off"{% if atual.sistema == 3 %} data-nucleai="1"{% endif %}>
+      {{ csrf_input }}
+      <input type="hidden" name="para" value="{{ atual.id }}">
+      <div class="chat-img-previa" id="chat-img-previa" hidden>
+        {% if atual.sistema == 3 %}
+        <span class="chat-arq-nome" data-arq-nome></span>
+        {% else %}
+        <img alt="Imagem escolhida para enviar">
+        <span>A imagem some 24 horas depois de enviada.</span>
+        {% endif %}
+        <button type="button" data-img-remover aria-label="Remover anexo" title="Remover anexo">×</button>
+      </div>
+      {% if atual.sistema == 3 %}
+      <input type="file" id="chat-img" accept=".xlsx,.xls,.csv,.txt" hidden>
+      <button class="chat-anexar" type="button" id="chat-anexar" aria-label="Enviar arquivo" title="Enviar planilha ou texto (.xlsx, .xls, .csv, .txt)">
+        <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><line x1="16" y1="17" x2="8" y2="17" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      </button>
+      {% else %}
+      <input type="file" id="chat-img" accept="image/jpeg,image/png,image/gif,image/webp" hidden>
+      <button class="chat-anexar" type="button" id="chat-anexar" aria-label="Enviar uma imagem" title="Enviar uma imagem (some em 24 horas). Também dá para colar com Ctrl+V.">
+        <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M4 5h16a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1zm0 11 5-5 4 4 2-2 5 5M15.5 9.5h.01"/></svg>
+      </button>
+      {% endif %}
+      <label class="chat-sr" for="chat-texto">Mensagem</label>
+      <textarea id="chat-texto" name="corpo" rows="1" maxlength="2000" placeholder="Escreva uma mensagem. Enter envia, Shift+Enter quebra a linha."></textarea>
+      <button class="chat-enviar" type="submit" aria-label="Enviar mensagem" title="Enviar">
+        <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M3.4 20.4 21 12 3.4 3.6l-.01 6.53L15 12 3.39 13.87z"/></svg>
+      </button>
+      <small class="chat-erro" data-chat-erro hidden></small>
+    </form>
+    <script type="application/json" id="chat-inicial">{{ mensagens|tojson }}</script>
+    {% else %}
+    <div class="chat-boas-vindas">
+      <svg viewBox="0 0 64 64" width="84" height="84" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round" d="M10 12h44a4 4 0 0 1 4 4v24a4 4 0 0 1-4 4H30l-12 10V44h-8a4 4 0 0 1-4-4V16a4 4 0 0 1 4-4z"/><circle cx="22" cy="28" r="2.6" fill="currentColor"/><circle cx="32" cy="28" r="2.6" fill="currentColor"/><circle cx="42" cy="28" r="2.6" fill="currentColor"/></svg>
+      <h2>Suas conversas</h2>
+      <p>Escolha uma pessoa na lista ao lado para ler e enviar mensagens. Novas mensagens aparecem na hora, sem precisar atualizar a página.</p>
+    </div>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

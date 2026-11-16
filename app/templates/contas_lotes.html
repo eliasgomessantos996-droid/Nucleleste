@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+{% from '_ic.html' import ic %}
+{% block titulo %}Lotes de pagamento{% endblock %}
+{% block conteudo %}
+<div class="cabecalho">
+  <div><h1>Lotes de pagamento</h1><p class="sub">{{ lotes|length }} lote(s) no filtro. Cada lote é o grupo de contas enviado a um banco para pagamento.</p></div>
+  <div class="acoes">
+    <a class="btn sec com-icone" href="{{ url_for('fin.contas') }}">{{ ic('wallet', 16) }} Contas a pagar</a>
+  </div>
+</div>
+<form class="cartao filtros" method="get">
+  <div><label>Situação do lote</label><select name="status">
+    <option value="" {% if not status %}selected{% endif %}>Todos</option>
+    <option value="ABERTO" {% if status == 'ABERTO' %}selected{% endif %}>Aberto</option>
+    <option value="CONCLUIDO" {% if status == 'CONCLUIDO' %}selected{% endif %}>Concluído</option></select></div>
+  <div><button class="btn" type="submit">Filtrar</button></div>
+</form>
+
+<div class="tabela-wrap"><table class="tabela">
+  <thead><tr><th>Lote</th><th>Banco</th><th>Criado em</th><th>Por</th><th>Situação</th><th class="num">Contas</th><th class="num">Total (R$)</th><th class="num">Em pagamento</th><th class="num">Pagas</th><th class="num">Devolvidas</th><th></th></tr></thead>
+  <tbody>
+  {% for l in lotes %}
+    <tr>
+      <td><a href="{{ url_for('fin.conta_lote', lote_id=l.id) }}">Lote nº {{ l.id }}</a></td>
+      <td>{{ l.banco }}</td>
+      <td>{{ l.criado_em[:10]|data_br }} {{ l.criado_em[11:16] }}</td>
+      <td>{{ l.criado_por or '' }}</td>
+      <td>{% if l.status == 'CONCLUIDO' %}<span class="etiqueta pago">Concluído</span>{% else %}<span class="etiqueta aberto">Aberto</span>{% endif %}</td>
+      <td class="num">{{ l.qtd }}</td>
+      <td class="num">{{ l.total|moeda }}</td>
+      <td class="num">{{ l.pendentes }}</td>
+      <td class="num">{{ l.pagas }}</td>
+      <td class="num">{{ l.devolvidas }}</td>
+      <td class="num"><a class="btn sec peq" href="{{ url_for('fin.conta_lote', lote_id=l.id) }}">Abrir</a></td>
+    </tr>
+  {% else %}<tr><td colspan="11" class="vazio">Nenhum lote de pagamento encontrado.</td></tr>{% endfor %}
+  </tbody>
+</table></div>
+{% endblock %}

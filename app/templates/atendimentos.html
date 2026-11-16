@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% block titulo %}Atendimentos{% endblock %}
+{% block conteudo %}
+<div class="cabecalho">
+  <div><h1>Atendimentos</h1><p class="sub">{{ rows|length }} atendimento(s) no filtro{% if rows|length == 2000 %} (mostrando os 2000 mais recentes){% endif %}</p></div>
+</div>
+<form class="cartao filtros" method="get">
+  <div><label>De</label><input type="date" name="de" value="{{ f.de }}"></div>
+  <div><label>Até</label><input type="date" name="ate" value="{{ f.ate }}"></div>
+  <div class="largo"><label>Cliente (nome ou CPF)</label><input type="search" name="cliente" value="{{ f.cliente }}"></div>
+  <div><label>Exame</label><select name="exame"><option value="">Todos</option>{% for e in exames %}<option {% if e|upper == f.exame|upper %}selected{% endif %}>{{ e }}</option>{% endfor %}</select></div>
+  <div><label>Convênio</label><select name="convenio"><option value="">Todos</option>{% for c in convenios %}<option {% if c == f.convenio %}selected{% endif %}>{{ c }}</option>{% endfor %}</select></div>
+  <div><label>Médico</label><input type="search" name="medico" value="{{ f.medico }}"></div>
+  <div><label>Usuário</label><select name="usuario"><option value="">Todos</option>{% for u in usuarios %}<option {% if u == f.usuario %}selected{% endif %}>{{ u }}</option>{% endfor %}</select></div>
+  <div><button class="btn" type="submit">Filtrar</button></div>
+</form>
+<div class="tabela-wrap"><table class="tabela">
+  <thead><tr><th>Data</th><th>Cliente</th><th>CPF</th><th>Exame</th><th>Convênio</th><th>Médico</th><th>Usuário</th><th></th></tr></thead>
+  <tbody>
+  {% for a in rows %}
+    <tr>
+      <td>{{ a.data|data_br }}</td>
+      <td>{% if a.cliente_id %}<a href="{{ url_for('cad.cliente_editar', cid=a.cliente_id) }}">{{ a.cliente_nome }}</a>{% else %}{{ a.cliente_nome }}{% endif %}</td>
+      <td>{{ a.cpf or '' }}</td><td>{{ a.exame }}{% if a.interno %} <span class="etiqueta">Interno{% if a.interno_local %}: {{ a.interno_local }}{% endif %}</span>{% endif %}
+        {% set pm = pend_mc.get(a.id) %}{% if pm and (pm[0] or pm[1]) %}<div><a class="etiqueta aberto" href="{{ url_for('mpend.lista', mostrar='todos', q=a.cliente_nome) }}#aten-{{ a.id }}" title="Estudo na Medcloud: abrir as pendências deste paciente">Medcloud: pendente {% if pm[0] and pm[1] %}anexos e laudos{% elif pm[0] %}anexos{% else %}laudos{% endif %}</a></div>{% endif %}</td><td>{{ a.convenio or '' }}</td><td>{{ a.medico or '' }}</td><td>{{ a.usuario or '' }}</td>
+      <td class="num" style="white-space:nowrap">
+        <a class="btn sec peq" href="{{ url_for('atend.imprimir', aid=a.id) }}">Fichas</a>
+        {% if pode('prontuario') and a.cliente_id %}<a class="btn sec peq" href="{{ url_for('pront.paciente', cid=a.cliente_id) }}">Prontuário</a>{% endif %}
+        {% if usuario.admin %}
+        <form method="post" action="{{ url_for('atend.excluir', aid=a.id) }}" style="display:inline" data-confirmar="Excluir este atendimento (e a guia/caixa vinculados)?">
+          {{ csrf_input }}<input type="hidden" name="voltar" value="{{ request.full_path }}"><button class="btn perigo peq" type="submit">Excluir</button></form>
+        {% endif %}
+      </td>
+    </tr>
+  {% else %}<tr><td colspan="8" class="vazio">Nenhum atendimento no período.</td></tr>{% endfor %}
+  </tbody>
+</table></div>
+{% endblock %}

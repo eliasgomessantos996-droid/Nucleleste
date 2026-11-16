@@ -1,0 +1,111 @@
+{% extends 'base.html' %}
+{% block titulo %}Backup{% endblock %}
+{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/backup.css') }}">{% endblock %}
+{% block conteudo %}
+<div class="cabecalho">
+  <div><h1>Backup</h1><p class="sub">Banco de dados: <code>{{ banco }}</code><br>Pasta dos backups: <code>{{ pasta }}</code></p></div>
+  <form class="acoes" method="post">{{ csrf_input }}<button class="btn" type="submit">Fazer backup agora</button></form>
+</div>
+<div class="cartao" style="display:flex;gap:12px;align-items:end;flex-wrap:wrap">
+  <form method="post" action="{{ url_for('atu.avisar') }}" style="display:flex;gap:12px;align-items:end;flex-wrap:wrap"
+        onsubmit="return confirm('Avisar todos os usuários pelo contato do sistema? Depois do prazo, o programa pode ser encerrado para atualização.')">
+    {{ csrf_input }}
+    <div><strong>Aviso antes da atualização</strong><br><small>Todos os usuários recebem a mensagem pelo contato “AVISOS DO SISTEMA”.</small></div>
+    <div><label for="prazo">Prazo (minutos)</label><input type="number" id="prazo" name="prazo" min="1" max="60" value="10" style="width:110px"></div>
+    <button class="btn perigo" type="submit">Avisar usuários</button>
+  </form>
+</div>
+{% if pode_restaurar %}
+{% set em_dia_todas = externa and (externa|selectattr('em_dia')|list|length == externa|length) %}
+{% set estado = 'ok' if em_dia_todas else ('espera' if externa else 'off') %}
+<section class="cartao bk-externa bk-{{ estado }}">
+  <div class="bk-arte" aria-hidden="true">
+    <svg viewBox="0 0 120 120" class="bk-svg">
+      <circle class="bk-onda" cx="60" cy="60" r="34"/><circle class="bk-onda w2" cx="60" cy="60" r="34"/>
+      <path class="bk-nuvem" d="M34 80h50a19 19 0 0 0 3.5-37.7A26 26 0 0 0 38 46a17 17 0 0 0-4 34z"/>
+      <g class="bk-seta"><path d="M60 74V50"/><path d="m50 59 10-10 10 10"/></g>
+      <g class="bk-selo"><circle cx="88" cy="86" r="14"/><path d="m81 86 5 5 9-10"/></g>
+    </svg>
+  </div>
+  <div class="bk-corpo">
+    <h2>Cópia em outras pastas (Google Drive, rede ou pendrive)</h2>
+    <p class="ajuda">O backup é sempre feito neste computador, junto do banco de dados. As pastas abaixo recebem uma cópia dos backups dos últimos 7 dias (até {{ max_pastas }} pastas).
+      Os backups são copiados para todas as pastas. O servidor não enxerga o Google Drive nem as unidades do usuário; a cópia para essas pastas é feita pelo ícone da bandeja no computador onde elas existem.</p>
+    {% for p in externa %}
+    <div class="bk-status" role="status" style="margin-bottom:8px">
+      <code>{{ p.pasta }}</code>
+      {% if p.em_dia %}<span class="bk-pilula ok">Em dia</span>{% if p.ok_em %} copiado em {{ p.ok_em[8:10] }}/{{ p.ok_em[5:7] }}/{{ p.ok_em[:4] }} {{ p.ok_em[11:16] }}{% endif %}
+      {% elif p.erro %}<span class="bk-pilula espera erro">Erro</span> <span class="bk-erro">{{ p.erro }}{% if p.erro_em %} ({{ p.erro_em[8:10] }}/{{ p.erro_em[5:7] }} {{ p.erro_em[11:16] }}){% endif %}</span>
+      {% else %}<span class="bk-pilula espera">Atrasada</span>{% if p.ok_em %} última cópia em {{ p.ok_em[8:10] }}/{{ p.ok_em[5:7] }}/{{ p.ok_em[:4] }} {{ p.ok_em[11:16] }}{% else %} ainda não houve cópia{% endif %}{% endif %}
+      <form method="post" action="{{ url_for('admin.backup_destino_remover') }}" style="display:inline">
+        {{ csrf_input }}<input type="hidden" name="pasta" value="{{ p.pasta }}"><button class="btn sec peq" type="submit">Remover</button>
+      </form>
+    </div>
+    {% else %}
+    <div class="bk-status" role="status"><span class="bk-pilula off">Desligada</span> Nenhuma pasta escolhida: os backups ficam só neste computador.</div>
+    {% endfor %}
+    {% if externa|length < max_pastas %}
+    <form method="post" action="{{ url_for('admin.backup_destino') }}" class="bk-form">
+      {{ csrf_input }}
+      <div class="bk-campo"><label for="pasta_destino">Adicionar pasta</label>
+        <input type="text" id="pasta_destino" name="pasta" placeholder="G:\Meu Drive\Backups Nucleleste" autocomplete="off"></div>
+      <button class="btn" type="submit">Adicionar pasta</button>
+    </form>
+    <small class="ajuda">Caminho completo, como aparece no Explorador de Arquivos (exemplos: <code>G:\Meu Drive\Backups</code> ou <code>\\servidor\backups</code>). O sistema não precisa enxergar a pasta agora.</small>
+    {% else %}
+    <p class="ajuda"><b>Já há {{ max_pastas }} pastas de cópia.</b> Remova uma antes de adicionar outra.</p>
+    {% endif %}
+    {% if backups_externos %}
+    <div class="tabela-wrap" style="margin-top:10px"><table class="tabela">
+      <thead><tr><th>Backup nas pastas de cópia</th><th>Pasta de origem</th><th>Data</th><th></th></tr></thead>
+      <tbody>{% for b in backups_externos %}<tr><td>{{ b.nome }}</td><td><code>{{ b.pasta }}</code></td><td>{{ b.data }}</td>
+        <td class="num">{% if pode_restaurar %}<a class="btn perigo peq" href="{{ url_for('admin.backup_restaurar', nome=b.nome, origem='pasta') }}">Restaurar</a>{% endif %}</td></tr>{% endfor %}</tbody>
+    </table></div>
+    {% endif %}
+  </div>
+</section>
+
+<section class="cartao bk-auto{{ '' if auto.ligado else ' bk-desligado' }}">
+  <div class="bk-arte pequena" aria-hidden="true">
+    <svg viewBox="0 0 80 80" class="bk-svg">
+      <circle class="bk-relogio" cx="40" cy="42" r="26"/><path class="bk-ponteiro h" d="M40 42V28"/><path class="bk-ponteiro m" d="M40 42l11 6"/>
+      <circle class="bk-pino" cx="40" cy="42" r="3"/><path class="bk-sino" d="M16 20 24 12M64 20 56 12"/>
+    </svg>
+  </div>
+  <div class="bk-corpo">
+    <form method="post" action="{{ url_for('admin.backup_automatico') }}" class="bk-form">
+      {{ csrf_input }}
+      <div class="bk-campo"><strong>Backup automático</strong>
+        <label class="inline"><input type="checkbox" name="ligado" value="1" {% if auto.ligado %}checked{% endif %}> ligado</label></div>
+      <div class="bk-campo"><label for="auto_inicio">Das</label><input type="time" id="auto_inicio" name="inicio" value="{{ auto.inicio }}" required style="width:130px"></div>
+      <div class="bk-campo"><label for="auto_fim">Até</label><input type="time" id="auto_fim" name="fim" value="{{ auto.fim }}" required style="width:130px"></div>
+      <div class="bk-campo"><label for="auto_minutos">Frequência</label>
+        <select id="auto_minutos" name="minutos">{% for n, rotulo in opcoes_minutos %}<option value="{{ n }}" {% if auto.minutos == n %}selected{% endif %}>{{ rotulo }}</option>{% endfor %}</select></div>
+      <button class="btn sec" type="submit">Salvar</button>
+    </form>
+    <p class="ajuda" style="margin:10px 0 0">Durante a janela, o sistema faz um backup a cada intervalo. Cada backup gera um arquivo novo (o nome traz a data e o horário). Backups com mais de 7 dias são apagados sozinhos, aqui e nas pastas de cópia; os 3 mais recentes sempre ficam.
+      Se houver pasta de cópia acima, o backup também vai para ela (Google Drive, rede ou pendrive). O botão “Fazer backup agora” continua funcionando a qualquer hora.</p>
+    <div class="bk-status" role="status" style="--bk: {{ '#2c9a52' if auto.ligado else '#8b9a92' }}">
+      {% if auto.ligado %}<span class="bk-pilula">Ligado</span>
+        {% if auto.proximo %}Próximo backup automático previsto: <b>{{ auto.proximo }}</b>.{% endif %}
+        {% if auto.ultimo %} Último automático: <b>{{ auto.ultimo }}</b>{% if auto.arquivo %} · arquivo <code>{{ auto.arquivo }}</code>{% endif %}.{% else %} Ainda não houve backup automático.{% endif %}
+      {% else %}<span class="bk-pilula">Desligado</span> Nenhum backup é feito sozinho; use o botão “Fazer backup agora”.{% endif %}
+    </div>
+  </div>
+</section>
+<div class="cartao" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+  <div style="flex:1;min-width:260px"><strong>Restaurar backup</strong><br>
+    <small>{% if ultimo %}Último backup: <b>{{ ultimo.nome }}</b> ({{ ultimo.data }}). {% endif %}A restauração troca os dados atuais (cadastros e anexos) pelos do backup e pede um código de verificação antes de executar. Os dados de agora são guardados em um backup automático. Só a administração e a gerência veem esta área.</small></div>
+  {% if ultimo %}<a class="btn perigo" href="{{ url_for('admin.backup_restaurar') }}">Restaurar o último backup</a>{% endif %}
+  <a class="btn sec" href="{{ url_for('admin.backup_pasta') }}">Buscar em outra pasta</a>
+</div>
+{% endif %}
+<div class="msg aviso">Cada backup é um arquivo <b>.zip</b> com os dois bancos (<code>sistema.db</code> e <code>anexos.db</code>) e um <code>LEIA-ME.txt</code> com o passo a passo para restaurar. Copie periodicamente os backups para outro local (pendrive, outro computador ou nuvem).{% if pode_restaurar %} Para restaurar um backup específico, use o botão “Restaurar” na linha dele.{% endif %}</div>
+<div class="tabela-wrap"><table class="tabela">
+  <thead><tr><th>Arquivo</th><th>Data</th><th class="num">Tamanho</th><th></th></tr></thead>
+  <tbody>{% for b in lista %}<tr><td>{{ b.nome }}{% if b.com_anexos %} <span class="etiqueta" title="Contém sistema.db e anexos.db">sistema + anexos</span>{% else %} <span class="etiqueta" title="Formato antigo: só o sistema.db">só sistema (antigo)</span>{% endif %}</td><td>{{ b.data }}</td><td class="num">{{ '%.1f'|format(b.tamanho / 1048576) }} MB</td>
+    <td class="num"><a class="btn sec peq" href="{{ url_for('admin.backup_baixar', nome=b.nome) }}">Baixar</a>
+      {% if pode_restaurar %}<a class="btn perigo peq" href="{{ url_for('admin.backup_restaurar', nome=b.nome) }}">Restaurar</a>{% endif %}</td></tr>
+  {% else %}<tr><td colspan="4" class="vazio">Nenhum backup ainda.</td></tr>{% endfor %}</tbody>
+</table></div>
+{% endblock %}

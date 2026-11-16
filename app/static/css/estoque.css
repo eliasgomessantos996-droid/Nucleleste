@@ -1,0 +1,25 @@
+/* Estoque de materiais e medicamentos: só o que as classes gerais (app.css, tema) não cobrem. Cores vêm das variáveis do tema. */
+.est-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
+.est-destaque { font-size: 26px; font-weight: 700; margin: 6px 0 10px; color: var(--texto, inherit); }
+.linha-check { display: inline-flex; align-items: center; gap: 6px; font-weight: 500; }
+dialog { width: min(560px, calc(100% - 32px)); }
+/* pedidos de compra */
+.ped-acoes form { display: inline; margin: 0; }
+.ped-titulo { margin-top: 18px; }
+.ped-qtd, .ped-valor { width: 96px; }
+.ped-obs { width: 140px; }
+.ped-item { min-width: 180px; max-width: 100%; }
+/* relatórios, escrituração e preços */
+.est-secao { margin-top: 18px; font-size: 17px; }
+.est-secao small { font-weight: 400; color: var(--suave, inherit); }
+.est-saldo td { background: var(--zebra, rgba(127, 127, 127, .08)); }
+.est-grafico { display: block; width: 100%; max-width: 680px; height: auto; margin: 8px 0 14px; color: var(--texto, inherit); }
+.est-grafico .est-linha { fill: none; stroke: var(--verde, #255f39); stroke-width: 2.5; }
+.est-grafico .est-ponto { fill: var(--verde, #255f39); }
+.est-grafico .est-eixo { stroke: currentColor; opacity: .35; }
+.est-grafico .est-eixo-txt { fill: currentColor; font-size: 12px; }
+@media (max-width: 760px) {
+  .est-cards { grid-template-columns: 1fr; }
+  dialog { width: calc(100% - 24px); }
+  .ped-item { min-width: 140px; }
+}

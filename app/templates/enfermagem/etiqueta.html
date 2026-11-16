@@ -1,0 +1,8 @@
+{% from 'enfermagem/_ficha.html' import estilo %}<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><title>Etiqueta {{ p.codigo }}</title>{{ estilo() }}
+<style>.etq { width: 90mm; border: 1.5px solid #111; border-radius: 4px; padding: 6px 8px; display: flex; gap: 8px; align-items: center; margin: 10mm auto; } .etq img { width: 26mm; height: 26mm; } .etq b { font-size: 15px; } .etq p { margin: 2px 0; font-size: 11.5px; } @media print { .etq { margin: 0; } }</style></head><body>
+<div class="barra"><button onclick="window.print()">Imprimir etiqueta</button></div>
+<div class="etq"><img src="{{ url_for('enf.pacote_qr', pid=p.id) }}" alt="QR {{ p.codigo }}">
+  <div><b>{{ p.codigo }}</b><p>{{ p.descricao }}</p><p>Esterilizado: {{ p.data_esteril|data_br }}</p><p><b>Validade: {{ p.validade|data_br }}</b></p>
+    <p>Químico: {{ p.quimico|lower }} · Biológico: {{ p.biologico|lower }}</p><p>{{ p.autoclave }} {{ p.ciclo }}{% if ass %} · {{ ass.nome }}{% endif %}</p><p style="font-size:9px">{{ clinica }}</p></div></div>
+</body></html>

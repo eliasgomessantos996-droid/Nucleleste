@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+{% block titulo %}{{ doc.titulo }}{% endblock %}
+{% block conteudo %}
+<h1>{{ doc.titulo }}</h1>
+<p class="sub">Selecione um cliente para preencher o nome automaticamente, ou digite os dados.</p>
+<form class="cartao" method="post" target="_blank" autocomplete="off">
+  {{ csrf_input }}
+  <div class="seletor" id="seletor-cliente" style="margin-bottom:14px">
+    <label>Buscar cliente (opcional)</label>
+    <input type="search" placeholder="Nome, código ou CPF...">
+    <input type="hidden" value="">
+    <div class="resultados"></div>
+  </div>
+  <div class="grade">
+    {% for nome, rotulo, tipo in doc.campos %}
+      <div class="{{ 'c12' if nome in ('nome', 'acompanhante', 'referente') else 'c4' }}">
+        <label>{{ rotulo }}</label>
+        {% if tipo == 'periodo' %}
+          <select name="{{ nome }}">{% for p in periodos %}<option>{{ p }}</option>{% endfor %}</select>
+        {% else %}
+          <input type="{{ tipo }}" name="{{ nome }}" id="campo-{{ nome }}" value="{{ v.get(nome, '') }}" {% if tipo == 'text' and nome != 'valor' %}data-maiusculas{% endif %}>
+        {% endif %}
+      </div>
+    {% endfor %}
+  </div>
+  <div class="acoes"><button class="btn" type="submit">Gerar e imprimir</button><a class="btn sec" href="{{ url_for('doc.indice') }}">Voltar</a></div>
+</form>
+{% endblock %}
+{% block scripts %}
+<script>
+SeletorCliente(document.getElementById('seletor-cliente'), (c) => {
+  if (!c) return;
+  const nome = document.getElementById('campo-nome');
+  if (nome) nome.value = c.nome;
+});
+</script>
+{% endblock %}

@@ -1,0 +1,20 @@
+{% extends 'bh/layout.html' %}
+{% block titulo %}Importar ponto{% endblock %}
+{% block conteudo %}
+<div class="cabecalho"><div><h1>Importar lançamentos do relógio de ponto</h1><p class="sub">Traga as batidas mensais e associe os funcionários pelo Número I.</p></div></div>
+{% if pode('bh_gestao') %}
+<form class="cartao" method="post" action="{{ url_for('bh.importacao_enviar') }}" enctype="multipart/form-data">
+  {{ csrf_input }}
+  <h2>Planilha do relógio de ponto</h2><p class="sub">Selecione o arquivo mensal no formato XLS. O original será preservado para consulta.</p>
+  <div class="grade"><div class="c8"><label class="obrig" for="file">Arquivo da planilha</label><input type="file" id="file" name="file" accept=".xls" required><div class="ajuda">Arquivos já importados são identificados para evitar duplicações.</div></div>
+    <div class="c4" style="align-self:end"><button type="submit" class="btn">Importar e conferir</button></div></div>
+</form>
+{% endif %}
+{% if pending_ids %}<div class="bh-aviso"><h2>{{ pending_ids|length }} número{{ 's' if pending_ids|length != 1 }} aguardando cadastro</h2><p>As batidas foram guardadas. Cadastre os funcionários para associar os lançamentos.</p><a class="btn sec" href="{{ url_for('bh.funcionarios') }}">Resolver cadastros pendentes →</a></div>{% endif %}
+<div class="cartao"><h2>Histórico de importações</h2><p class="sub">Consulte o arquivo, o período e os funcionários identificados.</p>
+  {% if imports %}<div class="tabela-wrap"><table class="tabela"><thead><tr><th>Arquivo</th><th>Período</th><th>Importado em</th><th class="num">Funcionários</th><th class="num">Lançamentos</th><th></th></tr></thead><tbody>
+    {% for b in imports %}<tr><td><strong>{{ b.filename }}</strong></td><td>{{ b.period_start|bh_data }} a {{ b.period_end|bh_data }}</td><td>{{ b.created_at|bh_datahora }}</td><td class="num">{{ b.employee_count if b.employee_count is defined else '—' }}</td><td class="num">{{ b.record_count if b.record_count is defined else '—' }}</td><td class="num"><a class="btn sec peq" href="{{ url_for('bh.importacao', batch_id=b.id) }}">Ver detalhes →</a></td></tr>{% endfor %}
+  </tbody></table></div>
+  {% else %}<p class="bh-muted" style="text-align:center;padding:20px">Nenhuma importação realizada. Importe a primeira planilha para iniciar a conferência das batidas.</p>{% endif %}</div>
+<p class="bh-info">ⓘ Dias sem batidas dentro do período importado são registrados como folga. Você pode corrigir essa classificação no extrato do funcionário.</p>
+{% endblock %}

@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+{% from '_ic.html' import ic %}
+{% from '_fat_macros.html' import pilula, protocolo_acoes, visualizador %}
+{% block titulo %}Faturamento{% endblock %}
+{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/fat.css') }}">{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='js/fat.js') }}"></script>{% endblock %}
+{% block conteudo %}
+<div class="cabecalho">
+  <div><h1>Faturamento</h1><p class="sub">Cadastre cada fatura enviada ao convênio (valor faturado, protocolo, guias). A nota fiscal pode vir depois, na aba “Emissão da nota fiscal”; o pagamento é lançado em “Recebidas”. {{ rows|length }} fatura(s) no filtro.</p></div>
+  <div class="acoes">
+    <a class="btn com-icone" href="{{ url_for('fat.editar') }}">{{ ic('clipboard-plus', 16) }} Nova fatura</a>
+    {% if pode('faturamento_dash') %}<a class="btn sec com-icone" href="{{ url_for('fat.dashboard') }}">{{ ic('trending-up', 16) }} Dashboard financeiro</a>{% endif %}
+  </div>
+</div>
+
+<form class="cartao filtros" method="get">
+  <div><label>Situação</label><select name="status">
+    <option value="" {% if not f.status %}selected{% endif %}>Todas</option>
+    <option value="FATURADO" {% if f.status == 'FATURADO' %}selected{% endif %}>Faturadas (sem nota fiscal)</option>
+    <option value="NF_EMITIDA" {% if f.status == 'NF_EMITIDA' %}selected{% endif %}>Nota fiscal emitida</option>
+    <option value="RECEBIDO" {% if f.status == 'RECEBIDO' %}selected{% endif %}>Recebidas</option></select></div>
+  <div><label>Convênio / particular</label><select name="convenio"><option value="">Todos</option>{% for c in convenios %}<option {% if c == f.convenio %}selected{% endif %}>{{ c }}</option>{% endfor %}</select></div>
+  <div><label>Referência de</label><input type="date" name="de" value="{{ f.de }}"></div>
+  <div><label>até</label><input type="date" name="ate" value="{{ f.ate }}"></div>
+  <div class="largo"><label>Protocolo, nota fiscal ou convênio</label><input type="search" name="q" value="{{ f.q }}"></div>
+  <div><button class="btn" type="submit">Filtrar</button></div>
+</form>
+
+<div class="indicadores">
+  <div class="indicador"><div class="n">R$ {{ tot.faturado|moeda }}</div><div class="t">valor faturado</div></div>
+  <div class="indicador"><div class="n">{{ tot.guias }}</div><div class="t">guias faturadas</div></div>
+  <div class="indicador"><div class="n">R$ {{ tot.a_receber|moeda }}</div><div class="t">ainda a receber</div></div>
+  <div class="indicador"><div class="n">R$ {{ tot.glosa|moeda }}</div><div class="t">glosa das recebidas</div></div>
+</div>
+
+<div class="tabela-wrap"><table class="tabela fat-tabela">
+  <thead><tr><th>Convênio</th><th>Referência</th><th>Protocolo</th><th class="num">Guias</th><th class="num">Faturado</th><th>Nota fiscal</th><th>Situação</th><th>Protocolo (PDF)</th><th></th></tr></thead>
+  <tbody>
+  {% for r in rows %}
+    <tr>
+      <td><strong>{{ r.convenio }}</strong></td><td>{{ r.referencia|data_br }}</td><td>{{ r.protocolo or '—' }}</td>
+      <td class="num">{{ r.qtd_guias if r.qtd_guias is not none else '—' }}</td><td class="num"><strong>{{ r.valor_bruto|moeda }}</strong></td>
+      <td>{% if r.nota_fiscal %}{{ r.nota_fiscal }}{% if r.nf_emitida_em %}<br><small>{{ r.nf_emitida_em|data_br }}</small>{% endif %}{% else %}<span class="fat-sem">sem nota</span>{% endif %}</td>
+      <td>{{ pilula(r) }}</td>
+      <td>{{ protocolo_acoes(r, request.full_path) }}</td>
+      <td class="num" style="white-space:nowrap">
+        {% if r.status == 'FATURADO' %}<a class="btn sec peq com-icone" href="{{ url_for('fat.emissao', q=r.protocolo) }}" title="Informar o número da nota fiscal">{{ ic('file-text', 15) }} Emitir nota</a>{% endif %}
+        <a class="btn sec peq" href="{{ url_for('fat.editar', fid=r.id) }}">Editar</a>
+        <a class="btn sec peq" href="{{ url_for('fat.resumo_pdf', fid=r.id) }}" target="_blank" rel="noopener" title="Resumo da fatura em PDF">PDF</a>
+      </td>
+    </tr>
+  {% else %}<tr><td colspan="9" class="vazio">Nenhuma fatura encontrada. Use “Nova fatura” para cadastrar.</td></tr>{% endfor %}
+  </tbody>
+  {% if rows %}<tfoot><tr><td colspan="3">Total</td><td class="num">{{ tot.guias }}</td><td class="num">{{ tot.faturado|moeda }}</td><td colspan="4"></td></tr></tfoot>{% endif %}
+</table></div>
+{{ visualizador() }}
+{% endblock %}

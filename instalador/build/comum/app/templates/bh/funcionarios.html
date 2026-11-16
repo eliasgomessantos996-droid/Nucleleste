@@ -1,0 +1,31 @@
+{% extends 'bh/layout.html' %}
+{% block titulo %}Funcionários do ponto{% endblock %}
+{% block conteudo %}
+<div class="cabecalho">
+  <div><h1>{{ 'Funcionários arquivados' if arquivados else 'Funcionários do ponto' }}</h1><p class="sub">Associe cada pessoa ao Número I cadastrado no relógio de ponto.</p></div>
+  <div class="acoes">{% if arquivados %}<a class="btn sec" href="{{ url_for('bh.funcionarios') }}">← Funcionários</a>{% else %}{% if n_arquivados %}<a class="btn sec" href="{{ url_for('bh.funcionarios', arquivados=1) }}">📁 Ver arquivados ({{ n_arquivados }})</a>{% endif %}{% if pode('bh_gestao') %}<a class="btn" href="{{ url_for('bh.funcionario_novo') }}">+ Cadastrar colaborador</a>{% endif %}{% endif %}</div>
+</div>
+{% if pending_ids and pode('bh_gestao') %}
+<div class="bh-aviso"><h2>Há funcionários aguardando cadastro</h2><p>Estes números foram encontrados nas importações. Cadastre a pessoa e defina sua jornada para liberar os lançamentos.</p>
+  <div class="bh-pendentes">{% for p in pending_ids %}<a href="{{ url_for('bh.funcionario_novo', clock_id=p.clock_id, name=p.name, start_date=p.first_date) }}"><strong>{{ p.name or 'Nome não informado' }}</strong><small>Número I: {{ p.clock_id }}</small><span>Cadastrar →</span></a>{% endfor %}</div></div>
+{% endif %}
+<div class="cartao">
+  <div class="cabecalho" style="margin-bottom:8px"><div><h2 style="margin:0">Cadastros</h2><p class="sub" style="margin:0">Funcionários inativos mantêm seus saldos e histórico.</p></div>
+    <input type="search" class="bh-busca" placeholder="Buscar nome ou Número I" aria-label="Buscar funcionário" data-table-search="funcs"></div>
+  {% if employees %}
+  <div class="tabela-wrap"><table class="tabela" id="funcs">
+    <thead><tr><th>Funcionário</th><th>Número I</th><th>Admissão</th><th>Situação</th><th></th></tr></thead>
+    <tbody>{% for e in employees %}
+      <tr><td><div class="bh-pessoa"><span class="bh-avatar">{{ e.name[:1]|upper }}</span><strong>{{ e.name }}{{ ' · Estágio' if e.is_intern else '' }}</strong></div></td>
+        <td><span class="bh-id">{{ e.clock_id }}</span></td><td>{{ e.start_date|bh_data }}</td>
+        <td><span class="etiqueta {{ 'pago' if e.active }}">{{ 'Ativo' if e.active else 'Inativo' }}</span></td>
+        <td class="num bh-nowrap">{% if not e.is_intern %}<a class="btn sec peq" href="{{ url_for('bh.extrato', employee_id=e.id) }}">Extrato</a>{% else %}<a class="btn sec peq" href="{{ url_for('bh.escala') }}">Escala</a>{% endif %}
+          {% if pode('bh_gestao') %}<a class="btn sec peq" href="{{ url_for('bh.funcionario_editar', employee_id=e.id) }}">Editar cadastro</a>{% endif %}</td></tr>
+    {% endfor %}</tbody>
+  </table></div>
+  {% else %}
+  <div style="padding:26px;text-align:center"><h3>Nenhum funcionário cadastrado</h3><p class="bh-muted">Use o mesmo Número I do relógio de ponto para associar as importações automaticamente.</p>
+    {% if pode('bh_gestao') %}<a class="btn" href="{{ url_for('bh.funcionario_novo') }}">Cadastrar primeiro funcionário</a>{% endif %}</div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,15 @@
+{% from 'enfermagem/_ficha.html' import estilo, assinatura %}<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><title>Teste diário {{ t.equipamento }}</title>{{ estilo() }}</head><body>
+<div class="barra"><button onclick="window.print()">Imprimir</button></div>
+<div class="folha">
+  <div class="cab"><b>{{ clinica }}</b><span>Enfermagem e Segurança</span></div>
+  <h1>Teste diário — {{ t.equipamento }} — {{ t.data_hora[8:10] }}/{{ t.data_hora[5:7] }}/{{ t.data_hora[:4] }} {{ t.data_hora[11:16] }}</h1>
+  <p class="sub">{{ t.tipo }}{% if t.patrimonio %} · patrimônio {{ t.patrimonio }}{% endif %}{% if t.local %} · {{ t.local }}{% endif %}</p>
+  <table><thead><tr><th>Verificação</th><th style="width:60px">Situação</th></tr></thead><tbody>
+  {% if t.tipo == 'Cardioversor/desfibrilador' %}{% for k, rot in cheques %}<tr class="{{ '' if t.checklist.get(k) else 'ruim' }}"><td>{{ rot }}</td><td>{{ 'OK' if t.checklist.get(k) else 'NÃO' }}</td></tr>{% endfor %}
+  {% else %}<tr class="{{ '' if t.checklist.get('funcionando') else 'ruim' }}"><td>Funcionando normalmente</td><td>{{ 'OK' if t.checklist.get('funcionando') else 'NÃO' }}</td></tr>{% endif %}</tbody></table>
+  {% if t.tipo == 'Cardioversor/desfibrilador' %}<p class="sub">Cole aqui a fita impressa do teste de carga:</p><div style="height:60px;border:1px dashed #999"></div>{% endif %}
+  {% if t.obs %}<p><b>Observações:</b> {{ t.obs }}</p>{% endif %}
+  <p><b>Resultado:</b> {{ 'equipamento apto' if t.ok else 'FALHA no teste: não usar até a avaliação' }}.</p>
+  {{ assinatura(ass) }}
+</div></body></html>

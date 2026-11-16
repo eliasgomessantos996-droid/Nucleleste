@@ -1,0 +1,43 @@
+{% extends 'enfermagem/_base.html' %}
+{% from '_ic.html' import ic %}
+{% block titulo %}Enfermagem e Segurança{% endblock %}
+{% block titulo_e %}Enfermagem e Segurança{% endblock %}
+{% block sub_e %}Carrinho de emergência, medicamentos, equipamentos, esterilização e radioproteção da enfermagem, com avisos de vencimento para o responsável de cada área.{% endblock %}
+{% block corpo_e %}
+<section class="cartao enf-heroi">
+  <svg class="enf-arte" viewBox="0 0 220 60" width="220" height="60" aria-hidden="true"><path class="enf-pulso" d="M0 30h50l10-22 14 44 12-34 8 12h126"/><circle class="enf-ponto" cx="0" cy="30" r="4"/></svg>
+  <div><h2>Situação de hoje</h2>
+    <p class="ajuda">Vermelho: item vencido, faltando ou abaixo do mínimo, equipamento com teste atrasado ou manutenção vencida. Clique na área para resolver.</p></div>
+</section>
+<div class="enf-areas">
+  {% set destinos = {'carrinho': 'enf.carrinho', 'medicamentos': 'enf.medicamentos', 'equipamentos': 'enf.equipamentos', 'esterilizacao': 'enf.esterilizacao', 'radioprotecao': 'enf.radioprotecao'} %}
+  {% set icones = {'carrinho': 'heart-pulse', 'medicamentos': 'pill', 'equipamentos': 'gauge', 'esterilizacao': 'flask-conical', 'radioprotecao': 'radiation'} %}
+  {% for chave, nome in areas %}{% set r = resumo[chave] %}
+  <a class="enf-area {{ 'vermelho' if r.vermelho else 'verde' }}" href="{{ url_for(destinos[chave]) }}">
+    <span class="enf-area-ico">{{ ic(icones[chave], 26) }}</span><strong>{{ nome }}</strong>
+    <span class="enf-chip {{ 'vermelho' if r.vermelho else 'verde' }}">{% if r.vermelho %}{{ r.vermelho }} com problema{% else %}Em dia{% endif %}</span>
+    <small>{{ r.total }} cadastrado(s){% if r.atrasadas %} · {{ r.atrasadas }} conferência(s) atrasada(s){% endif %}{% if r.reposicao %} · {{ r.reposicao }} em reposição{% endif %}{% if r.temperatura %} · temperatura de hoje pendente{% endif %}</small>
+  </a>
+  {% endfor %}
+</div>
+<div class="cartao">
+  <h2>{{ ic('badge-check', 18) }} Minha assinatura</h2>
+  {% if minha and minha.assinatura_id %}
+    <p>Cadastrada: <b>{{ minha.cargo }} — {{ minha.conselho }}-{{ minha.uf }} {{ minha.numero }}</b>. Ela sai nas fichas que você conferir e registrar no sistema.</p>
+    <img class="enf-ass-previa" src="{{ url_for('enf.assinatura_png', uid=usuario.id) }}" alt="Sua assinatura">
+  {% else %}<p class="ajuda">Você ainda não tem assinatura cadastrada. A gestão a importa em Administração › Usuários, ao liberar este módulo.</p>{% endif %}
+</div>
+{% if gestao %}
+<form class="cartao enf-form" method="post" action="{{ url_for('enf.responsaveis') }}">
+  {{ csrf_input }}<h2>Responsáveis por área</h2>
+  <p class="ajuda">O titular e o substituto recebem, no contato AVISOS DO SISTEMA, os avisos de validade e de testes da área. Se o item ficar vencido por {{ 3 }} dias sem providência, o aviso também vai para a gerência. Sem responsável definido, o aviso vai só para a gerência.</p>
+  <table class="tabela"><thead><tr><th>Área</th><th>Titular</th><th>Substituto</th></tr></thead><tbody>
+  {% for chave, nome in areas %}<tr><td>{{ nome }}</td>
+    <td><select name="titular_{{ chave }}"><option value="">(sem responsável)</option>{% for u in usuarios %}<option value="{{ u.id }}" {{ 'selected' if resp[chave].titular_id == u.id }}>{{ u.nome }}</option>{% endfor %}</select></td>
+    <td><select name="substituto_{{ chave }}"><option value="">(sem substituto)</option>{% for u in usuarios %}<option value="{{ u.id }}" {{ 'selected' if resp[chave].substituto_id == u.id }}>{{ u.nome }}</option>{% endfor %}</select></td></tr>{% endfor %}
+  </tbody></table>
+  <p class="ajuda">Só aparecem pessoas com o módulo liberado e a assinatura importada.</p>
+  <button class="btn" type="submit">Salvar responsáveis</button>
+</form>
+{% endif %}
+{% endblock %}

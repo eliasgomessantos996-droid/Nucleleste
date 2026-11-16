@@ -1,0 +1,3 @@
+# Robô da Medcloud (app/medcloud.py). Só entra no Setup de 64 bits: o greenlet, que o playwright exige, não tem pacote
+# para 32 bits no Python embutido. O robô usa o Google Chrome (ou o Microsoft Edge) do computador: nenhum navegador é baixado.
+playwright>=1.40

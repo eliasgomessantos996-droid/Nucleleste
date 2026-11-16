@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% block titulo %}Suporte do desenvolvedor{% endblock %}
+{% block conteudo %}
+<div class="cabecalho">
+  <div><h1>Suporte do desenvolvedor</h1><p class="sub">Tem uma ideia, encontrou um problema ou quer pedir uma melhoria? Escreva aqui. A sua mensagem vai para o desenvolvedor e a resposta aparece nesta tela e em Mensagens, na conversa com “SUPORTE DO DESENVOLVEDOR”.</p></div>
+</div>
+
+{% if sou_o_suporte %}
+<div class="msg aviso">Você está no perfil do suporte. As sugestões são lidas e respondidas pela gestão, na aba “Responder sugestões”.</div>
+{% elif not disponivel %}
+<div class="msg erro">O perfil de suporte não está disponível agora. Fale com a administração.</div>
+{% else %}
+<form method="post" action="{{ url_for('sup.enviar_sugestao') }}" class="cartao">
+  {{ csrf_input }}
+  <label for="sugestao"><strong>Sua sugestão ou problema</strong></label>
+  <textarea id="sugestao" name="sugestao" rows="5" maxlength="{{ limite }}" required style="width:100%" placeholder="Conte o que aconteceu ou o que você gostaria que o sistema fizesse. Se for um problema, diga em qual tela e o que você estava fazendo."></textarea>
+  <div class="acoes"><button class="btn" type="submit">Enviar ao desenvolvedor</button></div>
+</form>
+{% endif %}
+
+<h2>Suas mensagens com o suporte</h2>
+<div class="cartao" style="display:flex;flex-direction:column;gap:8px">
+  {% for m in mensagens %}
+    <div style="max-width:78%;padding:8px 12px;border-radius:10px;border:1px solid var(--borda,#ccd5cf);{{ 'align-self:flex-end;background:rgba(47,138,80,.12)' if m.minha else 'align-self:flex-start' }}">
+      <small style="opacity:.7">{{ 'Você' if m.minha else 'Desenvolvedor' }} · {{ m.quando[8:10] }}/{{ m.quando[5:7] }}/{{ m.quando[:4] }} {{ m.quando[11:16] }}</small>
+      <div style="white-space:pre-wrap">{{ m.corpo }}</div>
+    </div>
+  {% else %}
+    <p class="vazio" style="margin:0">Você ainda não enviou nenhuma sugestão.</p>
+  {% endfor %}
+</div>
+{% endblock %}

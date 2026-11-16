@@ -1,0 +1,19 @@
+{% import 'guias_macros.html' as gm %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/guias.css') }}">
+<section class="folha retrato guia guia-ipsemg" data-ficha="guia_ipsemg_pedido">
+  <div class="g-margem">
+    <span>Padronização de formulários IPSEMG: Departamento de Planejamento e Orçamento - DEPO. Ramal: 52585</span>
+    <span>IP-195&nbsp;&nbsp;&nbsp;PÁGINA 1 DE 1&nbsp;&nbsp;&nbsp;23/02/18</span>
+  </div>
+  <div class="g-topo-ip">
+    <div class="g-logo-ip">ipsemg</div>
+    <div class="g-caixa-titulo">PEDIDO PARA DIAGNÓSTICO E TRATAMENTO</div>
+  </div>
+  {% for b in f.blocos %}
+    {% if b.t == 'faixa' %}<div class="g-faixa">{{ b.titulo }}</div>
+    {% elif b.t == 'linha' %}<div class="g-linha">{% for c in b.cels %}{{ gm.cel(c, f, true) }}{% endfor %}</div>
+    {% elif b.t == 'tabela' %}{{ gm.tabela(b, f) }}
+    {% endif %}
+  {% endfor %}
+  <div class="g-rodape">INSTITUTO DE PREVIDÊNCIA DOS SERVIDORES DO ESTADO DE MINAS GERAIS | GERÊNCIA DE AUDITORIA E CONTAS DA SAÚDE - GEACS</div>
+</section>

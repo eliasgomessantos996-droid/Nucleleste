@@ -1,0 +1,36 @@
+{# Peças das folhas de guia de convênio (fichas/guia_unimed_sadt.html e fichas/guia_ipsemg_pedido.html). #}
+
+{# Uma célula com rótulo pequeno (numerado) e o valor. pauta=True escreve sobre as linhas pautadas (IPSEMG). #}
+{% macro cel(c, f, pauta) -%}
+<div class="g-cel{% if c.t == 'area' %} g-area{% if pauta %} g-pauta{% endif %}{% endif %}"
+     style="width:{{ c.w }}%{% if c.t == 'area' %};min-height:{{ (2.2 + 6.4 * c.n) if pauta else (6 * c.n) }}mm{% endif %}">
+  <span class="g-rot">{{ c.r }}</span>
+  {%- if c.t == 'escolha' %}
+  <span class="g-val g-opcoes">{% for val, rot in c.op %}<span class="g-op"><span class="g-x">{{ 'X' if f[c.k] == val }}</span> {{ rot }}</span>{% endfor %}</span>
+  {%- elif c.t == 'vazio' %}
+  <span class="g-val g-sig"></span>
+  {%- else %}
+  <span class="g-val{% if c.t in ('moeda', 'calc') %} g-dir{% endif %}">{{ f[c.k] }}</span>
+  {%- endif %}
+</div>
+{%- endmacro %}
+
+{# Tabela de linhas numeradas: cabeçalho com os rótulos e uma linha por item. #}
+{% macro tabela(b, f) -%}
+<div class="g-tab">
+  <div class="g-linha g-th">{% for c in b.cols %}<div class="g-cel" style="width:{{ c.w }}%"><span class="g-rot">{{ c.r }}</span></div>{% endfor %}</div>
+  {% for i in range(1, b.linhas + 1) %}
+  <div class="g-linha g-tr">{% for c in b.cols %}<div class="g-cel" style="width:{{ c.w }}%"><span class="g-val{% if c.t in ('moeda', 'calc') %} g-dir{% endif %}">{{ f[c.k ~ '_' ~ i] }}</span></div>{% endfor %}</div>
+  {% endfor %}
+</div>
+{%- endmacro %}
+
+{# Dez espaços (campos 56 e 57 do impresso Unimed) em duas linhas de cinco: "N- dd/mm/aaaa" e linha de assinatura. #}
+{% macro serie(b, f) -%}
+<div class="g-faixa">{{ b.titulo }}</div>
+{% for linha in range(0, b.n, 5) %}
+<div class="g-linha g-serie">{% for i in range(linha + 1, linha + 6) %}
+  <div class="g-cel" style="width:20%"><span class="g-rot">{{ i }}-</span><span class="g-val">{{ f[b.chave ~ '_' ~ i] or '____/____/____' }}</span><span class="g-sig"></span></div>
+{% endfor %}</div>
+{% endfor %}
+{%- endmacro %}

@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+{% block titulo %}Dados da clínica{% endblock %}
+{% block conteudo %}
+<h1>Dados da clínica</h1>
+<p class="sub">Usados nas declarações, atestados e recibos.</p>
+<form class="cartao" method="post" style="max-width:640px">
+  {{ csrf_input }}
+  <div class="grade">{% for k, rotulo in chaves %}<div class="c12"><label>{{ rotulo }}</label><input type="text" name="{{ k }}" value="{{ valores[k] }}"></div>{% endfor %}</div>
+  <label class="inline"><input type="checkbox" name="agenda_aviso_mibi" value="1" {{ 'checked' if agenda_aviso_mibi }}> Avisar agendamentos de MIBI pelo contato Agenda nas Mensagens</label>
+  <p class="sub">Envia paciente, data e etapa aos usuários que veem os avisos da gerência. Ativado por padrão.</p>
+  <label class="inline"><input type="checkbox" name="laudo_previsao_ficha" value="1" {{ 'checked' if laudo_previsao_ficha }}> Mostrar a previsão de entrega do laudo na ficha impressa</label>
+  <div class="acoes"><button class="btn" type="submit">Salvar</button></div>
+</form>
+{% endblock %}

@@ -1,0 +1,76 @@
+/* Faturamento (faturamento, emissão da nota fiscal, recebidas) e o protocolo em PDF. Ícones do sprite e desenhos SVG animados;
+   cores por variáveis e color-mix, então valem no tema claro e no escuro. */
+.fat-pilula { display: inline-flex; align-items: center; gap: 5px; padding: 2px 10px; border-radius: 99px; font-size: 12px; font-weight: 700; white-space: nowrap;
+  background: color-mix(in srgb, var(--pc) 16%, transparent); color: var(--pt, var(--texto)); border: 1px solid color-mix(in srgb, var(--pc) 45%, transparent); }
+.fat-pilula.faturado { --pc: #dc9a0d; --pt: #7a5200; } .fat-pilula.emitida { --pc: #1d7fe0; --pt: #0f4d8f; } .fat-pilula.recebido { --pc: #2c9a52; --pt: #1e5631; }
+.fat-pilula.atrasada { --pc: #d6453d; --pt: #a52a22; animation: fat-pisca 2.4s ease-in-out infinite; }
+.fat-sem { color: var(--suave); font-style: italic; }
+.fat-info { margin-left: 10px; color: var(--suave); }
+
+/* glosa */
+.fat-glosa { display: inline-flex; align-items: center; gap: 5px; padding: 3px 11px; border-radius: 99px; font-weight: 700; font-size: 13px; white-space: nowrap;
+  background: color-mix(in srgb, var(--gc) 14%, transparent); color: var(--gt, var(--texto)); border: 1px solid color-mix(in srgb, var(--gc) 45%, transparent); }
+.fat-glosa small { font-weight: 600; opacity: .85; }
+.fat-glosa.glosa { --gc: #d6453d; --gt: #a52a22; } .fat-glosa.sem { --gc: #2c9a52; --gt: #1e5631; } .fat-glosa.acima { --gc: #1d7fe0; --gt: #0f4d8f; }
+.fat-glosa.glosa .ic { animation: fat-treme 3.2s ease-in-out infinite; }
+html[data-brilho="escuro"] .fat-pilula, html[data-brilho="escuro"] .fat-glosa { color: color-mix(in srgb, var(--pc, var(--gc)) 55%, #fff); }
+
+/* faixa de cada aba (desenho + texto) */
+.fat-faixa { --fc: #dc9a0d; display: grid; grid-template-columns: 104px 1fr; gap: 18px; align-items: center; padding: 14px 22px; margin-bottom: 14px; border-left: 5px solid var(--fc); overflow: hidden; }
+.fat-faixa.faturado { --fc: #dc9a0d; } .fat-faixa.recebida { --fc: #2c9a52; }
+.fat-faixa h2 { margin: 0 0 4px; }
+.fat-arte { display: grid; place-items: center; }
+.fat-svg { width: 100%; max-width: 104px; height: auto; overflow: visible; color: var(--fc); }
+.fat-folha { fill: color-mix(in srgb, var(--fc) 16%, transparent); stroke: var(--fc); stroke-width: 3.6; stroke-linejoin: round; }
+.fat-linhas, .fat-fio { fill: none; stroke: var(--fc); stroke-width: 3.6; stroke-linecap: round; stroke-linejoin: round; }
+.fat-linhas { opacity: .55; animation: fat-linhas 3.6s ease-in-out infinite; }
+.fat-carimbo { transform-origin: 56px 56px; animation: fat-carimbo 3.6s var(--ease, ease) infinite; }
+.fat-carimbo circle { fill: var(--fc); stroke: var(--branco, #fff); stroke-width: 3; }
+.fat-carimbo path { fill: none; stroke: #fff; stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; }
+.fat-balanca-base { fill: var(--fc); opacity: .85; }
+.fat-prato { transform-box: fill-box; transform-origin: 50% 0; }
+.fat-prato.esq { animation: fat-prato-esq 4s ease-in-out infinite; } .fat-prato.dir { animation: fat-prato-dir 4s ease-in-out infinite; }
+
+.fat-contagens { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.fat-contagens h2 { flex-basis: 100%; }
+.fat-contagem { padding: 4px 12px; border-radius: 99px; font-size: 13px; background: color-mix(in srgb, var(--cc, #8b9a92) 13%, transparent); border: 1px solid color-mix(in srgb, var(--cc, #8b9a92) 38%, transparent); }
+.fat-contagem b { font-variant-numeric: tabular-nums; margin-right: 4px; } .fat-contagem.glosa { --cc: #d6453d; }
+
+.fat-secao { display: flex; align-items: baseline; gap: 10px; margin: 24px 0 10px; } .fat-secao .ic { align-self: center; color: var(--verde-2); }
+.fat-secao small { font-weight: 600; color: var(--suave); background: color-mix(in srgb, var(--verde-2) 14%, transparent); border-radius: 99px; padding: 0 9px; font-size: 13px; }
+.fat-tabela td { vertical-align: middle; }
+.fat-tabela tfoot td { font-weight: 700; background: color-mix(in srgb, var(--verde-2) 8%, transparent); }
+.btn.com-icone { display: inline-flex; align-items: center; gap: 7px; }
+.btn.com-icone .ic { transition: transform .25s var(--ease, ease); } .btn.com-icone:hover .ic { transform: translateY(-2px) scale(1.1); }
+
+/* emissão: formulário na própria linha */
+.fat-emitir { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 0; }
+.fat-emitir input[type=text] { width: 150px; padding: 5px 8px; } .fat-emitir input[type=date] { width: 150px; padding: 5px 8px; }
+
+/* protocolo (PDF) */
+.fat-pdf-acoes { display: flex; gap: 6px; align-items: center; }
+.fat-importar { margin: 0; } .fat-importar label { cursor: pointer; }
+.fat-visualizador { width: min(1100px, 96vw); height: min(90vh, 900px); padding: 0; border: 1px solid var(--borda); border-radius: 16px; overflow: hidden; }
+.fat-visualizador[open] { display: flex; flex-direction: column; }
+.fat-visualizador header { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 10px 14px; border-bottom: 1px solid var(--borda); background: var(--branco, #fff); }
+.fat-esp { flex: 1; }
+.fat-visualizador iframe { flex: 1; width: 100%; border: 0; background: #525659; }
+.fat-pdf-pagina { padding: 0; overflow: hidden; }
+.fat-pdf-topo { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 10px 14px; border-bottom: 1px solid var(--borda); }
+.fat-quadro { display: block; width: 100%; height: 76vh; min-height: 480px; border: 0; background: #525659; }
+.fat-pdf-campo input[type=file] { max-width: 100%; }
+
+/* recebimento: prévia ao vivo da glosa */
+.fat-dialogo { width: min(720px, 96vw); }
+.fat-previa { margin: 10px 0 4px; padding: 10px 14px; border-radius: 12px; font-weight: 600; background: color-mix(in srgb, var(--pv, #8b9a92) 12%, transparent); border: 1px solid color-mix(in srgb, var(--pv, #8b9a92) 40%, transparent); transition: background .25s, border-color .25s; }
+.fat-previa.glosa { --pv: #d6453d; } .fat-previa.sem { --pv: #2c9a52; } .fat-previa.acima { --pv: #1d7fe0; }
+.fat-previa:empty { display: none; }
+
+@keyframes fat-pisca { 0%, 100% { box-shadow: 0 0 0 0 rgba(214, 69, 61, 0); } 50% { box-shadow: 0 0 0 4px rgba(214, 69, 61, .28); } }
+@keyframes fat-treme { 0%, 86%, 100% { transform: rotate(0); } 90% { transform: rotate(-12deg); } 94% { transform: rotate(10deg); } 97% { transform: rotate(-5deg); } }
+@keyframes fat-linhas { 0%, 100% { opacity: .35; } 50% { opacity: .8; } }
+@keyframes fat-carimbo { 0%, 20% { transform: scale(0) rotate(-30deg); } 32% { transform: scale(1.18) rotate(6deg); } 40%, 88% { transform: scale(1) rotate(0); } 100% { transform: scale(0) rotate(-30deg); } }
+@keyframes fat-prato-esq { 0%, 100% { transform: translateY(5px); } 50% { transform: translateY(-5px); } }
+@keyframes fat-prato-dir { 0%, 100% { transform: translateY(-5px); } 50% { transform: translateY(5px); } }
+@media (max-width: 760px) { .fat-faixa { grid-template-columns: 1fr; } .fat-arte { max-width: 90px; } }
+@media (prefers-reduced-motion: reduce) { .fat-carimbo { transform: none; } }

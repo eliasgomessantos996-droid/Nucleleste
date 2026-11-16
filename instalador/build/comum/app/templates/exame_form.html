@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+{% block titulo %}Exame{% endblock %}
+{% block conteudo %}
+<h1>{{ ex.nome if ex else 'Novo exame' }}</h1>
+<p class="sub">Marque as fichas impressas ao lançar este exame. Use as setas para definir a ordem de impressão.</p>
+<form class="cartao" method="post" id="form-exame">
+  {{ csrf_input }}
+  <input type="hidden" name="ordem_docs" id="ordem_docs">
+  <div class="grade">
+    <div class="c4"><label class="obrig">Nome do exame</label><input type="text" name="nome" value="{{ ex.nome if ex else '' }}" required data-maiusculas></div>
+    <div class="c4"><label>Título impresso na ficha</label><input type="text" name="titulo_ficha" value="{{ ex.titulo_ficha if ex else '' }}" data-maiusculas>
+      <div class="ajuda">Ex.: “DOSE IODO” para o exame IODO.</div></div>
+    <div class="c2"><label>Ordem na lista</label><input type="number" name="ordem" value="{{ ex.ordem if ex else 100 }}"></div>
+    <div class="c2"><label>Questionário</label>
+      <select name="questionario"><option value="">Nenhum</option>
+        <option value="linfonodo" {% if ex and ex.questionario == 'linfonodo' %}selected{% endif %}>Linfonodo (4 perguntas)</option></select></div>
+    <div class="c12">
+      <label class="inline"><input type="checkbox" name="pede_medicamentos" value="1" {% if ex and ex.pede_medicamentos %}checked{% endif %}> Exige “medicamentos em uso” (vai para a ficha do Dr. Haroldo)</label>
+      <label class="inline"><input type="checkbox" name="ativo" value="1" {% if not ex or ex.ativo %}checked{% endif %}> Ativo</label>
+    </div>
+  </div>
+  <h3>Fichas impressas</h3>
+  <div class="lista-escolha" id="docs" style="max-height:none">
+    {% for o in opcoes %}
+    <label data-slug="{{ o.slug }}">
+      <input type="checkbox" name="doc_{{ o.slug }}" value="1" {% if o.marcado %}checked{% endif %}>
+      <span style="flex:1">{{ o.titulo }}</span>
+      cópias <input type="number" name="copias_{{ o.slug }}" value="{{ o.copias }}" min="1" max="10" style="width:64px">
+      <button class="btn sec peq" type="button" data-mover="-1">↑</button><button class="btn sec peq" type="button" data-mover="1">↓</button>
+    </label>
+    {% endfor %}
+  </div>
+  <div class="acoes"><button class="btn" type="submit">Salvar</button><a class="btn sec" href="{{ url_for('cad.exames') }}">Voltar</a></div>
+</form>
+{% endblock %}
+{% block scripts %}
+<script>
+const docs = document.getElementById('docs');
+docs.addEventListener('click', (e) => {
+  const b = e.target.closest('[data-mover]'); if (!b) return;
+  e.preventDefault();
+  const linha = b.closest('label'), dir = +b.dataset.mover;
+  if (dir < 0 && linha.previousElementSibling) docs.insertBefore(linha, linha.previousElementSibling);
+  if (dir > 0 && linha.nextElementSibling) docs.insertBefore(linha.nextElementSibling, linha);
+});
+document.getElementById('form-exame').addEventListener('submit', () => {
+  document.getElementById('ordem_docs').value = [...docs.querySelectorAll('label')].map(l => l.dataset.slug).join(',');
+});
+</script>
+{% endblock %}

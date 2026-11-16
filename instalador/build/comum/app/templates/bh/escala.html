@@ -1,0 +1,46 @@
+{% extends 'bh/layout.html' %}
+{% block titulo %}Escala mensal{% endblock %}
+{% block conteudo %}
+<div class="cabecalho"><div><h1>Escala de trabalho</h1><p class="sub">Planeje o mês com a equipe cadastrada, incluindo estagiários.</p></div>
+  {% if report.staff and not report.pending_count %}<div class="acoes"><a class="btn" href="{{ url_for('bh.escala_pdf', month=month) }}">Baixar escala em PDF</a></div>{% endif %}</div>
+<div class="bh-periodo"><form method="get"><div><label for="month">Mês da escala</label><input type="month" id="month" name="month" value="{{ month }}" required></div><button class="btn sec" type="submit">Consultar</button></form></div>
+<p class="bh-info">ⓘ Segunda a sexta têm trabalho previsto. Sábados e domingos começam como folga e podem receber exceções. O horário sugerido começa às 08h e usa a duração e o intervalo da jornada vigente. Férias e outras ausências são planejamento: confira o ponto no extrato para refletir a situação nos saldos.</p>
+{% if report.pending_count %}<div class="bh-aviso" style="margin-top:12px"><h2>{{ report.pending_count }} jornada(s) pendente(s)</h2><p>Configure a jornada de segunda a sexta no cadastro ou informe o horário / ausência na escala. Resolva essas pendências para liberar o PDF.</p></div>{% endif %}
+{% if not report.staff %}
+<div class="cartao" style="text-align:center;margin-top:12px"><h3>Nenhum colaborador neste mês</h3><p class="bh-muted">Cadastre colaboradores e estagiários com as datas de vínculo.</p>{% if pode('bh_gestao') %}<a class="btn" href="{{ url_for('bh.funcionario_novo') }}">Cadastrar colaborador</a>{% endif %}</div>
+{% else %}
+{% if pode('bh_gestao') %}
+<form class="cartao" method="post" action="{{ url_for('bh.escala_salvar') }}" style="margin-top:12px">
+  {{ csrf_input }}<input type="hidden" name="month" value="{{ month }}">
+  <h2>Marcar período ou ajustar horários</h2>
+  <div class="grade">
+    <div class="c4"><label for="employee_id">Colaborador</label><select id="employee_id" name="employee_id" required>{% for item in report.staff %}<option value="{{ item.employee.id }}">{{ item.employee.name }}{{ ' · Estágio' if item.employee.is_intern }}</option>{% endfor %}</select></div>
+    <div class="c4"><label for="kind">Marcação</label><select id="kind" name="kind" data-roster-kind>{% for k, rot in kinds.items() %}<option value="{{ k }}" {{ 'selected' if k == 'ferias' }}>{{ rot }}</option>{% endfor %}</select></div>
+    <div class="c2"><label for="start">Início</label><input type="date" id="start" name="start" value="{{ month }}-01" required></div>
+    <div class="c2"><label for="end">Término (inclusive)</label><input type="date" id="end" name="end" value="{{ month }}-01" required></div>
+    <div class="c4 roster-work"><label for="start_time">Entrada</label><input type="time" id="start_time" name="start_time" value="08:00"><div class="ajuda">Preencha apenas para Trabalho.</div></div>
+    <div class="c4 roster-work"><label for="end_time">Saída</label><input type="time" id="end_time" name="end_time" value="17:00"></div>
+    <div class="c4 roster-work"><label for="break_duration">Duração do intervalo</label><input type="text" id="break_duration" name="break_duration" value="01:00" placeholder="HH:MM"></div>
+    <div class="c12"><label class="obrig" for="note">Observação / justificativa</label><textarea id="note" name="note" maxlength="2000" required rows="2"></textarea></div>
+    <div class="c12"><label class="bh-check"><input type="checkbox" name="reset" value="1"> Remover exceções deste período e voltar à jornada do cadastro</label><div class="ajuda">O histórico registra a remoção. Os horários informados serão ignorados.</div></div>
+  </div>
+  <div class="acoes"><button class="btn" type="submit">Salvar marcação na escala</button></div>
+</form>
+{% endif %}
+<div class="cartao">
+  <h2>Visão mensal</h2><p class="sub">{{ 'Clique em um dia para preencher o formulário de alteração.' if pode('bh_gestao') else 'Consulte os horários completos abaixo.' }}</p>
+  <div class="tabela-wrap"><table class="bh-escala bh-escala-horarios"><thead><tr><th>Colaborador</th>{% for d in report.days %}<th>{{ '%02d'|format(d.day) }}<small>{{ ['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'][d.weekday()] }}</small></th>{% endfor %}</tr></thead><tbody>
+  {% for item in report.staff %}<tr><td><strong>{{ item.employee.name }}</strong>{% if item.employee.is_intern %}<small class="bh-bloco">Estágio · sem banco de horas</small>{% endif %}</td>
+    {% for row in item.rows %}<td class="{{ 'bh-fds' if report.days[loop.index0].weekday() >= 5 }}"><button type="button" class="bh-cel {{ 'k-pendente' if row.pending else 'k-' ~ row.kind }}" title="{{ row.hours }}{{ ' · ' ~ row.note if row.note }}" {% if pode('bh_gestao') and row.kind != 'fora' %}data-roster-date="{{ row.date }}" data-employee="{{ item.employee.id }}" data-kind="{{ row.kind }}" data-start="{{ row.start_time }}" data-end="{{ row.end_time }}" data-break="{{ row.break_minutes|bh_min }}" data-note="{{ row.note }}"{% else %}disabled{% endif %}>{{ '?' if row.pending else row.code }}{% if row.kind == 'trabalho' and not row.pending %}<small>{{ row.start_time }}–{{ row.end_time }}</small><small>Intervalo {{ row.break_minutes|bh_min }}</small><small>Carga {{ row.work_minutes|bh_min }}</small>{% endif %}</button></td>{% endfor %}</tr>{% endfor %}
+  </tbody></table></div>
+  <p class="bh-info">T: Trabalho · FE: Férias · FO: Folga · FD: Feriado · AF: Afastamento · FA: Falta · OU: Outra ausência · ?: Jornada pendente · –: Fora do vínculo</p>
+</div>
+{% for item in report.staff %}
+<details class="cartao" open><summary><strong>{{ item.employee.name }} · horários e observações · Carga do mês {{ item.planned_minutes|bh_min }}</strong></summary>
+  <div class="tabela-wrap" style="margin-top:8px"><table class="tabela"><thead><tr><th>Dia</th><th>Marcação</th><th>Entrada</th><th>Saída</th><th>Intervalo</th><th>Carga diária</th><th>Observação</th></tr></thead><tbody>
+  {% for row in item.rows %}{% if row.kind != 'fora' %}<tr><td>{{ row.date|bh_data }}</td><td>{{ row.label }}{{ ' · Jornada pendente' if row.pending }}</td><td>{{ row.start_time or '—' }}</td><td>{{ row.end_time or '—' }}</td><td>{{ row.break_minutes|bh_min }}</td><td>{{ row.work_minutes|bh_min }}</td><td>{{ row.note or '—' }}</td></tr>{% endif %}{% endfor %}
+  </tbody></table></div><p class="ajuda">Carga diária = saída − entrada − intervalo. Ausências e folgas têm carga planejada zero.</p></details>
+{% endfor %}
+{% endif %}
+{% endblock %}
+

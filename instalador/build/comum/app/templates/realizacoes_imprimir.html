@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Exames realizados - {{ titulo_periodo }}</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/exames.css') }}">
+<style>
+  @page { size: A4 landscape; margin: 8mm; }
+  body { background: #fff; padding: 10px 14px; }
+  .ex-tabela { font-size: 9.5px; width: 100%; border-collapse: collapse; }
+  .ex-tabela th, .ex-tabela td { padding: 2px 4px; border: 1px solid rgba(0,0,0,.25); }
+  .ex-tabela th { background: #eee; position: static; }
+  .topo { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 6px; }
+  .topo h1 { font-size: 15px; margin: 0; }
+  @media print { .nao-imprimir { display: none !important; } body { padding: 0; } * { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+</style>
+</head>
+<body>
+<div class="nao-imprimir acoes" style="margin:0 0 8px"><button class="btn" onclick="window.print()">Imprimir</button><a class="btn sec" href="javascript:window.close()">Fechar</a>
+  <span class="ajuda">Dica: ative “Gráficos de segundo plano” nas opções de impressão do navegador para sair colorido.</span></div>
+<div class="topo"><div><h1>Controle de realização de exames — {{ titulo_periodo }}</h1><span class="ajuda">{{ total }} exame(s){% if f.tipo %} · filtro de tipo ativo{% endif %}</span></div>
+  <div class="ex-tipos" style="margin:0;justify-content:flex-end">{% for t in tipos %}<span class="ex-tipo" {% if t.cor %}style="--c:{{ t.cor }};--t:{{ t.texto }}"{% endif %}>{{ t.rotulo }} <b>{{ t.n }}</b></span>{% endfor %}</div></div>
+<table class="ex-tabela"><thead><tr><th>Nº</th><th>Data</th><th>Código</th><th>Paciente</th><th>Idade</th><th>Peso</th><th>Alt.</th><th>Convênio</th><th>Médico solicitante</th><th>CID</th><th>Rádio</th><th>Eluição</th><th>Fármaco</th><th>Lote</th><th>Prescr.</th><th>Admin.</th><th>Exame</th><th>Inj.</th><th>Exame</th><th>Resp.</th></tr></thead>
+<tbody>{% for it in itens|reverse %}{% set r = it.r %}
+<tr class="ex-linha" {% if it.cor %}style="--c:{{ it.cor }};--t:{{ it.texto }}"{% endif %}>
+  <td>{{ r.numero or '' }}</td><td>{{ r.data|data_br }}</td><td>{{ r.codigo or '' }}</td><td>{{ r.paciente }}</td><td>{{ it.idade }}</td>
+  <td>{{ '%g'|format(r.peso) if r.peso is not none else '' }}</td><td>{{ '%g'|format(r.altura) if r.altura is not none else '' }}</td><td>{{ r.convenio or '' }}</td><td>{{ r.medico or '' }}</td><td>{{ r.cid or '' }}</td>
+  <td>{{ r.radio or '' }}</td><td>{{ r.eluicao or '' }}</td><td>{{ r.farmaco or '' }}</td><td>{{ r.lote or '' }}</td><td>{{ r.ativ_prescrita or '' }}</td><td>{{ r.ativ_administrada or '' }}</td>
+  <td>{{ r.exame or '' }}</td><td>{{ r.hora_injecao or '' }}</td><td>{{ r.hora_exame or '' }}</td><td>{{ r.responsavel or '' }}</td></tr>{% endfor %}
+</tbody></table>
+</body></html>

@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+{% block titulo %}Confirmar devolução{% endblock %}
+{% block conteudo %}
+<div class="cabecalho">
+  <div><h1>Confirmar devolução</h1><p class="sub">{{ pendentes|length }} blindagem(ns) aguardando a confirmação. Só você decide quando cada uma foi devolvida: o sistema não muda o status sozinho.</p></div>
+  <div class="acoes"><a class="btn sec" href="{{ url_for('blind.lista') }}">Cadastro de blindagem</a></div>
+</div>
+
+<form method="post" id="form-devolvidas" data-confirmar="Marcar as blindagens selecionadas como DEVOLVIDA na data informada?">
+  {{ csrf_input }}
+  <div class="tabela-wrap"><table class="tabela">
+    <thead><tr>
+      <th><input type="checkbox" id="marcar-todas" title="Marcar todas" {{ 'disabled' if not pendentes }}></th>
+      <th>Lote</th><th>Nota fiscal</th><th>Série</th><th>Validade</th><th>Solicitada em</th><th>Status</th></tr></thead>
+    <tbody>
+    {% for b in pendentes %}
+      <tr>
+        <td><input type="checkbox" name="ids" value="{{ b.id }}" aria-label="Marcar lote {{ b.lote }}"></td>
+        <td><strong>{{ b.lote }}</strong></td><td>{{ b.nota_fiscal }}</td><td>{{ b.serie }}</td>
+        <td>{{ b.validade|data_br }}</td><td>{{ (b.solicitado_em or '')[:10]|data_br }}</td>
+        <td><span class="etiqueta {{ classe_status_blindagem(b.status) }}">{{ b.status }}</span></td>
+      </tr>
+    {% else %}<tr><td colspan="7" class="vazio">Nenhuma blindagem aguardando confirmação. As blindagens entram aqui depois de “Solicitar devolução”.</td></tr>{% endfor %}
+    </tbody>
+  </table></div>
+
+  {% if pendentes %}
+  <div class="cartao filtros" style="margin-top:16px">
+    <div><label for="data_devolvida">Data em que foram devolvidas</label><input type="date" id="data_devolvida" name="data_devolvida" value="{{ hoje }}" max="{{ hoje }}" style="max-width:200px"><div class="ajuda">Não pode ser futura nem anterior à solicitação.</div></div>
+    <div><button class="btn" type="submit" id="botao-devolvidas" disabled>Marcar como devolvida</button></div>
+    <div><span class="ajuda" id="contador-devolvidas">Nenhuma blindagem marcada.</span></div>
+  </div>
+  {% endif %}
+</form>
+
+<h2 style="margin-top:28px">Devolvidas</h2>
+<div class="tabela-wrap"><table class="tabela">
+  <thead><tr><th>Lote</th><th>Nota fiscal</th><th>Série</th><th>Validade</th><th>Devolvida em</th><th>Confirmado por</th><th></th></tr></thead>
+  <tbody>
+  {% for b in feitas %}
+    <tr>
+      <td><strong>{{ b.lote }}</strong></td><td>{{ b.nota_fiscal }}</td><td>{{ b.serie }}</td>
+      <td>{{ b.validade|data_br }}</td><td>{{ b.devolvida_em|data_br }}</td><td>{{ b.devolvida_por or '—' }}</td>
+      <td class="num">{% if b.devolucao_id %}<a class="btn sec peq" href="{{ url_for('blind.devolucao_resultado', did=b.devolucao_id) }}">Ver devolução</a>{% endif %}</td>
+    </tr>
+  {% else %}<tr><td colspan="7" class="vazio">Nenhuma blindagem devolvida ainda.</td></tr>{% endfor %}
+  </tbody>
+</table></div>
+{% endblock %}
+{% block scripts %}
+<script>
+(function () {
+  var caixas = [].slice.call(document.querySelectorAll('input[name=ids]'));
+  var todas = document.getElementById('marcar-todas');
+  var botao = document.getElementById('botao-devolvidas');
+  var contador = document.getElementById('contador-devolvidas');
+  if (!botao) return;
+  function atualizar() {
+    var n = caixas.filter(function (c) { return c.checked; }).length;
+    botao.disabled = n === 0;
+    botao.textContent = n ? 'Marcar como devolvida (' + n + ')' : 'Marcar como devolvida';
+    contador.textContent = n ? n + ' blindagem(ns) marcada(s).' : 'Nenhuma blindagem marcada.';
+    if (todas) { todas.checked = n > 0 && n === caixas.length; todas.indeterminate = n > 0 && n < caixas.length; }
+  }
+  caixas.forEach(function (c) { c.addEventListener('change', atualizar); });
+  if (todas) todas.addEventListener('change', function () { caixas.forEach(function (c) { c.checked = todas.checked; }); atualizar(); });
+  atualizar();
+})();
+</script>
+{% endblock %}

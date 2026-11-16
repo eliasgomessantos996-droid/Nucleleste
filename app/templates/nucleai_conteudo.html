@@ -1,0 +1,82 @@
+{% extends 'base.html' %}
+{% block titulo %}NucleAI: conteúdo{% endblock %}
+{% block conteudo %}
+{% include '_nucleai_abas.html' %}
+
+<p class="ajuda" style="margin:0 0 12px">Aqui você corrige os textos da ajuda e cria áreas, módulos e temas novos. As mudanças valem na hora para todos.
+  {{ editadas }} texto(s) editado(s) · {{ novas }} área(s) criada(s). “Restaurar original” volta ao texto que veio com o sistema.</p>
+
+<details class="cartao" style="margin-bottom:16px" {{ 'open' if request.args.get('nova') }}>
+  <summary style="cursor:pointer;font-weight:700">➕ Nova área (ou módulo, ou tema)</summary>
+  <form method="post" action="{{ url_for('nucleai.nova') }}" style="margin-top:12px">
+    {{ csrf_input }}
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px">
+      <div><label>Tema</label>
+        <select name="tema" id="nai-tema">{% for t in arvore %}<option>{{ t.titulo }}</option>{% endfor %}</select>
+        <input name="tema_novo" placeholder="…ou escreva um tema novo" maxlength="70" style="margin-top:6px"></div>
+      <div><label>Módulo</label>
+        <select name="modulo" id="nai-modulo">{% for t in arvore %}{% for m in t.modulos %}<option data-tema="{{ t.titulo }}">{{ m.titulo }}</option>{% endfor %}{% endfor %}</select>
+        <input name="modulo_novo" placeholder="…ou escreva um módulo novo" maxlength="70" style="margin-top:6px"></div>
+      <div><label class="obrig">Título da área</label><input name="area" maxlength="70" required placeholder="Ex.: Como pedir segunda via do convênio"></div>
+      <div><label>Quem vê (só vale para módulo novo)</label>
+        <select name="chave_acesso"><option value="">Todos os usuários</option><option value="__admin__">Somente administração</option>
+          {% for k, nome in chaves %}<option value="{{ k }}">Quem tem “{{ nome }}”</option>{% endfor %}</select></div>
+    </div>
+    <label class="obrig" style="margin-top:12px">Instruções (até {{ max_texto }} letras)</label>
+    <textarea name="texto" rows="7" maxlength="{{ max_texto }}" required placeholder="1. Primeiro passo…&#10;2. Segundo passo…" style="width:100%"></textarea>
+    <p class="ajuda">Se o tema ou o módulo escolhido na lista já existe, a área entra nele. Escrevendo um nome novo, ele passa a existir.</p>
+    <button class="btn" type="submit">Criar área</button>
+  </form>
+</details>
+
+{% for t in arvore %}
+<details class="cartao" style="margin-bottom:10px" id="t{{ loop.index }}">
+  <summary style="cursor:pointer;font-size:16px;font-weight:700">{{ t.titulo }} <span class="ajuda">({{ t.modulos|length }} módulos)</span></summary>
+  {% for m in t.modulos %}
+    <h3 style="margin:14px 0 6px">{{ m.titulo }}
+      {% if m.acesso == '__admin__' %}<span class="nai-tag">só administração</span>{% elif m.acesso and m.acesso != 'livre' %}<span class="nai-tag">exige: {{ m.acesso }}</span>{% endif %}</h3>
+    {% for a in m.areas %}
+      <details style="border:1px solid var(--borda);border-radius:8px;padding:8px 10px;margin-bottom:6px;background:#fff">
+        <summary style="cursor:pointer"><strong>{{ a.titulo }}</strong>
+          {% if a.estado == 'EDITADA' %}<span class="nai-tag editada">editada por {{ a.por }}</span>
+          {% elif a.estado == 'NOVA' %}<span class="nai-tag nova">criada por {{ a.por }}</span>{% endif %}</summary>
+        <form method="post" action="{{ url_for('nucleai.editar') }}" style="margin-top:8px">
+          {{ csrf_input }}
+          <input type="hidden" name="tema" value="{{ t.titulo }}"><input type="hidden" name="modulo" value="{{ m.titulo }}"><input type="hidden" name="area" value="{{ a.titulo }}">
+          <textarea name="texto" rows="8" maxlength="{{ max_texto }}" style="width:100%">{{ a.texto }}</textarea>
+          <div style="display:flex;gap:8px;margin-top:6px;flex-wrap:wrap"><button class="btn peq" type="submit">Salvar texto</button></div>
+        </form>
+        <div style="display:flex;gap:8px;margin-top:6px;flex-wrap:wrap">
+          {% if a.estado == 'EDITADA' %}
+          <form method="post" action="{{ url_for('nucleai.restaurar') }}" onsubmit="return confirm('Voltar ao texto original desta área?')">
+            {{ csrf_input }}<input type="hidden" name="tema" value="{{ t.titulo }}"><input type="hidden" name="modulo" value="{{ m.titulo }}"><input type="hidden" name="area" value="{{ a.titulo }}">
+            <button class="btn sec peq" type="submit">Restaurar original</button></form>
+          {% elif a.estado == 'NOVA' %}
+          <form method="post" action="{{ url_for('nucleai.excluir') }}" onsubmit="return confirm('Excluir esta área?')">
+            {{ csrf_input }}<input type="hidden" name="id" value="{{ a.id }}"><button class="btn perigo peq" type="submit">Excluir área</button></form>
+          {% endif %}
+        </div>
+      </details>
+    {% endfor %}
+  {% endfor %}
+</details>
+{% endfor %}
+<script>
+  // o módulo oferecido é sempre do tema escolhido
+  (function () {
+    var tema = document.getElementById('nai-tema'), modulo = document.getElementById('nai-modulo');
+    if (!tema || !modulo) return;
+    var filtrar = function () {
+      var primeiro = null;
+      Array.prototype.forEach.call(modulo.options, function (o) {
+        var ok = o.getAttribute('data-tema') === tema.value;
+        o.hidden = !ok; o.disabled = !ok;
+        if (ok && !primeiro) primeiro = o;
+      });
+      if (modulo.selectedOptions[0] && modulo.selectedOptions[0].disabled && primeiro) modulo.value = primeiro.value;
+    };
+    tema.addEventListener('change', filtrar);
+    filtrar();
+  })();
+</script>
+{% endblock %}

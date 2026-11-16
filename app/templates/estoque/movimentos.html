@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% from '_ic.html' import ic %}
+{% block titulo %}Movimentações · Estoque{% endblock %}
+{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/estoque.css') }}">{% endblock %}
+{% block conteudo %}
+<div class="cabecalho">
+  <div><h1>{{ ic('scroll-text', 22) }} Movimentações do estoque</h1>
+    <p class="sub">{{ linhas|length }} movimento(s) no filtro · Entradas: {{ totais.entradas|est_qtd }} · Saídas: {{ totais.saidas|est_qtd }} · Valor das entradas: R$ {{ totais.valor_entradas|moeda }}</p></div>
+  <div class="acoes"><a class="btn sec" href="{{ url_for('est.itens') }}">Voltar para o estoque</a></div>
+</div>
+
+<form class="cartao filtros" method="get">
+  <div><label for="m-de">De</label><input id="m-de" type="date" name="de" value="{{ de }}"></div>
+  <div><label for="m-ate">Até</label><input id="m-ate" type="date" name="ate" value="{{ ate }}"></div>
+  <div class="largo"><label for="m-item">Item</label><select id="m-item" name="item"><option value="">Todos os itens</option>
+    {% for i in itens %}<option value="{{ i.id }}" {% if item_id == i.id %}selected{% endif %}>{{ i.nome }}{% if not i.ativo %} (desativado){% endif %}</option>{% endfor %}</select></div>
+  <div><label for="m-tipo">Tipo</label><select id="m-tipo" name="tipo"><option value="">Todos</option>
+    <option value="ENTRADA" {% if tipo == 'ENTRADA' %}selected{% endif %}>Entrada</option>
+    <option value="SAIDA" {% if tipo == 'SAIDA' %}selected{% endif %}>Baixa</option>
+    <option value="AJUSTE" {% if tipo == 'AJUSTE' %}selected{% endif %}>Ajuste</option></select></div>
+  <div><button class="btn" type="submit">Filtrar</button></div>
+</form>
+
+<div class="tabela-wrap"><table class="tabela">
+  <thead><tr><th>Data e hora</th><th>Item</th><th>Tipo</th><th class="num">Quantidade</th><th class="num">Valor unit. (R$)</th><th>Fornecedor / motivo</th><th>Usuário</th><th class="num">Saldo após</th></tr></thead>
+  <tbody>
+  {% for m in linhas %}
+    <tr>
+      <td>{{ m.data_hora|est_dh }}</td>
+      <td><a href="{{ url_for('est.historico', iid=m.item_id) }}">{{ m.item_nome }}</a> <small>{{ m.item_tipo|capitalize }}</small></td>
+      <td>{{ {'ENTRADA': 'Entrada', 'SAIDA': 'Baixa', 'AJUSTE': 'Ajuste'}[m.tipo] }}</td>
+      <td class="num">{{ '+' if m.sentido > 0 else '-' }}{{ m.qtd|est_qtd }} {{ m.unidade or '' }}</td>
+      <td class="num">{{ m.valor_unitario|moeda }}</td>
+      <td>{% if m.tipo == 'ENTRADA' %}{{ m.fornecedor_nome or '' }}{% if m.documento %} · NF {{ m.documento }}{% endif %}{% else %}{{ m.motivo or '' }}{% endif %}</td>
+      <td>{{ m.usuario or '' }}</td>
+      <td class="num">{{ m.saldo_apos|est_qtd }}</td>
+    </tr>
+  {% else %}
+    <tr><td colspan="8" class="vazio">Nenhuma movimentação neste filtro.</td></tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+{% endblock %}

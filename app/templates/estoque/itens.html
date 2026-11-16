@@ -1,0 +1,112 @@
+{% extends 'base.html' %}
+{% from '_ic.html' import ic %}
+{% block titulo %}Estoque{% endblock %}
+{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/estoque.css') }}">{% endblock %}
+{% block conteudo %}
+<div class="cabecalho">
+  <div><h1>{{ ic('clipboard-list', 22) }} Estoque de materiais e medicamentos</h1><p class="sub">{{ itens|length }} item(ns) na lista</p></div>
+  <div class="acoes">
+    <a class="btn sec" href="{{ url_for('est.movimentos') }}">Movimentações</a>
+    <a class="btn sec" href="{{ url_for('est.pedidos') }}">Pedidos de compra</a>
+    <a class="btn" href="{{ url_for('est.item_editar') }}">+ Novo item</a>
+  </div>
+</div>
+
+{% if abaixo_total %}
+<div class="msg aviso">{{ ic('triangle-alert', 18) }} <strong>{{ abaixo_total }} item(ns) abaixo do mínimo.</strong> A gerência recebe o aviso no contato do sistema.</div>
+{% endif %}
+
+<form class="cartao filtros" method="get">
+  <div><label for="f-tipo">Tipo</label><select id="f-tipo" name="tipo"><option value="">Todos</option>{% for t in tipos %}<option value="{{ t }}" {% if tipo == t %}selected{% endif %}>{{ t|capitalize }}</option>{% endfor %}</select></div>
+  <div class="largo"><label for="f-busca">Buscar por nome ou código</label><input id="f-busca" name="busca" value="{{ busca }}"></div>
+  <div><label class="linha-check"><input type="checkbox" name="abaixo" value="1" {% if so_abaixo %}checked{% endif %}> Só abaixo do mínimo</label></div>
+  <div><label class="linha-check"><input type="checkbox" name="inativos" value="1" {% if inativos %}checked{% endif %}> Mostrar desativados</label></div>
+  <div><button class="btn" type="submit">Filtrar</button></div>
+</form>
+
+<div class="tabela-wrap"><table class="tabela">
+  <thead><tr><th>Código</th><th>Item</th><th>Tipo</th><th>Unidade</th><th class="num">Saldo</th><th class="num">Mínimo</th><th class="num">Último valor (R$)</th><th>Situação</th><th></th></tr></thead>
+  <tbody>
+  {% for i in itens %}
+    <tr>
+      <td>{{ i.codigo or '' }}</td>
+      <td>{{ i.nome }}{% if not i.ativo %} <span class="etiqueta cancelado">desativado</span>{% endif %}{% if i.local %}<br><small>{{ i.local }}</small>{% endif %}</td>
+      <td>{{ i.tipo|capitalize }}</td>
+      <td>{{ i.unidade or '' }}</td>
+      <td class="num">{{ i.saldo|est_qtd }}</td>
+      <td class="num">{{ i.estoque_minimo|est_qtd }}</td>
+      <td class="num">{{ i.ultimo_valor|moeda }}</td>
+      <td><span class="etiqueta {{ {'ok': 'pago', 'abaixo': 'aberto', 'zerado': 'cancelado'}[i.situacao] }}">{{ {'ok': 'OK', 'abaixo': 'Abaixo do mínimo', 'zerado': 'Zerado'}[i.situacao] }}</span></td>
+      <td class="num" style="white-space:nowrap">
+        {% if i.ativo %}
+          <button class="btn peq" type="button" data-dialogo="dlg-entrada" data-url="{{ url_for('est.entrada', iid=i.id) }}" data-nome="{{ i.nome }}" data-unidade="{{ i.unidade or '' }}" data-saldo="{{ i.saldo|est_qtd }}">Entrada</button>
+          <button class="btn sec peq" type="button" data-dialogo="dlg-saida" data-url="{{ url_for('est.saida', iid=i.id) }}" data-nome="{{ i.nome }}" data-unidade="{{ i.unidade or '' }}" data-saldo="{{ i.saldo|est_qtd }}">Saída</button>
+          <button class="btn sec peq" type="button" data-dialogo="dlg-ajuste" data-url="{{ url_for('est.ajuste', iid=i.id) }}" data-nome="{{ i.nome }}" data-unidade="{{ i.unidade or '' }}" data-saldo="{{ i.saldo|est_qtd }}">Ajuste</button>
+        {% endif %}
+        <a class="btn sec peq" href="{{ url_for('est.historico', iid=i.id) }}">Histórico</a>
+        <a class="btn sec peq" href="{{ url_for('est.item_editar', iid=i.id) }}">Editar</a>
+      </td>
+    </tr>
+  {% else %}
+    <tr><td colspan="9" class="vazio">Nenhum item encontrado. Use "Novo item" para cadastrar.</td></tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+
+<dialog id="dlg-entrada">
+  <form method="post">
+    {{ csrf_input }}<input type="hidden" name="voltar" value="{{ request.full_path }}">
+    <h2 style="margin-top:0">Entrada: <span data-campo="nome"></span></h2>
+    <p class="sub">Saldo atual: <span data-campo="saldo"></span> <span data-campo="unidade"></span></p>
+    <div class="grade">
+      <div class="c6"><label class="obrig" for="e-qtd">Quantidade</label><input id="e-qtd" name="qtd" inputmode="decimal" required></div>
+      <div class="c6"><label for="e-valor">Valor unitário (R$)</label><input id="e-valor" name="valor_unitario" inputmode="decimal" placeholder="0,00"></div>
+      <div class="c6"><label for="e-forn">Fornecedor cadastrado</label><select id="e-forn" name="fornecedor_id"><option value="">(digitar abaixo)</option>{% for f in fornecedores %}<option value="{{ f.id }}">{{ f.nome }}</option>{% endfor %}</select></div>
+      <div class="c6"><label for="e-fnome">Ou nome do fornecedor</label><input id="e-fnome" name="fornecedor_nome"></div>
+      <div class="c6"><label for="e-nf">Nota fiscal</label><input id="e-nf" name="documento"></div>
+      <div class="c6"><label for="e-data">Data da compra</label><input id="e-data" type="date" name="data_documento" value="{{ hoje }}"></div>
+      <div class="c6"><label for="e-lote">Lote</label><input id="e-lote" name="lote"></div>
+      <div class="c6"><label for="e-validade">Validade</label><input id="e-validade" type="date" name="validade"></div>
+      <div class="c12"><label for="e-obs">Observação</label><input id="e-obs" name="obs"></div>
+    </div>
+    <div class="acoes"><button class="btn" type="submit">Registrar entrada</button><button class="btn sec" type="button" data-fechar>Cancelar</button></div>
+  </form>
+</dialog>
+
+<dialog id="dlg-saida">
+  <form method="post">
+    {{ csrf_input }}<input type="hidden" name="voltar" value="{{ request.full_path }}">
+    <h2 style="margin-top:0">Baixa manual: <span data-campo="nome"></span></h2>
+    <p class="sub">Saldo atual: <span data-campo="saldo"></span> <span data-campo="unidade"></span></p>
+    <div class="grade">
+      <div class="c6"><label class="obrig" for="s-qtd">Quantidade</label><input id="s-qtd" name="qtd" inputmode="decimal" required></div>
+      <div class="c6"><label class="obrig" for="s-motivo">Motivo</label><select id="s-motivo" name="motivo" required>{% for m in motivos %}<option>{{ m }}</option>{% endfor %}</select></div>
+      <div class="c12"><label for="s-obs">Observação</label><input id="s-obs" name="obs"></div>
+    </div>
+    <div class="acoes"><button class="btn" type="submit">Registrar baixa</button><button class="btn sec" type="button" data-fechar>Cancelar</button></div>
+  </form>
+</dialog>
+
+<dialog id="dlg-ajuste">
+  <form method="post">
+    {{ csrf_input }}<input type="hidden" name="voltar" value="{{ request.full_path }}">
+    <h2 style="margin-top:0">Ajuste de inventário: <span data-campo="nome"></span></h2>
+    <p class="sub">Saldo no sistema: <span data-campo="saldo"></span> <span data-campo="unidade"></span>. Informe a contagem física: o saldo passa a ser esse valor.</p>
+    <div class="grade">
+      <div class="c6"><label class="obrig" for="a-contagem">Contagem física</label><input id="a-contagem" name="contagem" inputmode="decimal" required></div>
+      <div class="c12"><label class="obrig" for="a-obs">Motivo do ajuste</label><input id="a-obs" name="obs" required placeholder="Ex.: contagem do fim do mês, quebra, sobra"></div>
+    </div>
+    <div class="acoes"><button class="btn" type="submit">Confirmar ajuste</button><button class="btn sec" type="button" data-fechar>Cancelar</button></div>
+  </form>
+</dialog>
+{% endblock %}
+{% block scripts %}
+<script>
+// cada botão de movimento leva a sua própria ação (o app.js preenche o nome, o saldo e a unidade do diálogo)
+document.addEventListener('click', function (e) {
+  var b = e.target.closest('[data-dialogo][data-url]');
+  if (!b) return;
+  document.getElementById(b.getAttribute('data-dialogo')).querySelector('form').action = b.getAttribute('data-url');
+});
+</script>
+{% endblock %}

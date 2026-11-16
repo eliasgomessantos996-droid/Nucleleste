@@ -1,0 +1,102 @@
+{% extends 'base.html' %}
+{% block titulo %}Medcloud{% endblock %}
+{% block conteudo %}
+<h1>Medcloud: acesso do paciente ao portal</h1>
+<p class="sub">Quando um atendimento é lançado, um robô entra na Medcloud, cria o acesso do paciente (cadastro sem e-mail, usando o CPF) e o protocolo sai impresso no final das fichas. Só a gerência vê esta página.</p>
+
+<style>
+.mc-estado{display:flex;align-items:center;gap:12px}
+.mc-estado svg{width:44px;height:44px;flex:none}
+.mc-orbita{transform-origin:22px 22px;animation:mc-gira 6s linear infinite}
+.mc-ligado .mc-pulso{animation:mc-pulso 1.6s ease-in-out infinite;transform-origin:22px 22px}
+@keyframes mc-gira{to{transform:rotate(360deg)}}
+@keyframes mc-pulso{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.18);opacity:.7}}
+@media (prefers-reduced-motion:reduce){.mc-orbita,.mc-pulso{animation:none!important}}
+.mc-convenios{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:6px 14px;margin-top:8px}
+</style>
+
+<form method="post" style="max-width:820px">
+  {{ csrf_input }}
+  <div class="cartao">
+    <div class="mc-estado {{ 'mc-ligado' if ativo else '' }}">
+      <svg viewBox="0 0 44 44" aria-hidden="true">
+        <circle cx="22" cy="22" r="15" fill="none" stroke="currentColor" stroke-width="1.6" opacity=".35"/>
+        <g class="mc-orbita"><circle cx="37" cy="22" r="3.2" fill="currentColor"/></g>
+        <circle class="mc-pulso" cx="22" cy="22" r="6" fill="{{ 'currentColor' if ativo else 'none' }}" stroke="currentColor" stroke-width="1.6"/>
+      </svg>
+      <div>
+        <label class="inline"><input type="checkbox" name="ativo" value="1" {% if ativo %}checked{% endif %}> <strong>Função ativada</strong></label>
+        <div class="ajuda">Desligada, o sistema não envia nada à Medcloud e as fichas saem como sempre.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="cartao">
+    <h2>Horário de funcionamento</h2>
+    <label class="inline"><input type="checkbox" name="horario" value="1" {% if horario %}checked{% endif %}> <strong>Funcionar só neste horário</strong></label>
+    <div class="ajuda">No início do horário o robô abre o navegador e entra na Medcloud sozinho. No fim, ele fecha, e os atendimentos lançados fora do horário saem sem acesso à Medcloud. Desmarcado, a função vale o dia todo.</div>
+    <div class="mc-convenios">
+      <label>Liga às <input type="time" name="inicio" value="{{ inicio }}"></label>
+      <label>Desliga às <input type="time" name="fim" value="{{ fim }}"></label>
+    </div>
+    <div class="mc-convenios">
+      {% for n, rot in dias_nomes %}<label class="inline"><input type="checkbox" name="dia" value="{{ n }}" {% if n in dias %}checked{% endif %}> {{ rot }}</label>{% endfor %}
+    </div>
+    <div class="ajuda">Agora: <strong>{{ 'dentro do horário, o robô está operando' if operando else 'robô parado (função desligada ou fora do horário)' }}</strong>.</div>
+  </div>
+
+  <div class="cartao">
+    <h2>Login da Medcloud</h2>
+    <label>Usuário (login do portal)
+      <input type="text" name="login" value="{{ login }}" autocomplete="off" maxlength="120"></label>
+    <label>Senha
+      <input type="password" name="senha" autocomplete="new-password" maxlength="120"
+             placeholder="{{ 'Deixe em branco para manter a senha atual' if tem_senha else 'Informe a senha' }}"></label>
+    <div class="ajuda">A senha fica guardada cifrada e nunca é exibida de novo. Quando mudar no portal, informe a nova aqui.
+      {% if tem_senha %}<strong>Há uma senha salva.</strong>{% else %}<strong>Nenhuma senha salva.</strong>{% endif %}</div>
+    <div class="acoes">
+      <button class="btn sec" type="submit" name="acao" value="testar">Testar conexão</button>
+      <span class="ajuda">O teste só faz o login (leva alguns segundos) e não cadastra ninguém.</span>
+    </div>
+  </div>
+
+  <div class="cartao">
+    <h2>Convênios que vão para a Medcloud</h2>
+    <div class="ajuda">Só os atendimentos dos convênios marcados geram acesso. Pacientes sem CPF usam o celular; sem nenhum dos dois, o pedido fica com erro.</div>
+    <div class="mc-convenios">
+      {% for c in convenios %}
+      <label class="inline"><input type="checkbox" name="convenio" value="{{ c.id }}" {% if c.medcloud %}checked{% endif %}> {{ c.nome }}</label>
+      {% else %}<span class="ajuda">Nenhum convênio ativo cadastrado.</span>{% endfor %}
+    </div>
+  </div>
+
+  <div class="acoes">
+    <button class="btn" type="submit" name="acao" value="salvar">Salvar</button>
+  </div>
+</form>
+
+<div class="cartao" style="max-width:820px">
+  <h2>Últimos pedidos do robô</h2>
+  {% if fila %}
+  <table class="tabela">
+    <thead><tr><th>Paciente</th><th>Convênio</th><th>Exame</th><th>Situação</th><th>Tentativas</th><th></th></tr></thead>
+    <tbody>
+    {% for f in fila %}
+      <tr>
+        <td>{{ f.cliente_nome or '-' }}</td><td>{{ f.convenio or '-' }}</td><td>{{ f.exame or '-' }}</td>
+        <td>{% if f.estado == 'OK' %}Acesso e estudo criados
+              {%- if f.compartilhado == 'OK' %}; estudo vinculado ao paciente
+              {%- elif f.compartilhado == 'ERRO' %}; <strong>estudo não vinculado ao paciente:</strong> {{ f.comp_erro }}
+              {%- elif f.compartilhado in ('PENDENTE', 'PROCESSANDO') %}; vinculando o estudo ao paciente...{% endif %}
+            {% elif f.estado == 'ERRO' %}<strong>Erro:</strong> {{ f.erro }}{% elif f.estado == 'PROCESSANDO' %}Processando{% else %}Na fila{% endif %}</td>
+        <td>{{ f.tentativas }}</td>
+        <td>{% if f.estado == 'ERRO' or (f.estado == 'OK' and f.compartilhado == 'ERRO') %}
+          <form method="post" style="margin:0">{{ csrf_input }}<input type="hidden" name="atendimento_id" value="{{ f.atendimento_id }}">
+            <button class="btn sec peq" name="acao" value="tentar">Tentar de novo</button></form>{% endif %}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}<p class="ajuda">Nenhum pedido ainda.</p>{% endif %}
+</div>
+{% endblock %}

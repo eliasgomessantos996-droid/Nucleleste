@@ -1,0 +1,21 @@
+{% extends 'qualidade/_base.html' %}
+{% from 'qualidade/_modelos.html' import galeria_problemas, pdf_botoes with context %}
+{% block titulo %}Diagrama de Ishikawa{% endblock %}
+{% block titulo_q %}Diagrama de Ishikawa{% endblock %}
+{% block sub_q %}Espinha de peixe: o problema na cabeça e as causas nos 6M (Método, Máquina, Mão de obra, Material, Meio ambiente, Medição). ★ marca a causa principal.{% endblock %}
+{% block acoes_q %}{% if isk %}{{ pdf_botoes(url_for('qual.ishikawa_pdf', p=pid)) }}{% endif %}{% endblock %}
+{% block corpo_q %}
+{{ galeria_problemas(modelos, 'ishikawa', not isk) }}
+{% include 'qualidade/_escolher_problema.html' %}
+{% if isk %}
+<div class="cartao q-folha-paisagem"><div class="q-ishikawa grande" data-ishikawa='{{ isk|tojson }}'></div></div>
+<form class="cartao q-form-inline q-nao-imprime" method="post" action="{{ url_for('qual.causa_nova', pid=pid) }}">
+  {{ csrf_input }}<input type="hidden" name="voltar" value="{{ url_for('qual.ishikawa', p=pid) }}">
+  <select name="categoria" required>{% for m in seis_m %}<option>{{ m }}</option>{% endfor %}</select>
+  <input type="text" name="texto" maxlength="300" placeholder="Causa provável" required>
+  <label class="q-check"><input type="checkbox" name="principal" value="1"> principal</label>
+  <button class="btn sec" type="submit">Incluir causa</button>
+  <a class="btn sec" href="{{ url_for('qual.problema_pagina', pid=pid) }}">Abrir o problema completo</a>
+</form>
+{% endif %}
+{% endblock %}

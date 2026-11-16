@@ -1,0 +1,25 @@
+{% extends 'qualidade/_base.html' %}
+{% from 'qualidade/_modelos.html' import galeria_fluxos, pdf_botoes with context %}
+{% block titulo %}Fluxograma de processos{% endblock %}
+{% block titulo_q %}Fluxograma de processos{% endblock %}
+{% block sub_q %}Desenhe cada processo com etapas, decisões, documentos, raias por setor e cores por tipo, setor ou situação de implantação. Aprovar congela a versão; alterar depois abre a próxima.{% endblock %}
+{% block corpo_q %}
+{{ galeria_fluxos(fluxos_prontos, not lista) }}
+<div class="tabela-wrap"><table class="tabela">
+  <thead><tr><th>Processo</th><th>Setor</th><th class="num">Etapas</th><th class="num">Versão</th><th>Situação</th><th>Atualizado</th><th class="q-nao-imprime">PDF</th></tr></thead>
+  <tbody>{% for f in lista %}
+    <tr><td><a href="{{ url_for('qual.fluxo', fid=f.id) }}"><strong>{{ f.nome }}</strong></a></td><td>{{ f.setor }}</td><td class="num">{{ f.etapas }}</td><td class="num">v{{ f.versao }}</td>
+      <td><span class="q-chip {{ 'ok' if f.status == 'APROVADO' else 'atencao' }}">{{ f.status }}</span>{% if f.aprovado_por %} <small>por {{ f.aprovado_por }}</small>{% endif %}</td>
+      <td>{{ f.atualizado_por or '' }} {{ (f.atualizado_em or '')[:10]|data_br if f.atualizado_em else '' }}</td>
+      <td class="q-nao-imprime" style="white-space:nowrap"><a class="btn sec peq" href="{{ url_for('qual.fluxo_pdf', fid=f.id) }}" target="_blank" rel="noopener">PDF</a> <a class="btn sec peq" href="{{ url_for('qual.fluxo_pdf', fid=f.id, baixar=1) }}">Baixar</a></td></tr>
+  {% else %}<tr><td colspan="7" class="sub">Nenhum fluxograma ainda. Comece por um modelo pronto abaixo.</td></tr>{% endfor %}</tbody>
+</table></div>
+<form class="cartao q-form q-nao-imprime" method="post" action="{{ url_for('qual.fluxo_novo') }}">
+  {{ csrf_input }}<h2>Novo fluxograma</h2>
+  <div class="q-linha3"><label>Nome do processo<input type="text" name="nome" required maxlength="160"></label>
+    <label>Setor<input type="text" name="setor" maxlength="80"></label>
+    <label>Começar de<select name="modelo"><option value="">Folha em branco</option>{% for k, nome in modelos %}<option value="{{ k }}">Modelo: {{ nome }}</option>{% endfor %}</select></label></div>
+  <label>Objetivo<textarea name="objetivo" rows="2"></textarea></label>
+  <button class="btn" type="submit">Criar e abrir o editor</button>
+</form>
+{% endblock %}

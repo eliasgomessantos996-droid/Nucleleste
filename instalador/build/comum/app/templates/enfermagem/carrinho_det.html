@@ -1,0 +1,48 @@
+{% extends 'enfermagem/_base.html' %}
+{% from '_ic.html' import ic %}
+{% set kit = c.tipo == 'KIT' %}
+{% block titulo %}{{ c.nome }}{% endblock %}
+{% block titulo_e %}{{ c.nome }}{% endblock %}
+{% block sub_e %}{{ c.local or 'sem local' }} · lacre atual <b>{{ c.lacre_atual or '—' }}</b> · conferência {{ 'diária' if c.periodicidade == 'DIARIA' else 'semanal' }}{% endblock %}
+{% block acoes_e %}<a class="btn sec" href="{{ url_for('enf.radioprotecao' if kit else 'enf.carrinho') }}">Voltar</a>{% endblock %}
+{% block corpo_e %}
+{% if c.vermelho %}<div class="cartao enf-alerta vermelho">{{ ic('triangle-alert', 18) }} <b>Atenção:</b> {{ c.problemas|join('; ') }}.</div>{% endif %}
+{% if c.atrasada %}<div class="cartao enf-alerta amarelo">{{ ic('clock', 18) }} Conferência atrasada: faça a conferência abaixo.</div>{% endif %}
+<div class="tabela-wrap"><table class="tabela">
+  <thead><tr><th>Item</th><th class="num">Qtd</th><th class="num">Mínimo</th><th>Lote</th><th>Validade</th><th></th></tr></thead>
+  <tbody>{% for i in c.itens %}
+    <tr class="{{ 'enf-linha-vermelha' if i.vermelho }}"><td>{{ i.nome }}</td><td class="num">{{ i.qtd }}</td><td class="num">{{ i.qtd_min }}</td><td>{{ i.lote }}</td>
+      <td>{% if i.validade %}{{ i.validade|data_br }} <span class="enf-chip {{ 'vermelho' if i.situacao == 'vencido' else 'amarelo' if i.situacao == 'vence' else 'verde' }}">{{ 'vencido' if i.situacao == 'vencido' else (i.dias ~ ' d') }}</span>{% else %}—{% endif %}</td>
+      <td class="enf-nao-imprime"><details class="q-editar"><summary>Editar</summary>
+        <form method="post" action="{{ url_for('enf.carrinho_item', cid=c.id) }}" class="enf-form-inline">{{ csrf_input }}<input type="hidden" name="id" value="{{ i.id }}">
+          <input type="text" name="nome" value="{{ i.nome }}" required><input type="number" name="qtd" min="0" value="{{ i.qtd }}" title="Quantidade"><input type="number" name="qtd_min" min="0" value="{{ i.qtd_min }}" title="Mínimo">
+          <input type="text" name="lote" value="{{ i.lote }}" placeholder="Lote"><input type="date" name="validade" value="{{ i.validade or '' }}"><button class="btn peq" type="submit">Salvar</button></form>
+        <form method="post" action="{{ url_for('enf.carrinho_item_excluir', cid=c.id, iid=i.id) }}" onsubmit="return confirm('Excluir o item?')">{{ csrf_input }}<button class="link perigo" type="submit">Excluir item</button></form></details></td></tr>
+  {% else %}<tr><td colspan="6" class="sub">Nenhum item. Inclua os itens abaixo.</td></tr>{% endfor %}</tbody>
+</table></div>
+<form class="cartao enf-form enf-nao-imprime" method="post" action="{{ url_for('enf.carrinho_item', cid=c.id) }}">
+  {{ csrf_input }}<h2>Incluir item</h2>
+  <div class="enf-form-inline"><input type="text" name="nome" required maxlength="100" placeholder="Nome do item (ex.: Adrenalina 1 mg)"><input type="number" name="qtd" min="0" value="0" title="Quantidade"><input type="number" name="qtd_min" min="0" value="1" title="Quantidade mínima">
+    <input type="text" name="lote" maxlength="40" placeholder="Lote"><input type="date" name="validade" title="Validade"><button class="btn" type="submit">Incluir</button></div>
+</form>
+{% if c.itens %}
+<form class="cartao enf-form enf-nao-imprime" method="post" action="{{ url_for('enf.carrinho_conferir', cid=c.id) }}">
+  {{ csrf_input }}<h2>{{ ic('clipboard-check', 18) }} Conferência</h2>
+  <p class="ajuda">Quem registra é <b>{{ eu.nome }}</b>{% if eu.assinatura %}: a assinatura dele(a) sai na ficha{% else %}, que ainda não tem assinatura importada (a ficha sairá sem a imagem){% endif %}.</p>
+  <div class="q-linha3"><label>Tipo<select name="tipo"><option value="DIARIA">Diária</option><option value="SEMANAL" selected>Semanal</option><option value="APOS_USO">Após o uso</option></select></label>
+    {% if not kit %}<label>Lacre quebrado (nº)<input type="text" name="lacre_quebrado" maxlength="40" value="{{ c.lacre_atual }}"></label><label>Novo lacre (nº)<input type="text" name="lacre_novo" maxlength="40"></label>{% endif %}</div>
+  <div class="enf-checklist">{% for t in checklist %}<label class="q-check"><input type="checkbox" name="chk_{{ loop.index0 }}" value="1"> {{ t }}</label>{% endfor %}</div>
+  <table class="tabela"><thead><tr><th>Item</th><th class="num">Mínimo</th><th>Quantidade encontrada</th><th>Lote</th><th>Validade</th></tr></thead><tbody>
+  {% for i in c.itens %}<tr><td>{{ i.nome }}</td><td class="num">{{ i.qtd_min }}</td><td><input type="number" min="0" name="qtd_{{ i.id }}" value="{{ i.qtd }}"></td>
+    <td><input type="text" name="lote_{{ i.id }}" value="{{ i.lote }}" maxlength="40"></td><td><input type="date" name="validade_{{ i.id }}" value="{{ i.validade or '' }}"></td></tr>{% endfor %}
+  </tbody></table>
+  <label>Observações<textarea name="obs" rows="2" maxlength="500"></textarea></label>
+  <button class="btn" type="submit">{{ ic('check', 16) }} Registrar conferência e abrir a ficha</button>
+</form>
+{% endif %}
+<h2>Últimas conferências</h2>
+<div class="tabela-wrap"><table class="tabela"><thead><tr><th>Data</th><th>Tipo</th><th>Quem conferiu</th><th>Lacre</th><th>Problemas</th><th></th></tr></thead><tbody>
+{% for h in historico %}<tr><td>{{ h.data_hora[8:10] }}/{{ h.data_hora[5:7] }}/{{ h.data_hora[:4] }} {{ h.data_hora[11:16] }}</td><td>{{ {'DIARIA': 'Diária', 'SEMANAL': 'Semanal', 'APOS_USO': 'Após o uso'}[h.tipo] }}</td><td>{{ h.profissional }}</td>
+  <td>{{ h.lacre_quebrado or '—' }} → {{ h.lacre_novo or '—' }}</td><td>{{ h.problemas }}</td><td><a class="btn sec peq" href="{{ url_for('enf.carrinho_ficha', conf_id=h.id) }}" target="_blank">Ficha</a></td></tr>
+{% else %}<tr><td colspan="6" class="sub">Nenhuma conferência registrada.</td></tr>{% endfor %}</tbody></table></div>
+{% endblock %}

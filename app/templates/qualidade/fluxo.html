@@ -1,0 +1,53 @@
+{% extends 'qualidade/_base.html' %}
+{% from 'qualidade/_modelos.html' import pdf_botoes with context %}
+{% block titulo %}Fluxograma: {{ f.nome }}{% endblock %}
+{% block titulo_q %}{{ f.nome }}{% endblock %}
+{% block sub_q %}{{ f.setor }}{{ ' · ' if f.setor }}versão {{ f.versao }} · {{ f.status }}{% if f.aprovado_por %} (aprovado por {{ f.aprovado_por }} em {{ f.aprovado_em[:10]|data_br }}){% endif %}{% if f.objetivo %} · {{ f.objetivo }}{% endif %}{% endblock %}
+{% block acoes_q %}
+{{ pdf_botoes(url_for('qual.fluxo_pdf', fid=f.id)) }}
+<button type="button" class="btn sec" data-fx="png">⬇ PNG</button>
+<button type="button" class="btn sec" data-fx="svg">⬇ SVG</button>
+{% if f.status != 'APROVADO' %}
+<form method="post" action="{{ url_for('qual.fluxo_aprovar', fid=f.id) }}" style="display:inline" onsubmit="return confirm('Aprovar esta versão do processo?')">{{ csrf_input }}<button class="btn sec" type="submit">✔ Aprovar versão</button></form>
+{% endif %}
+{% endblock %}
+{% block corpo_q %}
+<div class="fx" id="fx" data-salvar="{{ url_for('qual.fluxo_salvar', fid=f.id) }}" data-nome="{{ f.nome }}">
+  <div class="fx-barra q-nao-imprime" role="toolbar" aria-label="Ferramentas do fluxograma">
+    <span class="fx-grupo">
+      <button type="button" data-add="inicio" title="Início / fim">⬭ Início/fim</button>
+      <button type="button" data-add="processo" title="Etapa do processo">▭ Etapa</button>
+      <button type="button" data-add="decisao" title="Decisão (sim/não)">◇ Decisão</button>
+      <button type="button" data-add="documento" title="Documento / registro">🗎 Documento</button>
+      <button type="button" data-add="dados" title="Entrada ou saída de dados">▱ Dados</button>
+      <button type="button" data-add="subprocesso" title="Subprocesso (outro fluxograma)">⊟ Subprocesso</button>
+      <button type="button" data-add="espera" title="Espera / atraso">◗ Espera</button>
+      <button type="button" data-add="conector" title="Conector">○ Conector</button>
+    </span>
+    <span class="fx-grupo">
+      <button type="button" data-acao="ligar" title="Ligar: clique na etapa de origem e depois na de destino">↘ Ligar</button>
+      <button type="button" data-acao="raia" title="Nova raia (setor ou responsável)">☰ Raia</button>
+      <button type="button" data-acao="excluir" title="Excluir o item selecionado (Delete)">🗑 Excluir</button>
+      <button type="button" data-acao="desfazer" title="Desfazer (Ctrl+Z)">↶</button>
+      <button type="button" data-acao="refazer" title="Refazer (Ctrl+Y)">↷</button>
+    </span>
+    <span class="fx-grupo">
+      <label>Cores por <select data-modo>
+        <option value="tipo">tipo de etapa</option><option value="raia">setor (raia)</option><option value="status">situação de implantação</option><option value="livre">escolha livre</option></select></label>
+      <button type="button" data-acao="menos" title="Diminuir zoom">−</button><span data-zoom>100%</span><button type="button" data-acao="mais" title="Aumentar zoom">+</button>
+      <button type="button" data-acao="ajustar" title="Mostrar tudo">⤢</button>
+      <label class="q-check"><input type="checkbox" data-grade checked> grade</label>
+    </span>
+    <span class="fx-salvo" data-estado>Tudo salvo</span>
+  </div>
+  <div class="fx-corpo">
+    <div class="fx-tela" data-tela tabindex="0" aria-label="Área de desenho do fluxograma"></div>
+    <aside class="fx-props q-nao-imprime" data-props>
+      <p class="sub">Selecione uma etapa, uma ligação ou uma raia para editar. Arraste as etapas; arraste a borda inferior direita para mudar o tamanho. Dois cliques editam o texto.</p>
+    </aside>
+  </div>
+  <div class="fx-legenda" data-legenda></div>
+</div>
+<script type="application/json" id="fx-dados">{{ f.dados_obj|tojson }}</script>
+{% endblock %}
+{% block scripts_q %}<script src="{{ url_for('static', filename='js/fluxograma.js') }}"></script>{% endblock %}

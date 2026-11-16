@@ -1,0 +1,47 @@
+{% from '_ic.html' import ic %}
+{# Pílulas e textos comuns das telas do suporte #}
+{% macro quando(txt) -%}{{ (txt or '')[8:10] }}/{{ (txt or '')[5:7] }}/{{ (txt or '')[:4] }} {{ (txt or '')[11:16] }}{%- endmacro %}
+
+{% macro pilula_tipo(i) -%}
+{% if i.tipo == 'BUG' %}<span class="sp-pilula bug">{{ ic('bug', 14) }} Correção de bug</span>{% else %}<span class="sp-pilula sugestao">{{ ic('lightbulb', 14) }} Sugestão</span>{% endif %}
+{%- endmacro %}
+
+{% macro pilula_grav(i) -%}
+{% if i.tipo == 'BUG' and i.gravidade %}<span class="sp-pilula grav-{{ i.gravidade|lower }}">{{ i.gravidade_rotulo }}</span>{% endif %}
+{%- endmacro %}
+
+{% macro pilula_status(i) -%}
+<span class="sp-pilula st-{{ i.status|lower }}">{% if i.status == 'ACEITA' or i.status == 'APLICADA' %}{{ ic('circle-check', 14) }}{% elif i.status == 'RECUSADA' %}{{ ic('circle-x', 14) }}{% else %}{{ ic('send', 14) }}{% endif %} {{ i.status_rotulo }}</span>
+{%- endmacro %}
+
+{% macro pilula_tema(i) -%}
+<span class="sp-pilula tema">{{ ic('layout-grid', 14) }} {{ i.tema }}</span>
+{%- endmacro %}
+
+{# Dados do envio (aparelho, navegador, IP, o que a pessoa fez antes...) para o desenvolvedor conferir com os erros do sistema #}
+{% macro dados_envio(i) -%}
+{% set m = i.meta_obj %}{% if m %}{% set c = m.cliente or {} %}
+<details class="sp-meta"><summary>{{ ic('shield-check', 14) }} Dados do envio</summary>
+  <dl>
+    <dt>Usuário</dt><dd>{{ m.usuario }} · enviado em {{ quando(m.enviado_em) }} (hora do servidor)</dd>
+    <dt>Aparelho</dt><dd>{{ m.dispositivo }} · {{ m.sistema }} · {{ m.navegador }}{% if c.tela %} · tela {{ c.tela }}{% endif %}{% if c.janela %} (janela {{ c.janela }}){% endif %}</dd>
+    <dt>Endereço (IP)</dt><dd>{{ m.ip }}{% if m.ip_encaminhado %} · encaminhado {{ m.ip_encaminhado }}{% endif %}</dd>
+    <dt>Hora no aparelho</dt><dd>{{ c.hora_local or '—' }}{% if c.fuso %} · fuso {{ c.fuso }}{% endif %}</dd>
+    <dt>Veio da página</dt><dd>{{ c.pagina or m.referencia or '—' }}</dd>
+    <dt>Versão do sistema</dt><dd>{{ m.versao_sistema }}</dd>
+    {% if m.ultima_entrada %}<dt>Última entrada</dt><dd>{{ m.ultima_entrada.data_hora }} · {{ m.ultima_entrada.computador or '—' }}</dd>{% endif %}
+    <dt>Antes de enviar</dt><dd>{% for a in m.ultimas_acoes %}<span class="sp-acao">{{ a.data_hora[11:19] }} {{ a.acao }}</span>{% else %}sem ações registradas{% endfor %}</dd>
+    {% if m.erros_recentes %}<dt>Erros do sistema</dt><dd>{% for e in m.erros_recentes %}<span class="sp-acao erro">{{ e.data_hora[5:16] }} {{ e.rota }}: {{ e.detalhe }}</span>{% endfor %}</dd>{% endif %}
+    <dt>Navegador (texto completo)</dt><dd class="sp-ua">{{ m.user_agent }}</dd>
+  </dl>
+</details>{% endif %}
+{%- endmacro %}
+
+{# Corpo de um formulário já enviado (texto, tela, passos) #}
+{% macro corpo(i) -%}
+<div class="sp-corpo-item">
+  {% if i.tela %}<p class="sp-tela">{{ ic('layout-grid', 14) }} Tela: <b>{{ i.tela }}</b></p>{% endif %}
+  <p class="sp-descricao">{{ i.descricao }}</p>
+  {% if i.passos %}<p class="sp-passos"><b>Como acontece:</b> {{ i.passos }}</p>{% endif %}
+</div>
+{%- endmacro %}

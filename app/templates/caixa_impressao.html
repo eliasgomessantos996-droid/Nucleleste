@@ -1,0 +1,12 @@
+{% extends '_lista_impressao.html' %}
+{% block titulo %}Caixa{% endblock %}
+{% block orientacao %}landscape{% endblock %}
+{% block subtitulo %}Período: {{ de|data_br }} a {{ ate|data_br }}{% if usuario %} · Usuário: {{ usuario }}{% endif %}{% if status %} · Status: {{ status }}{% endif %}{% endblock %}
+{% block conteudo %}
+<table class="lista">
+  <thead><tr><th>Data</th><th>Cliente</th><th>CPF</th><th>Procedimento</th><th>Convênio</th><th>Usuário</th><th>Forma</th><th>NF</th><th class="num">Valor</th><th>Status</th></tr></thead>
+  <tbody>{% for r in rows %}<tr><td>{{ r.data|data_br }}</td><td>{{ r.cliente }}</td><td>{{ r.cpf or '' }}</td><td>{{ r.procedimento }}</td><td>{{ r.convenio }}</td>
+    <td>{{ r.usuario or '' }}</td><td>{{ r.forma_pagamento or '' }}</td><td>{{ r.nota_fiscal or '' }}</td><td class="num">{{ r.valor|moeda }}</td><td>{{ r.status }}</td></tr>{% endfor %}</tbody>
+  <tfoot>{% for st, t in totais.items() %}<tr><td colspan="8">Total {{ st|lower }} ({{ t[0] }})</td><td class="num">{{ t[1]|moeda }}</td><td></td></tr>{% endfor %}</tfoot>
+</table>
+{% endblock %}

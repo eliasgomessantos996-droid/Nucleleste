@@ -1,0 +1,27 @@
+{% extends 'qualidade/_base.html' %}
+{% from 'qualidade/_modelos.html' import galeria_planos, pdf_botoes with context %}
+{% block titulo %}Plano de ação 5W2H{% endblock %}
+{% block titulo_q %}Plano de ação 5W2H{% endblock %}
+{% block sub_q %}Todas as ações: o quê, por quê, onde, quando, quem, como e quanto custa. Ações vencidas aparecem em vermelho.{% endblock %}
+{% block acoes_q %}
+{{ pdf_botoes(url_for('qual.plano_arquivo', tipo='pdf')) }}
+<a class="btn sec" href="{{ url_for('qual.plano_arquivo', tipo='xlsx') }}">⬇ Excel</a>
+{% endblock %}
+{% block corpo_q %}
+{{ galeria_planos(modelos, not acoes) }}
+<form class="cartao filtros q-nao-imprime" method="get">
+  <div><label for="status">Situação</label><select id="status" name="status" onchange="this.form.submit()">
+    <option value="">Todas</option>{% for s in status_acao %}<option {{ 'selected' if s == status }}>{{ s }}</option>{% endfor %}</select></div>
+  <div style="align-self:end"><a class="btn sec" href="{{ url_for('qual.plano') }}?atrasadas=1">Só as atrasadas</a></div>
+</form>
+{% set mostrar_problema = True %}
+{% include 'qualidade/_acoes.html' %}
+<form class="cartao q-form q-nao-imprime" method="post" action="{{ url_for('qual.acao_nova') }}">
+  {{ csrf_input }}<input type="hidden" name="voltar" value="{{ url_for('qual.plano') }}">
+  <h2>Nova ação</h2>
+  <label>Problema (opcional)<select name="problema_id"><option value="">Sem problema ligado</option>{% for p in problemas %}<option value="{{ p.id }}">{{ p.titulo }}</option>{% endfor %}</select></label>
+  {% set a = none %}
+  {% include 'qualidade/_acao_campos.html' %}
+  <button class="btn" type="submit">Incluir ação</button>
+</form>
+{% endblock %}

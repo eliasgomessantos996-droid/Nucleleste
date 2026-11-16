@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% block titulo %}Atendimentos do dia{% endblock %}
+{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/exames.css') }}">{% endblock %}
+{% block conteudo %}
+<div class="cabecalho">
+  <div><h1>Exames realizados</h1><p class="sub">Atendimentos lançados na recepção em <strong>{{ dia|data_br }}</strong>, do mais recente ao mais antigo. Clique em <em>Lançar exame</em> para abrir o lançamento já com paciente, convênio, médico e exame preenchidos; o exame continua sendo um registro separado do atendimento.</p></div>
+</div>
+
+<nav class="ex-tipos" style="margin-bottom:10px">
+  <a class="ex-tipo" href="{{ url_for('lanc.lista') }}">Exames realizados</a>
+  <a class="ex-tipo ativo" href="{{ url_for('lanc.do_dia', data=dia) }}">Atendimentos do dia <b>{{ pendentes }}</b></a>
+</nav>
+
+<form class="cartao filtros" method="get">
+  <div><label for="data">Dia</label><input type="date" id="data" name="data" value="{{ dia }}"></div>
+  <div><button class="btn" type="submit">Mostrar</button></div>
+  <div class="ajuda" style="align-self:center">{{ itens|length }} atendimento(s); {{ pendentes }} ainda sem exame lançado.</div>
+</form>
+
+<div class="tabela-wrap"><table class="tabela">
+  <thead><tr><th>Hora</th><th>Paciente</th><th>Exame</th><th>Convênio</th><th>Médico solicitante</th><th>Lançado por</th><th></th></tr></thead>
+  <tbody>
+  {% for a in itens %}
+    <tr>
+      <td>{{ a.criado_em[11:16] if a.criado_em else '' }}</td>
+      <td class="quebra"><strong>{{ a.cliente_nome }}</strong></td>
+      <td>{{ a.exame or '' }}</td><td>{{ a.convenio or '' }}</td><td class="quebra">{{ a.medico or '' }}</td><td>{{ a.usuario or '' }}</td>
+      <td class="num">
+        {% if a.exame_id %}<a class="btn sec peq" href="{{ url_for('lanc.editar', rid=a.exame_id) }}">✔ Exame lançado (abrir)</a>
+        {% else %}<a class="btn peq" href="{{ url_for('lanc.editar', atendimento=a.id) }}">Lançar exame</a>{% endif %}
+      </td>
+    </tr>
+  {% else %}<tr><td colspan="7" class="vazio">Nenhum atendimento lançado neste dia.</td></tr>{% endfor %}
+  </tbody>
+</table></div>
+{% endblock %}

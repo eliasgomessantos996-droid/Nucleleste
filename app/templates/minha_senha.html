@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+{% block titulo %}Minha conta{% endblock %}
+{% block head %}<style>
+.conta-grade { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 18px; align-items: start; }
+@media (max-width: 1000px) { .conta-grade { grid-template-columns: 1fr; } }
+.cores { display: grid; grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); gap: 10px; }
+.cor-op { position: relative; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 10px 8px; margin: 0; border: 2px solid var(--borda); border-radius: 16px; background: var(--branco, #fff); cursor: pointer; font-weight: 600; color: var(--texto); transition: transform .2s, border-color .2s, box-shadow .2s; }
+.cor-op:hover { transform: translateY(-3px); box-shadow: 0 10px 20px -12px rgba(var(--verde-rgb), .7); }
+.cor-op input { position: absolute; opacity: 0; pointer-events: none; }
+.cor-op.escolhida { border-color: var(--verde-2); box-shadow: 0 0 0 3px rgba(var(--brilho-rgb), .3); }
+.cor-amostra { width: 100%; height: 44px; border-radius: 12px; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .08); }
+.brilhos { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 6px; }
+.brilho-op { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 14px 10px; margin: 0; border: 2px solid var(--borda); border-radius: 16px; cursor: pointer; font-weight: 700; transition: transform .2s, border-color .2s, box-shadow .2s; }
+.brilho-op:hover { transform: translateY(-3px); }
+.brilho-op input { position: absolute; opacity: 0; pointer-events: none; }
+.brilho-op .ico { font-size: 26px; }
+.brilho-op.claro { background: #f6f8f7; color: #1d2522; }
+.brilho-op.escuro { background: #15191c; color: #e8edea; }
+.brilho-op.escolhida { border-color: var(--verde-2); box-shadow: 0 0 0 3px rgba(var(--brilho-rgb), .3); }
+.conta-aviso { font-size: 12.5px; color: var(--suave); margin-top: 8px; }
+</style>{% endblock %}
+{% block conteudo %}
+<div class="cabecalho barra-titulo">
+  <div class="bt-titulo">{% include '_atomo.html' %}<div><h1>Minha conta</h1><p class="sub">Usuário: {{ usuario.usuario }} · senha, tema e brilho</p></div></div>
+  {% if not travado %}<div class="acoes"><a class="btn sec" href="{{ url_for('nov.lista') }}" title="O que mudou em cada versão, em PDF">📜 Log de atualizações</a></div>{% endif %}
+</div>
+{% if travado %}<div class="msg erro"><strong>Defina uma nova senha para liberar o sistema.</strong> Você entrou com uma senha provisória: até trocá-la, nenhuma outra tela fica disponível.</div>{% endif %}
+<div class="conta-grade">
+  {% if not travado %}<section class="cartao" id="aparencia">
+    <h2>🎨 Aparência</h2>
+    <p class="sub" style="margin-bottom:10px">O <strong>tema</strong> é a cor do sistema. O <strong>brilho</strong> diz se o fundo é claro (pastel) ou escuro (fechado). Qualquer cor combina com qualquer brilho, e a escolha vale em qualquer computador onde você entrar.</p>
+    <label>Tema (cor)</label>
+    <div class="cores" id="op-temas">
+      {% for chave, (nome, cor1, cor2, claro) in temas.items() %}
+      <label class="cor-op{% if chave == tema_atual %} escolhida{% endif %}"><input type="radio" name="tema" value="{{ chave }}"{% if chave == tema_atual %} checked{% endif %}>
+        <span class="cor-amostra" style="background: linear-gradient(120deg, {{ cor1 }}, {{ cor2 }} 65%, {{ claro }})"></span>{{ nome }}</label>
+      {% endfor %}
+    </div>
+    <label style="margin-top:14px">Brilho</label>
+    <div class="brilhos" id="op-brilhos">
+      {% for chave, nome in brilhos %}
+      <label class="brilho-op {{ chave }}{% if chave == brilho_atual %} escolhida{% endif %}"><input type="radio" name="brilho" value="{{ chave }}"{% if chave == brilho_atual %} checked{% endif %}>
+        <span class="ico" aria-hidden="true">{{ '☀️' if chave == 'claro' else '🌙' }}</span>{{ nome }}</label>
+      {% endfor %}
+    </div>
+    <p class="conta-aviso" id="aparencia-estado" role="status"></p>
+  </section>
+  {% if tutorial_passos %}<section class="cartao" id="tutorial">
+    <h2>🎓 Tutorial da NucleAI</h2>
+    <p class="sub" style="margin-bottom:10px">Um passeio animado pelo sistema, montado só com as telas que o seu usuário pode usar. Pode ver quantas vezes quiser.</p>
+    <button class="btn" type="button" data-tutorial-iniciar>Rever o tutorial</button>
+  </section>{% endif %}{% endif %}
+  <form class="cartao" method="post">
+    <h2>🔑 Alterar senha</h2>
+    {{ csrf_input }}
+    <div class="grade">
+      <div class="c12"><label class="obrig">Senha atual</label><input type="password" name="atual" required autocomplete="current-password"></div>
+      <div class="c12"><label class="obrig">Nova senha</label><input type="password" name="nova" required autocomplete="new-password"></div>
+      <div class="c12"><label class="obrig">Confirmar nova senha</label><input type="password" name="confirmar" required autocomplete="new-password"></div>
+    </div>
+    <div class="acoes"><button class="btn" type="submit">Salvar</button></div>
+  </form>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+(() => {
+  const csrf = (document.querySelector('meta[name=csrf]') || {}).content || '';
+  const estado = document.getElementById('aparencia-estado');
+  const html = document.documentElement;
+  const gravar = async (campo, valor) => {
+    html.dataset[campo] = valor;
+    document.body.dataset[campo] = valor;
+    try { localStorage.setItem('nucleleste.' + campo, valor); } catch (e) { /* ignorado */ }
+    try {
+      const r = await fetch('/meu-tema', {method: 'POST', body: new URLSearchParams({[campo]: valor}), credentials: 'same-origin', headers: {'X-CSRF-Token': csrf}});
+      estado.textContent = r.ok ? 'Aparência salva no seu perfil.' : 'Não foi possível salvar agora (a mudança vale só nesta tela).';
+    } catch (e) { estado.textContent = 'Sem conexão: a mudança vale só nesta tela.'; }
+  };
+  const ligar = (grupo, campo, classe) => document.querySelectorAll(`#${grupo} input`).forEach((i) => i.addEventListener('change', () => {
+    document.querySelectorAll(`#${grupo} .${classe}`).forEach((l) => l.classList.toggle('escolhida', l.contains(i)));
+    gravar(campo, i.value);
+  }));
+  ligar('op-temas', 'tema', 'cor-op');
+  ligar('op-brilhos', 'brilho', 'brilho-op');
+})();
+</script>
+{% endblock %}

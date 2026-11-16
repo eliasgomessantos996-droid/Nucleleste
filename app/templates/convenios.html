@@ -1,0 +1,118 @@
+{% extends 'base.html' %}
+{% block titulo %}Convênios{% endblock %}
+{% block conteudo %}
+<div class="cabecalho">
+  <div><h1>Convênios</h1><p class="sub">Convênios marcados como “vai para o caixa” não geram protocolo de guia (ex.: PARTICULAR, SMS, MAIS MED). Cada convênio pode ter o valor de todos os exames cadastrados.</p></div>
+  <div class="acoes"><button class="btn" type="button" data-dialogo="dlg-conv" data-id="" data-nome="" data-ativo="1" data-valores="{}">+ Novo convênio</button></div>
+</div>
+<div class="tabela-wrap"><table class="tabela">
+  <thead><tr><th>Cód.</th><th>Convênio</th><th>Destino</th><th>Valores por exame</th><th class="num">Clientes</th><th></th></tr></thead>
+  <tbody>
+  {% for c in rows %}
+    {% set v = valores.get(c.id, {}) %}
+    <tr {% if not c.ativo %}style="opacity:.55"{% endif %}>
+      <td>{{ c.id }}</td><td>{{ c.nome }}{% if not c.ativo %} <span class="etiqueta">inativo</span>{% endif %}</td>
+      <td>{% if c.gera_caixa %}<span class="etiqueta pago" title="O pagamento é feito na clínica: o recebimento vai para o movimento de caixa">💵 Pago na clínica</span>{% else %}Protocolo de guias{% endif %}</td>
+      <td>{% if v %}<span title="{% for e in exames %}{% if v.get(e.id|string) %}{{ e.nome }}: R$ {{ v[e.id|string] }}&#10;{% endif %}{% endfor %}">{{ v|length }} de {{ exames|length }} exames com valor</span>{% else %}<span class="ajuda">nenhum valor preenchido</span>{% endif %}</td>
+      <td class="num">{{ c.n_clientes }}</td>
+      <td class="num" style="white-space:nowrap">
+        <button class="btn sec peq" type="button" data-dialogo="dlg-conv" data-id="{{ c.id }}" data-nome="{{ c.nome }}"
+          data-gera="{{ c.gera_caixa }}" data-ativo="{{ c.ativo }}" data-valores='{{ v|tojson }}'>Editar</button>
+        <form method="post" action="{{ url_for('cad.convenio_excluir', cid=c.id) }}" style="display:inline" data-confirmar="Excluir o convênio {{ c.nome }}?">
+          {{ csrf_input }}<button class="btn perigo peq" type="submit">Excluir</button></form>
+      </td>
+    </tr>
+  {% else %}<tr><td colspan="6" class="vazio">Nenhum convênio cadastrado.</td></tr>{% endfor %}
+  </tbody>
+</table></div>
+
+<dialog id="dlg-conv">
+  <form method="post">
+    {{ csrf_input }}
+    <input type="hidden" name="id" data-campo="id">
+    <h2 style="margin-top:0">Convênio</h2>
+    <div class="grade">
+      <div class="c12"><label class="obrig">Nome</label><input type="text" name="nome" data-campo="nome" required data-maiusculas></div>
+      <div class="c12">
+        <label class="inline"><input type="checkbox" name="gera_caixa" value="1" id="chk-gera"> Pago na clínica (o recebimento vai para o caixa e não gera guia)</label>
+        <label class="inline"><input type="checkbox" name="ativo" value="1" id="chk-ativo" checked> Ativo</label>
+      </div>
+
+      <div class="c12">
+        <h3 style="margin:6px 0 2px">Valor de cada exame</h3>
+        <div class="ajuda">Escolha o exame, digite o valor e troque de exame (ou tecle Enter para ir ao próximo). Deixe em branco os exames que o convênio não paga.</div>
+      </div>
+      <div class="c8"><label for="sel-exame-valor">Exame</label>
+        <select id="sel-exame-valor">{% for e in exames %}<option value="{{ e.id }}">{{ e.nome }}</option>{% endfor %}</select></div>
+      <div class="c4"><label for="valor-exame">Valor (R$)</label>
+        <input type="text" id="valor-exame" inputmode="decimal" placeholder="0,00" autocomplete="off"></div>
+      <div class="c12"><div id="resumo-valores" class="ajuda"></div></div>
+    </div>
+    <div id="valores-ocultos">{% for e in exames %}<input type="hidden" name="valor_{{ e.id }}" data-exame="{{ e.id }}">{% endfor %}</div>
+    <div class="acoes"><button class="btn" type="submit">Salvar</button><button class="btn sec" type="button" data-fechar>Cancelar</button></div>
+  </form>
+</dialog>
+{% endblock %}
+{% block scripts %}
+<script>
+(function () {
+  const dlg = document.getElementById('dlg-conv');
+  const sel = document.getElementById('sel-exame-valor');
+  const campo = document.getElementById('valor-exame');
+  const resumo = document.getElementById('resumo-valores');
+  const oculto = (id) => dlg.querySelector('#valores-ocultos input[data-exame="' + id + '"]');
+
+  function formatar(txt) {   // "1250" / "1.250,5" -> "1.250,00"
+    let s = (txt || '').replace(/R\$/g, '').replace(/\s/g, '');
+    if (!s) return '';
+    // "1.250" (ponto + 3 dígitos) é milhar no padrão brasileiro; "12.5" é decimal
+    s = s.indexOf(',') >= 0 || /^\d{1,3}(\.\d{3})+$/.test(s) ? s.replace(/\./g, '').replace(',', '.') : s;
+    const n = Number(s);
+    return isFinite(n) && n >= 0 ? n.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : txt;
+  }
+  function atualizar() {
+    Array.from(sel.options).forEach((o) => {
+      const v = oculto(o.value).value;
+      o.textContent = o.dataset.nome + (v ? '  —  R$ ' + v : '');
+    });
+    const feitos = Array.from(sel.options).filter((o) => oculto(o.value).value);
+    resumo.textContent = '';
+    if (!feitos.length) { resumo.textContent = 'Nenhum valor preenchido ainda.'; return; }
+    feitos.forEach((o) => {
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'btn sec peq';
+      b.style.margin = '2px 4px 2px 0'; b.textContent = o.dataset.nome + ': R$ ' + oculto(o.value).value;
+      b.addEventListener('click', () => { sel.value = o.value; mostrar(); campo.focus(); campo.select(); });
+      resumo.appendChild(b);
+    });
+  }
+  function mostrar() { campo.value = sel.value ? oculto(sel.value).value : ''; }
+
+  Array.from(sel.options).forEach((o) => { o.dataset.nome = o.textContent; });
+  sel.addEventListener('change', () => { mostrar(); campo.focus(); campo.select(); });
+  campo.addEventListener('input', () => { if (sel.value) { oculto(sel.value).value = campo.value; atualizar(); } });
+  campo.addEventListener('blur', () => {
+    if (!sel.value) return;
+    campo.value = formatar(campo.value); oculto(sel.value).value = campo.value; atualizar();
+  });
+  campo.addEventListener('keydown', (ev) => {   // Enter: guarda o valor e passa para o próximo exame, sem enviar o formulário
+    if (ev.key !== 'Enter') return;
+    ev.preventDefault();
+    campo.value = formatar(campo.value); oculto(sel.value).value = campo.value;
+    if (sel.selectedIndex < sel.options.length - 1) sel.selectedIndex += 1;
+    atualizar(); mostrar(); campo.focus(); campo.select();
+  });
+
+  document.querySelectorAll('[data-dialogo=dlg-conv]').forEach((b) => b.addEventListener('click', () => {
+    document.getElementById('chk-gera').checked = b.dataset.gera === '1';
+    document.getElementById('chk-ativo').checked = b.dataset.ativo !== '0';
+    let valores = {};
+    try { valores = JSON.parse(b.dataset.valores || '{}'); } catch (e) { valores = {}; }
+    dlg.querySelectorAll('#valores-ocultos input').forEach((i) => { i.value = valores[i.dataset.exame] || ''; });
+    sel.selectedIndex = 0; atualizar(); mostrar();
+  }));
+  dlg.querySelector('form').addEventListener('submit', () => {   // garante que o valor que está sendo digitado também seja enviado
+    if (sel.value) oculto(sel.value).value = formatar(campo.value);
+  });
+})();
+</script>
+{% endblock %}

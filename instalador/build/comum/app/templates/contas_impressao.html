@@ -1,0 +1,11 @@
+{% extends '_lista_impressao.html' %}
+{% block titulo %}Contas a pagar{% endblock %}
+{% block subtitulo %}{% if lote %}Lote nº {{ lote.id }} · {% endif %}Banco: {{ banco }} · {{ rows|length }} conta(s){% endblock %}
+{% block conteudo %}
+<table class="lista">
+  <thead><tr><th>#</th><th>Descrição</th><th>Vencimento</th><th class="num">Valor (R$)</th></tr></thead>
+  <tbody>{% for c in rows %}<tr><td>{{ loop.index }}</td><td>{{ c.descricao }}{% if c.parcela_total %} ({{ c.parcela_n }}/{{ c.parcela_total }}){% endif %}{% if c.fornecedor %} · {{ c.fornecedor }}{% endif %}</td><td>{{ c.vencimento|data_br }}</td><td class="num">{{ c.valor|moeda }}</td></tr>{% endfor %}</tbody>
+  <tfoot><tr><td colspan="3"><strong>TOTAL</strong></td><td class="num"><strong>{{ total|moeda }}</strong></td></tr></tfoot>
+</table>
+<div class="assinaturas"><div>Responsável</div><div>Autorizado por</div></div>
+{% endblock %}

@@ -1,0 +1,158 @@
+/* ============================================================================================================
+   Tema de cor do perfil: vale para TODO o sistema (menu, barra do topo, páginas, botões, tabelas, cartões, átomo,
+   degradês e luz que acompanha o mouse). Carregado por último. Leve: só gradientes, variáveis e transform/opacity.
+   Variáveis: --verde (cor principal) --verde-2 (hover/degradê) --verde-claro (realce suave) --verde-escuro
+              --acento (destaque: átomo, item ativo) --brilho / --brilho-2 (degradês claros) --verde-rgb / --brilho-rgb
+              --pagina-1 / --pagina-2 (fundo da página)
+   ============================================================================================================ */
+:root, html[data-tema="verde"] {
+  --verde: #255f39; --verde-2: #2f7a49; --verde-claro: #e8f2ec; --verde-escuro: #173d25; --acento: #ffd54a;
+  --brilho: #5bc0a0; --brilho-2: #2f9e6a; --verde-rgb: 37, 95, 57; --brilho-rgb: 47, 158, 106;
+  --pagina-1: #f4f8f5; --pagina-2: #e1eee6;
+}
+html[data-tema="azul"] { --verde: #1f4e79; --verde-2: #2a6aa3; --verde-claro: #e6eff8; --verde-escuro: #12304c; --acento: #8fd8ff;
+  --brilho: #6ec1f0; --brilho-2: #3b8fd0; --verde-rgb: 31, 78, 121; --brilho-rgb: 59, 143, 208; --pagina-1: #f3f8fd; --pagina-2: #dce9f6; }
+html[data-tema="vinho"] { --verde: #6b1e34; --verde-2: #8a2b45; --verde-claro: #f5e8ec; --verde-escuro: #3f0f1e; --acento: #ffb3c7;
+  --brilho: #e07a96; --brilho-2: #b84666; --verde-rgb: 107, 30, 52; --brilho-rgb: 184, 70, 102; --pagina-1: #fbf3f5; --pagina-2: #f0dde3; }
+html[data-tema="roxo"] { --verde: #4b2a7b; --verde-2: #63399f; --verde-claro: #efe9f7; --verde-escuro: #2c1649; --acento: #dcc0ff;
+  --brilho: #a98be0; --brilho-2: #7c55c4; --verde-rgb: 75, 42, 123; --brilho-rgb: 124, 85, 196; --pagina-1: #f7f3fc; --pagina-2: #e6dcf4; }
+html[data-tema="terracota"] { --verde: #8a4b2a; --verde-2: #a85d36; --verde-claro: #f6ece6; --verde-escuro: #5a2f18; --acento: #ffcf9a;
+  --brilho: #e9a06b; --brilho-2: #cc7a41; --verde-rgb: 138, 75, 42; --brilho-rgb: 204, 122, 65; --pagina-1: #fcf5f0; --pagina-2: #f0dfd2; }
+html[data-tema="grafite"] { --verde: #374151; --verde-2: #4b5563; --verde-claro: #eef0f3; --verde-escuro: #1f2733; --acento: #7fe3d0;
+  --brilho: #8fa3b5; --brilho-2: #5d7389; --verde-rgb: 55, 65, 81; --brilho-rgb: 93, 115, 137; --pagina-1: #f3f4f6; --pagina-2: #dde1e7; }
+html[data-tema="oceano"] { --verde: #0f5c63; --verde-2: #187f88; --verde-claro: #e1f3f4; --verde-escuro: #093a3f; --acento: #7ff0e0;
+  --brilho: #4fd1c5; --brilho-2: #2aa59b; --verde-rgb: 15, 92, 99; --brilho-rgb: 42, 165, 155; --pagina-1: #f1f9f9; --pagina-2: #d8ecec; }
+html[data-tema="indigo"] { --verde: #2b3990; --verde-2: #3d4fb5; --verde-claro: #e8ebf8; --verde-escuro: #19215a; --acento: #aebcff;
+  --brilho: #8fa2ff; --brilho-2: #5b6dd6; --verde-rgb: 43, 57, 144; --brilho-rgb: 91, 109, 214; --pagina-1: #f3f4fb; --pagina-2: #dde0f3; }
+
+/* ---------------------------------------------------------------- página central (nada de fundo todo branco) */
+html { scrollbar-color: color-mix(in srgb, var(--verde-2) 60%, #fff) transparent; }
+body { background: linear-gradient(160deg, var(--pagina-1), var(--pagina-2)) fixed; accent-color: var(--verde-2); }
+body::before { content: ''; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  background: radial-gradient(900px 520px at 94% -10%, rgba(var(--brilho-rgb), .22), transparent 70%),
+              radial-gradient(760px 440px at -8% 108%, rgba(var(--verde-rgb), .14), transparent 70%); }
+.layout, .conteudo { background: transparent !important; }
+::selection { background: rgba(var(--brilho-rgb), .32); }
+.conteudo h1, .cabecalho h1 { color: var(--verde); }
+
+/* ---------------------------------------------------------------- átomo (muda de cor com o tema) */
+.atomo { width: 36px; height: 36px; flex: 0 0 auto; color: var(--verde); animation: tema-gira 14s linear infinite; will-change: transform; }
+.menu .atomo, .barra-pagina .atomo { color: #fff; }
+.menu .marca strong::before { content: none; }
+.menu .marca strong { gap: 10px; }
+.menu .marca .atomo { width: 38px; height: 38px; filter: drop-shadow(0 0 8px rgba(var(--brilho-rgb), .8)); }
+@keyframes tema-gira { to { transform: rotate(360deg); } }
+@keyframes tema-desliza { from { background-position: 0 0, 0% 50%; } to { background-position: 0 0, 100% 50%; } }
+
+/* ---------------------------------------------------------------- barra do topo (mostra em qual aba a pessoa está) */
+.barra-pagina { position: sticky; top: 10px; z-index: 30; display: flex; align-items: center; gap: 14px; padding: 10px 20px; margin: 0 0 18px; border-radius: 22px; color: #fff; overflow: hidden;
+  background-image: radial-gradient(260px circle at var(--mx, -400px) var(--my, -400px), rgba(255, 255, 255, .26), transparent 65%),
+                    linear-gradient(100deg, var(--verde-escuro), var(--verde) 38%, var(--verde-2) 72%, var(--verde));
+  background-size: 100% 100%, 220% 100%; animation: tema-desliza 18s ease-in-out infinite alternate;
+  box-shadow: 0 12px 28px -14px rgba(var(--verde-rgb), .85), inset 0 1px 0 rgba(255, 255, 255, .22); }
+.barra-pagina .atomo { width: 40px; height: 40px; filter: drop-shadow(0 0 7px rgba(255, 255, 255, .45)); }
+.bp-txt { display: flex; flex-direction: column; line-height: 1.15; min-width: 0; }
+.bp-txt small { font-size: 11px; text-transform: uppercase; letter-spacing: 1.2px; opacity: .8; }
+.bp-txt strong { font-size: 19px; font-weight: 800; letter-spacing: .2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bp-ico { font-size: 22px; filter: drop-shadow(0 2px 4px rgba(0, 0, 0, .3)); }
+.bp-data { margin-left: auto; font-size: 13px; opacity: .9; white-space: nowrap; }
+.barra-titulo { align-items: center; }
+.bt-titulo { display: flex; align-items: center; gap: 12px; }
+.bt-titulo .atomo { width: 46px; height: 46px; }
+.bt-titulo h1 { margin: 0; }
+.bt-titulo .sub { margin: 2px 0 0; }
+
+/* ---------------------------------------------------------------- barra lateral: luz que acompanha o mouse e degradê do tema */
+.menu { background-image: radial-gradient(240px circle at var(--mx, -400px) var(--my, -400px), rgba(255, 255, 255, .17), transparent 70%),
+                          linear-gradient(175deg, var(--verde) 0%, var(--verde-2) 100%); }
+.menu .tema-itens a.ativo .ico-item { background: var(--acento); }
+.menu .tema-itens a.ativo { box-shadow: inset 4px 0 0 var(--acento), 0 2px 8px rgba(0, 0, 0, .15); }
+
+/* ---------------------------------------------------------------- botões */
+.btn { background-color: var(--verde); border-color: var(--verde);
+  background-image: radial-gradient(120px circle at var(--mx, -300px) var(--my, -300px), rgba(255, 255, 255, .34), transparent 65%), linear-gradient(135deg, var(--verde-2), var(--verde));
+  box-shadow: 0 4px 12px -6px rgba(var(--verde-rgb), .75); }
+.btn:hover { background-color: var(--verde-2);
+  background-image: radial-gradient(120px circle at var(--mx, -300px) var(--my, -300px), rgba(255, 255, 255, .4), transparent 65%), linear-gradient(135deg, var(--brilho-2), var(--verde-2));
+  box-shadow: 0 12px 22px -10px rgba(var(--verde-rgb), .8); }
+.btn.sec { background-color: #fff; color: var(--verde); border-color: color-mix(in srgb, var(--verde) 38%, #fff);
+  background-image: radial-gradient(120px circle at var(--mx, -300px) var(--my, -300px), rgba(var(--brilho-rgb), .22), transparent 65%), linear-gradient(180deg, #fff, var(--verde-claro));
+  box-shadow: none; }
+.btn.sec:hover { background-image: radial-gradient(120px circle at var(--mx, -300px) var(--my, -300px), rgba(var(--brilho-rgb), .3), transparent 65%), linear-gradient(180deg, var(--verde-claro), var(--verde-claro)); }
+.btn.perigo { background-color: #fff; background-image: radial-gradient(120px circle at var(--mx, -300px) var(--my, -300px), rgba(214, 69, 61, .16), transparent 65%), linear-gradient(180deg, #fff, #fdecea); box-shadow: none; }
+.btn.perigo:hover { background-image: radial-gradient(120px circle at var(--mx, -300px) var(--my, -300px), rgba(214, 69, 61, .22), transparent 65%), linear-gradient(180deg, #fdecea, #fdecea); }
+.btn:disabled { background-image: none; }
+.btn .onda { background: rgba(255, 255, 255, .45); }
+
+/* ---------------------------------------------------------------- cartões, tabelas, indicadores, diálogos */
+.cartao, .indicador, .tabela-wrap, .atalhos a { background-color: #fff; border-top: 3px solid color-mix(in srgb, var(--verde-2) 55%, #fff);
+  background-image: radial-gradient(260px circle at var(--mx, -400px) var(--my, -400px), rgba(var(--brilho-rgb), .10), transparent 70%);
+  box-shadow: 0 1px 2px rgba(var(--verde-rgb), .08), 0 10px 26px -14px rgba(var(--verde-rgb), .35); }
+.tabela th { background: linear-gradient(180deg, var(--verde-claro), color-mix(in srgb, var(--verde-claro) 55%, #fff)); color: var(--verde); border-bottom: 2px solid color-mix(in srgb, var(--verde-2) 35%, #fff); }
+.tabela tbody tr:hover td { background: rgba(var(--verde-rgb), .06); }
+.tabela tbody tr:hover td:first-child { box-shadow: inset 3px 0 0 var(--verde-2); }
+.indicador { border-left: 4px solid var(--verde-2); }
+.indicador .n { color: var(--verde); }
+.ag-grade th { background: var(--verde-claro); color: var(--verde); }
+dialog { border: 0; border-top: 5px solid var(--verde-2); border-radius: 22px; box-shadow: 0 24px 60px -18px rgba(var(--verde-rgb), .6); }
+dialog::backdrop { background: rgba(var(--verde-rgb), .35); backdrop-filter: blur(2px); }
+input:focus, select:focus, textarea:focus { border-color: var(--verde-2); box-shadow: 0 0 0 4px rgba(var(--brilho-rgb), .24); outline: none; }
+.etiqueta { background: var(--verde-claro); color: var(--verde); }
+.msg.ok { background: color-mix(in srgb, var(--verde-claro) 70%, #e6f4ea); }
+
+/* ---------------------------------------------------------------- degradês animados nas faixas de destaque (dashboard e telas com hero) */
+.ph-hero, .hero { background-size: 200% 200%; animation: tema-hero 22s ease-in-out infinite alternate, ph-entra .8s var(--ease, ease) backwards; }
+@keyframes tema-hero { from { background-position: 0% 40%; } to { background-position: 100% 60%; } }
+.ph-hero .btn, .hero .btn { background-image: none; }
+
+/* ---------------------------------------------------------------- login */
+.login-pagina { background: linear-gradient(160deg, var(--verde-escuro), var(--verde) 55%, var(--verde-2)); }
+.login-caixa { box-shadow: 0 30px 70px -26px rgba(0, 0, 0, .6); }
+.login-pagina .ph-atomo { color: rgba(255, 255, 255, .16); }
+/* logo do login: a imagem (sem fundo) muda com o tema e o brilho; o átomo é desenhado por cima e gira */
+.login-caixa .login-logo { position: relative; margin-bottom: 18px; }
+.login-caixa .login-logo img { margin-bottom: 0; }
+.logo-atomo { position: absolute; left: 50%; top: 24.8%; width: 22%; height: auto; transform: translate(-50%, -50%); pointer-events: none; overflow: visible;
+  animation: logo-entra .9s .15s var(--ease) backwards; }
+.logo-atomo .orb { stroke: #d6b25e; opacity: .9; }
+.logo-atomo .nucleo { fill: var(--verde); transform-box: view-box; transform-origin: 100px 100px; animation: logo-pulso 2.8s ease-in-out infinite; }
+.logo-atomo .eletron { fill: var(--brilho-2); }
+html[data-brilho="escuro"] .logo-atomo .orb { stroke: #f0cf78; }
+html[data-brilho="escuro"] .logo-atomo .nucleo { fill: var(--brilho); }
+html[data-brilho="escuro"] .logo-atomo .eletron { fill: var(--acento); }
+@keyframes logo-entra { from { opacity: 0; transform: translate(-50%, -50%) scale(.5) rotate(-90deg); } to { opacity: 1; transform: translate(-50%, -50%); } }
+@keyframes logo-pulso { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.09); } }
+@media (prefers-reduced-motion: reduce) { .logo-atomo .eletron, .logo-atomo .nucleo { display: none; } .logo-atomo { animation: none; } }
+
+@media (prefers-reduced-motion: reduce) { .atomo, .barra-pagina, .ph-hero, .hero { animation: none !important; } }
+@media print { .barra-pagina { display: none !important; } body, body::before { background: #fff !important; } }
+@media (max-width: 900px) { .barra-pagina { top: 4px; padding: 8px 14px; border-radius: 16px; } .bp-data { display: none; } }
+
+/* a barra do topo agora vem antes das faixas de destaque: elas deixam de "subir" por baixo dela */
+.ph-hero { margin: 0 0 22px !important; border-radius: 24px !important; }
+.dash { margin: 0 !important; background: transparent !important; min-height: 0 !important; padding-bottom: 0 !important; }
+.hero { margin: 0 0 22px !important; border-radius: 24px !important; }
+
+/* títulos dentro das faixas escuras continuam claros; nome do tema na barra lateral numa linha só, com o ícone ao lado */
+.hero h1, .ph-hero h1, .hero-saudacao, .hero .sub, .ph-hero .sub { color: #fff; }
+.hero-saudacao { text-shadow: 0 2px 10px rgba(0, 0, 0, .35); }
+.menu button.grupo > span:first-child { display: flex; align-items: center; gap: 4px; min-width: 0; flex: 1; text-align: left; }
+.menu button.grupo .ico { margin-right: 4px; flex: 0 0 auto; }
+
+.rodape-conta { display: inline-block; margin: 2px 0 6px; padding: 5px 12px; border-radius: 12px; background: rgba(255, 255, 255, .14); color: #fff; text-decoration: none; font-weight: 600; transition: background .2s, transform .2s; }
+.rodape-conta:hover { background: rgba(255, 255, 255, .26); transform: translateX(3px); }
+
+
+/* ---------------------------------------------------------------- ícones SVG (Lucide, traço fino) */
+.ic { flex: 0 0 auto; display: inline-block; vertical-align: -3px; }
+.menu .ico-item { font-size: 0; }
+.menu .ico-item .ic { opacity: .95; transition: transform .2s var(--ease, ease); }
+.menu .tema-itens a:hover .ico-item { transform: none; background: rgba(255, 255, 255, .26); }
+.menu .tema-itens a.ativo .ico-item { color: var(--verde-escuro); }
+.menu button.grupo > span:first-child .ic { margin-right: 8px; opacity: .95; }
+.menu button.grupo.com-ativo .ic { color: var(--acento); }
+.bp-ico { display: inline-flex; align-items: center; color: #fff; filter: none; }
+.fav-ico { color: var(--cor); font-size: 0; }
+.fav-simbolos { grid-template-columns: repeat(10, 1fr); }
+.fav-simbolos button { color: var(--verde); display: flex; align-items: center; justify-content: center; }
+.fav-ctl button .ic { vertical-align: middle; }

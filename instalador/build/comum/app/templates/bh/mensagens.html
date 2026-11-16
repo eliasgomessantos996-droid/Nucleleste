@@ -1,0 +1,27 @@
+{% extends 'bh/layout.html' %}
+{% macro balao(m) %}<div class="msg-bh {{ 'msg-mine' if m.mine }}" data-id="{{ m.id }}"><div class="msg-meta"><strong>{{ m.label }}</strong>{% if not m.from_employee %} · {{ m.name }}{% endif %} <time>{{ m.at }}</time></div><div class="msg-body">{{ m.body }}</div></div>{% endmacro %}
+{% block titulo %}Mensagens{% endblock %}
+{% block conteudo %}
+<div class="cabecalho"><div><h1>Mensagens</h1><p class="sub">{% if staff %}Converse com os funcionários. Eles só conseguem falar com a Gerência e a Gestão, nunca entre si.{% else %}Fale com a Gerência e a Gestão. Só elas veem esta conversa.{% endif %}</p></div></div>
+<div class="bh-chat {{ 'equipe' if staff }}">
+  {% if staff %}
+  <aside class="cartao bh-chat-lista">
+    <div class="bh-chat-busca"><input type="search" placeholder="Buscar funcionário" aria-label="Buscar funcionário" data-chat-filter></div>
+    <ul data-conv-list>{% for c in conversations %}<li data-name="{{ c.name }}"><a class="chat-conv {{ 'is-active' if selected and selected.id == c.id }}" href="{{ url_for('bh.mensagens', employee=c.id) }}"><span class="chat-conv-main"><strong>{{ c.name }}</strong><small>{{ c.preview }}{{ ' · sem acesso ativo' if not c.has_account }}</small></span><span class="selo-menu" {{ 'hidden' if not c.unread }}>{{ c.unread }}</span></a></li>{% else %}<li class="chat-vazio">Nenhum funcionário com acesso ativo. Crie o acesso na ficha do funcionário.</li>{% endfor %}</ul>
+  </aside>
+  {% endif %}
+  <section class="cartao bh-chat-painel">
+    {% if selected %}
+    <div class="bh-chat-topo"><div><h2>{{ selected.name if staff else 'Gerência e Gestão' }}</h2><small class="bh-muted">{{ 'Número I ' ~ selected.clock_id if staff else 'Conversa privada com a gerência.' }}</small></div><span class="chat-live" data-chat-status>● ao vivo</span></div>
+    <div id="msg-thread" class="chat-messages" data-employee="{{ selected.id }}" data-after="{{ last_id }}" aria-live="polite">{% for m in messages %}{{ balao(m) }}{% else %}<p class="chat-vazio">Nenhuma mensagem ainda. Escreva a primeira abaixo.</p>{% endfor %}</div>
+    {% if can_send %}
+    <form id="msg-form" method="post" action="{{ url_for('bh.msg_enviar') }}" class="chat-form">{{ csrf_input }}{% if staff %}<input type="hidden" name="employee_id" value="{{ selected.id }}">{% endif %}
+      <label class="bh-sr" for="msg-body">Mensagem</label><textarea id="msg-body" name="body" rows="2" maxlength="2000" required placeholder="Escreva sua mensagem. Enter envia; Shift+Enter quebra a linha."></textarea>
+      <button class="btn" type="submit">Enviar</button><small class="chat-error" data-chat-error hidden></small></form>
+    {% else %}<p class="ajuda" style="padding:12px 16px">Este funcionário não tem acesso ativo ao sistema e não receberia mensagens. Crie ou reative o acesso na ficha dele.</p>{% endif %}
+    {% else %}
+    <div style="padding:40px;text-align:center"><h3>Selecione uma conversa</h3><p class="bh-muted">Escolha um funcionário na lista para ler e responder as mensagens.</p></div>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

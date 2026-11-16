@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% from '_ic.html' import ic %}
+{% block titulo %}Dados protegidos{% endblock %}
+{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/suporte.css') }}">{% endblock %}
+{% block conteudo %}
+<div class="cabecalho"><div><h1>Dados protegidos</h1>
+  <p class="sub">Respostas da pesquisa de satisfação, que o sistema não deixa excluir. Só o desenvolvedor exclui, e a exclusão <b>não aparece</b> no registro de atividades.</p></div></div>
+<form class="cartao filtros" method="get"><div><label for="de">De</label><input type="date" id="de" name="de" value="{{ de }}"></div>
+  <div><label for="ate">Até</label><input type="date" id="ate" name="ate" value="{{ ate }}"></div><div><button class="btn" type="submit">Filtrar</button></div></form>
+<form method="post" action="{{ url_for('sup.dados_excluir') }}" onsubmit="return confirm('Excluir definitivamente as respostas marcadas?')">
+  {{ csrf_input }}<input type="hidden" name="de" value="{{ de }}"><input type="hidden" name="ate" value="{{ ate }}">
+  <div class="tabela-wrap"><table class="tabela">
+    <thead><tr><th><input type="checkbox" aria-label="Marcar todas" onclick="document.querySelectorAll('.sp-marca').forEach(c => c.checked = this.checked)"></th><th>Data</th><th>Nome</th><th>Telefone</th><th class="num">Nota</th><th>Respostas</th><th>Elogio</th><th>Sugestão</th></tr></thead>
+    <tbody>{% for r in respostas %}<tr><td><input class="sp-marca" type="checkbox" name="id" value="{{ r.id }}" aria-label="Marcar resposta {{ r.id }}"></td><td>{{ r.data|data_br }}</td><td>{{ r.nome }}</td><td>{{ r.telefone }}</td>
+      <td class="num">{{ '%.1f'|format(r.nota)|replace('.', ',') if r.nota is not none else '' }}</td><td>{% for i in r.itens %}<small>{{ i.ordem }}: {{ i.opcao }}</small> {% endfor %}</td><td>{{ r.elogio }}</td><td>{{ r.sugestao }}</td></tr>
+    {% else %}<tr><td colspan="8" class="sub">Nenhuma resposta no período.</td></tr>{% endfor %}</tbody>
+  </table></div>
+  {% if respostas %}<button class="btn perigo" type="submit">{{ ic('x', 16) }} Excluir as marcadas</button>{% endif %}
+</form>
+{% endblock %}

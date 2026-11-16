@@ -1,0 +1,20 @@
+/* Lembretes em checklist: tela de gestão (/lembretes) e janela que abre ao entrar no sistema. Cores pelos tokens do tema (vale no escuro). */
+.acoes-linha { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.acoes-linha form { margin: 0; }
+.marcar-linha { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+.marcar-linha input { width: auto; margin: 0; }
+
+dialog.lembretes-janela { max-width: 560px; }
+.lembretes-janela h2 { margin: 0 0 6px; }
+.lembretes-janela .lem-sub { margin: 0 0 12px; color: var(--suave, inherit); opacity: .8; }
+.lembrete-bloco { border: 1px solid var(--borda); border-radius: var(--raio); padding: 12px; margin-bottom: 12px; }
+.lembrete-bloco h3 { margin: 0 0 8px; font-size: 1.02em; }
+.lembrete-bloco ul { list-style: none; margin: 0; padding: 0; }
+.lembrete-bloco li { margin: 0 0 6px; }
+.lembrete-bloco li label { display: flex; align-items: flex-start; gap: 8px; cursor: pointer; }
+.lembrete-bloco li input[type=checkbox] { width: 18px; height: 18px; margin-top: 2px; flex: 0 0 auto; }
+.lembrete-bloco li.feito span { text-decoration: line-through; opacity: .6; }
+.lembrete-acoes { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.lembrete-acoes .btn { margin: 0; }
+.lembretes-vazio { margin: 0 0 12px; }
+.lembretes-erro { color: var(--erro); font-size: .92em; margin: 0 0 8px; }

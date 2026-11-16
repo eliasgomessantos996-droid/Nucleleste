@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+{% from '_ic.html' import ic %}
+{% from '_prontuario_campos.html' import campo with context %}
+{% block titulo %}{{ modelo.titulo }}{% endblock %}
+{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/prontuario.css') }}">{% endblock %}
+{% block conteudo %}
+<div class="cartao pr-cabecalho">
+  <div class="pr-arte" aria-hidden="true">
+    <svg viewBox="0 0 120 96" class="pr-svg">
+      <rect x="22" y="14" width="76" height="72" rx="8" class="pr-prancheta"/>
+      <rect x="46" y="6" width="28" height="14" rx="4" class="pr-prendedor"/>
+      <path class="pr-batimento" pathLength="100" d="M30 52H46L52 36L60 66L68 44L72 52H90"/>
+    </svg>
+  </div>
+  <div>
+    <h1>{{ modelo.titulo }}</h1>
+    <p class="sub">{{ d.cliente_nome }} · Prontuário nº {{ d.numero }} · Situação: <span class="etiqueta">{{ situacoes[d.situacao] }}</span>
+      {% if d.situacao == 'CONCLUIDO' %} · concluído em {{ d.concluido_em[:10]|data_br }} por {{ d.concluido_por }}{% endif %}</p>
+  </div>
+  <div class="acoes">
+    <a class="btn sec" href="{{ url_for('pront.doc_imprimir', did=d.id) }}">{{ ic('file-down', 16) }} Imprimir</a>
+    {% if ficha_url %}<a class="btn sec" href="{{ ficha_url }}" target="_blank" rel="noopener">Imprimir na ficha original</a>{% endif %}
+    <a class="btn sec" href="{{ url_for('pront.paciente', cid=d.cliente_id) }}">Voltar ao prontuário</a>
+  </div>
+</div>
+
+{% if ro %}
+<div class="msg aviso">Documento concluído: somente leitura.{% if g.usuario.admin %} A administração pode reabri-lo para correção, abaixo.{% endif %}</div>
+{% endif %}
+
+<div class="cartao pr-ident">
+  <div class="grade">
+    <div class="c4"><span class="rotulo-campo">Paciente</span><div>{{ d.cliente_nome or '' }}</div></div>
+    <div class="c4"><span class="rotulo-campo">Nome da mãe</span><div>{{ d.nome_mae or 'não informado' }}</div></div>
+    <div class="c2"><span class="rotulo-campo">Nascimento</span><div>{{ d.data_nasc|data_br if d.data_nasc else 'não informado' }}</div></div>
+    <div class="c2"><span class="rotulo-campo">Idade</span><div>{{ d.data_nasc|idade if d.data_nasc else 'não informada' }}</div></div>
+    <div class="c4"><span class="rotulo-campo">Convênio</span><div>{{ d.at_convenio or d.convenio_cliente or '—' }}</div></div>
+    <div class="c4"><span class="rotulo-campo">Atendimento</span><div>{% if d.at_data %}{{ d.at_data|data_br }} · {{ d.at_exame or '' }}{% else %}Sem atendimento vinculado{% endif %}</div></div>
+    {% if d.interno %}<div class="c4"><span class="rotulo-campo">Origem</span><div><span class="etiqueta">Interno</span> {{ d.interno_local or '' }}</div></div>{% endif %}
+  </div>
+</div>
+
+<form method="post" id="form-doc" autocomplete="off">
+  {{ csrf_input }}
+  {% for s in secoes %}
+  <div class="cartao pr-secao" id="secao-{{ s.id }}">
+    <div class="pr-titulo">
+      {% if s.letra %}<span class="pr-letra letra-{{ s.letra|lower }}" aria-hidden="true">{{ s.letra }}</span>{% endif %}
+      <div class="pr-titulo-texto"><h2>{% if s.letra %}{{ s.letra }} · {% endif %}{{ s.titulo }}</h2>{% if s.subtitulo %}<p class="ajuda">{{ s.subtitulo }}</p>{% endif %}</div>
+      {% if not ro and s.letra %}<button class="btn sec peq" type="button" data-preencher-secao>Preencher com o padrão</button>{% endif %}
+    </div>
+    <div class="grade">
+      {% for c in s.campos %}{{ campo(c, dados, ro, erros) }}{% endfor %}
+    </div>
+  </div>
+  {% endfor %}
+
+  <div class="cartao pr-rodape">
+    <div class="grade">
+      <div class="c6 pr-campo{% if 'profissional_nome' in erros %} pr-erro{% endif %}">
+        <label class="obrig" for="profissional_nome">Nome do profissional</label>
+        <input type="text" id="profissional_nome" name="profissional_nome" value="{{ prof.nome }}" maxlength="120" {{ 'disabled' if ro }}>
+      </div>
+      <div class="c3">
+        <label for="profissional_conselho">Conselho</label>
+        <select id="profissional_conselho" name="profissional_conselho" {{ 'disabled' if ro }}>
+          {% for c in conselhos %}
+          <option value="{{ c }}" {{ 'selected' if prof.conselho == c }}>{{ c }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="c3">
+        <label for="profissional_registro">Registro</label>
+        <input type="text" id="profissional_registro" name="profissional_registro" value="{{ prof.registro }}" maxlength="40" {{ 'disabled' if ro }}>
+      </div>
+    </div>
+    <div class="acoes">
+      {% if not ro %}
+      <button class="btn sec" type="submit" name="acao" value="rascunho">Salvar rascunho</button>
+      <button class="btn" type="submit" name="acao" value="concluir">Concluir e imprimir</button>
+      <span class="ajuda">Ao concluir, o documento fica fechado e sai impresso para a assinatura no papel.</span>
+      {% else %}
+      <a class="btn" href="{{ url_for('pront.doc_imprimir', did=d.id) }}">{{ ic('file-down', 16) }} Imprimir</a>
+      {% endif %}
+    </div>
+  </div>
+</form>
+
+{% if ro and g.usuario.admin %}
+<form method="post" action="{{ url_for('pront.doc_reabrir', did=d.id) }}" class="acoes" style="margin-top:12px" data-confirmar="Reabrir este documento para correção? Ele volta a ficar editável.">
+  {{ csrf_input }}
+  <button class="btn sec" type="submit">Reabrir para correção</button>
+</form>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/prontuario.js') }}"></script>
+{% endblock %}

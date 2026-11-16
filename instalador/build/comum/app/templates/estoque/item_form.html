@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% from '_ic.html' import ic %}
+{% block titulo %}{{ 'Editar item' if iid else 'Novo item' }} · Estoque{% endblock %}
+{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/estoque.css') }}">{% endblock %}
+{% block conteudo %}
+{% set v = item or {} %}
+<div class="cabecalho">
+  <div><h1>{{ ic('clipboard-list', 22) }} {{ 'Editar item' if iid else 'Novo item de estoque' }}</h1><p class="sub">Material ou medicamento controlado pelo estoque.</p></div>
+  <div class="acoes"><a class="btn sec" href="{{ url_for('est.itens') }}">Voltar para o estoque</a></div>
+</div>
+
+<form method="post" action="{{ url_for('est.item_editar', iid=iid) if iid else url_for('est.item_editar') }}" class="cartao">
+  {{ csrf_input }}
+  <div class="grade">
+    <div class="c3"><label for="i-codigo">Código</label><input id="i-codigo" name="codigo" value="{{ v.codigo or '' }}" maxlength="40"></div>
+    <div class="c3"><label class="obrig" for="i-tipo">Tipo</label>
+      <select id="i-tipo" name="tipo" required>{% for t in tipos %}<option value="{{ t }}" {% if v.tipo == t %}selected{% endif %}>{{ t|capitalize }}</option>{% endfor %}</select></div>
+    <div class="c3"><label class="obrig" for="i-unidade">Unidade</label><input id="i-unidade" name="unidade" value="{{ v.unidade or '' }}" maxlength="20" placeholder="UN, CX, AMP, FR" required></div>
+    <div class="c3"><label for="i-minimo">Estoque mínimo</label><input id="i-minimo" name="estoque_minimo" inputmode="decimal" value="{{ v.estoque_minimo or '' }}" placeholder="0"></div>
+    <div class="c12"><label class="obrig" for="i-nome">Nome</label><input id="i-nome" name="nome" value="{{ v.nome or '' }}" maxlength="200" required></div>
+    <div class="c6"><label for="i-local">Local de guarda</label><input id="i-local" name="local" value="{{ v.local or '' }}" maxlength="80" placeholder="Ex.: armário da sala 2"></div>
+    {% if not iid %}
+    <div class="c6"><label for="i-saldo">Saldo inicial</label><input id="i-saldo" name="saldo_inicial" inputmode="decimal" placeholder="0" value="{{ v.saldo_inicial or '' }}"></div>
+    {% endif %}
+    <div class="c12"><label for="i-obs">Observação</label><input id="i-obs" name="obs" value="{{ v.obs or '' }}" maxlength="500"></div>
+    {% if iid %}
+    <div class="c12"><label class="linha-check"><input type="checkbox" name="ativo" value="1" {% if v.ativo %}checked{% endif %}> Item ativo</label>
+      <small class="sub">Item desativado some das listas de lançamento; o histórico continua guardado.</small></div>
+    {% endif %}
+  </div>
+  <div class="acoes"><button class="btn" type="submit">Salvar item</button><a class="btn sec" href="{{ url_for('est.itens') }}">Cancelar</a></div>
+</form>
+
+{% if iid %}
+  {% if tem_movimentos %}
+  <p class="sub">Este item já tem movimentações, por isso não pode ser excluído. Para tirá-lo das listas, desmarque "Item ativo".</p>
+  {% else %}
+  <form method="post" action="{{ url_for('est.item_excluir', iid=iid) }}" data-confirmar="Excluir este item? Esta ação não pode ser desfeita.">
+    {{ csrf_input }}
+    <button class="btn sec" type="submit">Excluir item</button>
+  </form>
+  {% endif %}
+{% endif %}
+{% endblock %}

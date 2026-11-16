@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+{% block titulo %}Agendar medicamento{% endblock %}
+{% block conteudo %}
+<h1>{{ 'Editar agendamento' if dose else 'Agendar medicamento' }}</h1>
+<p class="sub">Ao salvar, a ficha de agendamento e as orientações de preparo do iodo (15 ou 30 dias) ficam prontas para impressão.</p>
+<form method="post" autocomplete="off">
+  {{ csrf_input }}
+  <div class="cartao">
+    <h2>Paciente</h2>
+    {% if dose %}
+      <p><strong>{{ dose.paciente }}</strong> · CPF {{ dose.cpf or '—' }} · Nasc. {{ dose.data_nasc|data_br }} · {{ dose.contato or '' }}</p>
+      <input type="hidden" name="cliente_id" value="{{ f.cliente_id }}">
+    {% else %}
+    <div class="seletor" id="seletor-cliente">
+      <label class="obrig">Pesquisar cliente (nome, código ou CPF)</label>
+      <input type="search" placeholder="Digite pelo menos 2 letras..." autofocus>
+      <input type="hidden" name="cliente_id" value="{{ f.cliente_id }}">
+      <div class="resultados"></div>
+    </div>
+    <div class="ficha-cliente" id="ficha-cliente"><dl id="dados-cliente"></dl></div>
+    {% endif %}
+  </div>
+  <div class="cartao">
+    <h2>Medicamento</h2>
+    <div class="grade">
+      <div class="c6"><label class="obrig">Medicamento</label>
+        {% for m in medicamentos %}<label class="inline"><input type="radio" name="medicamento" value="{{ m }}" {% if f.medicamento == m %}checked{% endif %} required> {{ m }}</label>{% endfor %}</div>
+      <div class="c6"><label>Preparo</label>
+        {% for p in preparos %}<label class="inline"><input type="radio" name="preparo" value="{{ p }}" {% if f.preparo == p %}checked{% endif %}> {{ p }}</label>{% endfor %}</div>
+      <div class="c3"><label>Dose (mCi)</label><input type="text" name="mci" value="{{ f.mci }}"></div>
+      <div class="c3"><label class="obrig">Data da dose</label><input type="date" name="data_dose" value="{{ f.data_dose }}" required></div>
+      <div class="c6"><label class="obrig">Médico solicitante</label>
+        <input type="text" name="medico" list="lista-medicos" value="{{ f.medico }}" required data-maiusculas>
+        <datalist id="lista-medicos">{% for m in medicos %}<option value="{{ m }}">{% endfor %}</datalist></div>
+      <div class="c12"><label class="inline"><input type="checkbox" name="sem_preparo" value="1" id="sem_preparo" {% if f.sem_preparo %}checked{% endif %}> Sem preparo (dieta e suspensão de medicação não se aplicam)</label></div>
+      <div class="c3 bloco-preparo"><label class="obrig">Início da dieta</label><input type="date" name="dieta" value="{{ f.dieta if f.dieta != sem_preparo else '' }}"></div>
+      <div class="c3 bloco-preparo"><label class="obrig">Suspensão da medicação</label><input type="date" name="susp_medicacao" value="{{ f.susp_medicacao if f.susp_medicacao != sem_preparo else '' }}"></div>
+      <div class="c12"><label>Observação</label><input type="text" name="obs" value="{{ f.obs }}"></div>
+    </div>
+  </div>
+  <div class="acoes">
+    <button class="btn" type="submit">Salvar e imprimir</button>
+    <a class="btn sec" href="{{ url_for('med.lista') }}">Ver agenda</a>
+  </div>
+</form>
+{% endblock %}
+{% block scripts %}
+<script>
+(function () {
+  const sp = document.getElementById('sem_preparo');
+  function preparo() { document.querySelectorAll('.bloco-preparo').forEach(b => b.classList.toggle('oculto', sp.checked)); }
+  sp.addEventListener('change', preparo); preparo();
+  const sel = document.getElementById('seletor-cliente');
+  if (!sel) return;
+  const dl = document.getElementById('dados-cliente'), ficha = document.getElementById('ficha-cliente');
+  SeletorCliente(sel, (c) => {
+    dl.innerHTML = '';
+    if (!c) { ficha.classList.remove('aberto'); return; }
+    [['Código', c.id], ['CPF', c.cpf], ['Nascimento', c.data_nasc + (c.idade ? ' (' + c.idade + ')' : '')], ['Contato', c.contato], ['Convênio', c.convenio]]
+      .forEach(([t, v]) => { const dt = document.createElement('dt'); dt.textContent = t; const dd = document.createElement('dd'); dd.textContent = v || '—'; dl.append(dt, dd); });
+    ficha.classList.add('aberto');
+  });
+})();
+</script>
+{% endblock %}

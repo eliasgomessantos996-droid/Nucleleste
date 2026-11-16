@@ -1,0 +1,109 @@
+{% extends 'base.html' %}
+{% block titulo %}Faturamento: relatórios{% endblock %}
+{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">{% endblock %}
+{% block conteudo %}
+<div class="cabecalho">
+  <div><h1>Faturamento: dashboard financeiro</h1>
+    <p class="sub">{{ de|data_br }} a {{ ate|data_br }}{% if convenio %} · {{ convenio }}{% else %} · todos os convênios{% endif %} · {{ n }} fatura(s) por data de referência</p></div>
+  <div class="acoes">
+    {% if pode('faturamento') %}<a class="btn" href="{{ url_for('fat.lista') }}">Ver faturas</a>{% endif %}
+    <button class="btn sec" type="button" onclick="window.print()">Imprimir</button>
+  </div>
+</div>
+
+<form class="cartao filtros nao-imprimir" method="get" style="margin-bottom:18px">
+  <div><label>Período (data de referência)</label>
+    <select name="p" id="sel-p">
+      <option value="ano" {% if p == 'ano' %}selected{% endif %}>Este ano</option>
+      <option value="mes" {% if p == 'mes' %}selected{% endif %}>Este mês</option>
+      <option value="12m" {% if p == '12m' %}selected{% endif %}>Últimos 12 meses</option>
+      <option value="tudo" {% if p == 'tudo' %}selected{% endif %}>Tudo</option>
+      <option value="custom" {% if p == 'custom' %}selected{% endif %}>Personalizado</option></select></div>
+  <div id="cx-de"><label>De</label><input type="date" name="de" value="{{ de }}"></div>
+  <div id="cx-ate"><label>Até</label><input type="date" name="ate" value="{{ ate }}"></div>
+  <div><label>Convênio / particular</label><select name="convenio"><option value="">Todos</option>{% for c in convenios %}<option {% if c == convenio %}selected{% endif %}>{{ c }}</option>{% endfor %}</select></div>
+  <div><button class="btn" type="submit">Atualizar</button></div>
+</form>
+
+<div class="dash dash-interno">
+  <section class="kpis">
+    <article class="kpi revelar" style="--i:0;--cor:#255f39;--cor-bg:#e3f2e9">
+      <div class="kpi-topo"><span class="kpi-ico">$</span><span class="kpi-rotulo">Faturado bruto</span></div>
+      <div class="kpi-valor"><small>R$</small> <span data-contar="{{ bruto }}" data-dec="2">{{ bruto|moeda }}</span></div>
+      <p class="kpi-sub"><b>{{ n }}</b> fatura(s) no período</p>
+    </article>
+    <article class="kpi revelar" style="--i:1;--cor:#b5473a;--cor-bg:#fbe5e1">
+      <div class="kpi-topo"><span class="kpi-ico">%</span><span class="kpi-rotulo">Tributos</span></div>
+      <div class="kpi-valor"><small>R$</small> <span data-contar="{{ trib }}" data-dec="2">{{ trib|moeda }}</span></div>
+      <p class="kpi-sub"><b>{{ ('%.1f'|format(pct_trib))|replace('.', ',') }}%</b> do valor bruto</p>
+    </article>
+    <article class="kpi revelar" style="--i:2;--cor:#1f7a8c;--cor-bg:#dff1f4">
+      <div class="kpi-topo"><span class="kpi-ico">=</span><span class="kpi-rotulo">Valor líquido</span></div>
+      <div class="kpi-valor"><small>R$</small> <span data-contar="{{ liquido }}" data-dec="2">{{ liquido|moeda }}</span></div>
+      <p class="kpi-sub">bruto − tributos</p>
+    </article>
+    <article class="kpi revelar" style="--i:3;--cor:#167a3f;--cor-bg:#dcf5e6">
+      <div class="kpi-topo"><span class="kpi-ico">✓</span><span class="kpi-rotulo">Recebido</span></div>
+      <div class="kpi-valor"><small>R$</small> <span data-contar="{{ recebido }}" data-dec="2">{{ recebido|moeda }}</span></div>
+      <p class="kpi-sub"><b>{{ ('%.1f'|format(taxa))|replace('.', ',') }}%</b> do líquido · {{ qtd_rec }} fatura(s)</p>
+    </article>
+    <article class="kpi revelar" style="--i:4;--cor:#c77d0a;--cor-bg:#fcefd6">
+      <div class="kpi-topo"><span class="kpi-ico">⏳</span><span class="kpi-rotulo">A receber</span></div>
+      <div class="kpi-valor"><small>R$</small> <span data-contar="{{ aberto }}" data-dec="2">{{ aberto|moeda }}</span></div>
+      <p class="kpi-sub"><b>{{ qtd_ab }}</b> em aberto{% if atrasadas %} · <b style="color:#b42318">{{ atrasadas|length }} atrasada(s)</b>{% endif %}</p>
+    </article>
+    <article class="kpi revelar" style="--i:5;--cor:#7b5ea7;--cor-bg:#ece6f5">
+      <div class="kpi-topo"><span class="kpi-ico">⌛</span><span class="kpi-rotulo">Prazo médio</span></div>
+      {% if prazo_medio is not none %}<div class="kpi-valor"><span data-contar="{{ prazo_medio }}">{{ prazo_medio }}</span> <small>dias</small></div>{% else %}<div class="kpi-valor">—</div>{% endif %}
+      <p class="kpi-sub">da referência ao recebimento · glosas R$ <b>{{ glosa|moeda }}</b></p>
+    </article>
+  </section>
+
+  <section class="grade-graficos">
+    <article class="card revelar g-8" style="--i:6">
+      <header class="card-cab"><div><h3>Faturado × recebido por mês</h3><p>faturado (líquido) pelo mês da referência; recebido pelo mês do recebimento</p></div></header>
+      <div class="g-barras" id="g-mensal"></div>
+    </article>
+    <article class="card revelar g-4" style="--i:7">
+      <header class="card-cab"><div><h3>Situação do líquido</h3><p>recebido × a receber</p></div></header>
+      <div class="g-donut" id="g-comp"></div>
+    </article>
+    <article class="card revelar g-6" style="--i:8">
+      <header class="card-cab"><div><h3>Por convênio: recebido × em aberto</h3><p>valores líquidos</p></div></header>
+      <div id="g-conv"></div>
+    </article>
+    <article class="card revelar g-6" style="--i:9">
+      <header class="card-cab"><div><h3>Envelhecimento do que está a receber</h3><p>dias desde a data de referência</p></div></header>
+      <div class="g-barras" id="g-aging"></div>
+    </article>
+    <article class="card revelar g-6" style="--i:10">
+      <header class="card-cab"><div><h3>Tributos por convênio</h3><p>% do valor bruto</p></div></header>
+      <div id="g-trib"></div>
+    </article>
+    <article class="card revelar g-6" style="--i:11">
+      <header class="card-cab"><div><h3>Maiores valores a receber</h3><p>faturas em aberto</p></div>{% if pode('faturamento') %}<a class="link-peq" href="{{ url_for('fat.lista') }}">ver todas →</a>{% endif %}</header>
+      <ul class="lista-avatar">
+        {% for r in abertos_top %}
+        <li style="--i:{{ loop.index0 }}">
+          <span class="avatar" data-nome="{{ r.convenio }}">{{ r.convenio[:1] }}</span>
+          <span class="li-corpo"><b>{{ r.convenio }}</b><small>ref. {{ r.referencia|data_br }} · NF {{ r.nota_fiscal or 's/n' }}{% if r.previsao and r.previsao < hoje %} · <span style="color:#b42318">atrasada</span>{% endif %}</small></span>
+          <span class="tag">R$ {{ r.valor_liquido|moeda }}</span>
+        </li>
+        {% else %}<li class="vazio">Nada a receber no período. 🎉</li>{% endfor %}
+      </ul>
+    </article>
+  </section>
+</div>
+<script type="application/json" id="dados-fat">{{ dados|tojson }}</script>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+<script src="{{ url_for('static', filename='js/faturamento.js') }}"></script>
+<script>
+(function () {
+  const sel = document.getElementById('sel-p'), de = document.getElementById('cx-de'), ate = document.getElementById('cx-ate');
+  const alterna = () => { const c = sel.value === 'custom'; de.style.display = ate.style.display = c ? '' : 'none'; };
+  sel.addEventListener('change', alterna); alterna();
+})();
+</script>
+{% endblock %}

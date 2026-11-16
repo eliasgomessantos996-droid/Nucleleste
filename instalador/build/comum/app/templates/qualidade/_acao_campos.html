@@ -1,0 +1,11 @@
+{% set a = a if a is defined and a else {} %}
+<div class="q-5w2h">
+  <label><b>O quê</b> (What)<input type="text" name="o_que" value="{{ a.o_que or '' }}" maxlength="300" required></label>
+  <label><b>Por quê</b> (Why)<input type="text" name="por_que" value="{{ a.por_que or '' }}" maxlength="500"></label>
+  <label><b>Onde</b> (Where)<input type="text" name="onde" value="{{ a.onde or '' }}" maxlength="200"></label>
+  <label><b>Quando</b> (When)<input type="date" name="quando" value="{{ a.quando or '' }}"></label>
+  <label><b>Quem</b> (Who)<input type="text" name="quem" value="{{ a.quem or '' }}" maxlength="120"></label>
+  <label><b>Como</b> (How)<input type="text" name="como" value="{{ a.como or '' }}" maxlength="800"></label>
+  <label><b>Custo</b> (How much, R$)<input type="text" name="quanto" inputmode="decimal" value="{{ '%.2f'|format(a.quanto) if a.quanto is number else '' }}"></label>
+  <label>Situação<select name="status">{% for s in status_acao %}<option {{ 'selected' if s == (a.status or 'A FAZER') }}>{{ s }}</option>{% endfor %}</select></label>
+</div>

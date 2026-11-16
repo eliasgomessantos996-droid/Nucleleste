@@ -1,0 +1,52 @@
+/* ============================================================================================================
+   Visual corporativo: cores chapadas, sem degradês, sem brilhos que acompanham o mouse e sem enfeites de fundo.
+   As ANIMAÇÕES continuam (entrada das telas, átomo girando, pulsos, linhas da agenda). Carregado por último.
+   Para voltar ao visual com degradês, basta tirar a linha que carrega este arquivo no base.html e no login.html.
+   ============================================================================================================ */
+
+/* fundo da página: cor única, sem as manchas de luz */
+body { background: var(--pagina-1) !important; }
+body::before { display: none !important; }
+
+/* faixas de destaque (cabeçalho das telas e painel): cor chapada, sem o degradê que se mexe */
+.ph-hero, .hero { background: var(--verde) !important; background-image: none !important; background-size: auto !important;
+  box-shadow: none !important; }
+.ph-hero::before, .ph-hero::after, .hero::before, .hero::after { display: none !important; }
+
+/* enfeites grandes de fundo (átomo gigante, bolhas de luz) somem; o átomo pequeno da barra continua */
+.ph-atomo, .ph-fundo, .ph-blob, .hero-fundo { display: none !important; }
+
+/* menu, barra do topo e botões: cor chapada, sem luz que segue o mouse */
+.menu { background: var(--verde-escuro) !important; background-image: none !important; box-shadow: none !important; }
+.menu .marca .atomo { filter: none; }
+.barra-pagina { background: var(--verde) !important; background-image: none !important; box-shadow: 0 1px 3px rgba(0, 0, 0, .12) !important; }
+.bp-ico { filter: none !important; }
+.menu::before, .menu::after { display: none !important; }
+.btn { background-image: none !important; box-shadow: none !important; }
+.btn:hover { box-shadow: none !important; }
+.btn.sec { background-image: none !important; }
+.btn.perigo { background-image: none !important; }
+
+/* cartões e tabelas: borda leve no lugar de sombra grande */
+.cartao, .tabela-wrap, .indicador { box-shadow: 0 1px 2px rgba(0, 0, 0, .06) !important; border: 1px solid var(--borda, #dfe6e2) !important; }
+.cartao:hover, .indicador:hover { box-shadow: 0 1px 2px rgba(0, 0, 0, .06) !important; transform: none !important; }
+.tabela tbody tr:hover td { background: #f3f7f5 !important; }
+.tabela tbody tr:hover td:first-child { box-shadow: none !important; }
+
+/* login: cartão branco sobre cor chapada */
+.login-pagina { background: var(--verde) !important; background-image: none !important; }
+.login-caixa { box-shadow: 0 2px 10px rgba(0, 0, 0, .18) !important; backdrop-filter: none !important; }
+
+/* a luz de foco dos campos fica discreta */
+input:focus, select:focus, textarea:focus { box-shadow: 0 0 0 2px rgba(var(--verde-rgb), .22) !important; }
+
+/* modo escuro: sem degradês e com as mesmas regras de cor chapada */
+html[data-brilho="escuro"] body { background: var(--sup-2, #1e2622) !important; }
+html[data-brilho="escuro"] .login-pagina { background: var(--sup-2, #1e2622) !important; }
+html[data-brilho="escuro"] .cartao, html[data-brilho="escuro"] .tabela-wrap { border-color: var(--borda, #33403a) !important; }
+
+/* modo escuro: linhas de tabela com destaque (passar o mouse, linha marcada) ficam escuras, com o texto claro legível.
+   (O visual corporativo acima tinha um destaque claro que deixava o texto claro ilegível.) */
+html[data-brilho="escuro"] .tabela tbody tr:hover td { background: color-mix(in srgb, var(--brilho) 20%, var(--sup, #1e2622)) !important; color: var(--texto) !important; }
+html[data-brilho="escuro"] .tabela tr.mov-marcada td { background: color-mix(in srgb, #b3261e 35%, var(--sup, #1e2622)) !important; color: var(--texto) !important; }
+html[data-brilho="escuro"] .tabela tbody tr:hover .etiqueta { background-color: #0f1714; color: #e9f5ef; }

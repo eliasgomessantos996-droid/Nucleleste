@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+{% from '_ic.html' import ic %}
+{% from '_suporte_icones.html' import arte %}
+{% from '_suporte_macros.html' import quando, pilula_tipo, pilula_grav, pilula_status, pilula_tema, dados_envio, corpo %}
+{% block titulo %}Formulários recebidos{% endblock %}
+{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/suporte.css') }}">{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='js/suporte.js') }}"></script>{% endblock %}
+
+{% macro cartao(i, recusados, n) %}
+<article class="cartao sp-item {{ 'bug' if i.tipo == 'BUG' else 'sugestao' }}" id="item-{{ i.id }}" style="--i: {{ n }}">
+  <header>{{ pilula_tipo(i) }}{{ pilula_grav(i) }}{{ pilula_tema(i) }}<span class="sp-quando">{{ quando(i.criado_em) }}</span><span class="sp-espaco"></span>{% if recusados %}{{ pilula_status(i) }}{% endif %}</header>
+  <h3>{{ i.titulo }}</h3>
+  <p class="sp-autor">Enviado por <b>{{ i.usuario }}</b></p>
+  {{ corpo(i) }}
+  {{ dados_envio(i) }}
+  <form method="post" action="{{ url_for('sup.decidir', iid=i.id) }}" class="sp-decisao" data-card="item-{{ i.id }}">
+    {{ csrf_input }}<input type="hidden" name="de" value="recebidos">{% if recusados %}<input type="hidden" name="mostrar" value="recusados">{% endif %}
+    <button class="sp-grande sim" type="submit" name="decisao" value="aceitar">{{ ic('circle-check', 26) }}<span><b>Sim, aceitar</b><small>vai para a pasta da próxima atualização</small></span></button>
+    {% if recusados %}
+    <button class="sp-grande volta" type="submit" formaction="{{ url_for('sup.situacao', iid=i.id) }}" name="acao" value="voltar">{{ ic('rotate-ccw', 26) }}<span><b>Voltar para análise</b><small>decidir depois</small></span></button>
+    {% else %}
+    <button class="sp-grande nao" type="submit" name="decisao" value="recusar">{{ ic('circle-x', 26) }}<span><b>Não aceitar</b><small>abre a conversa com quem enviou</small></span></button>
+    {% endif %}
+  </form>
+</article>
+{% endmacro %}
+
+{% block conteudo %}
+<div class="cabecalho">
+  <div><h1>Formulários recebidos</h1>
+    <p class="sub">Tudo o que os usuários enviaram em “Sugestão” e “Correção de bug”. As correções de bugs ficam acima. Aceite ou não cada uma: as aceitas vão para a pasta da próxima atualização.</p></div>
+  <div class="acoes"><a class="btn sec" href="{{ url_for('sup.pasta') }}">{{ ic('clipboard-check', 16) }} Pasta de aceitos ({{ resumo.ACEITA.BUG + resumo.ACEITA.SUGESTAO }})</a></div>
+</div>
+
+<section class="cartao sp-faixa recebidos {{ 'tem-bug' if bugs else '' }}">
+  <div class="sp-arte">{{ arte('recebidos') }}</div>
+  <div>
+    <h2>{% if bugs or sugestoes %}Aguardando a sua decisão{% else %}Tudo em dia{% endif %}</h2>
+    <div class="sp-contagens">
+      <span class="sp-contagem bug"><b>{{ bugs|length }}</b> correção(ões) de bug</span>
+      <span class="sp-contagem sugestao"><b>{{ sugestoes|length }}</b> sugestão(ões)</span>
+      <span class="sp-contagem ok"><b>{{ resumo.ACEITA.BUG + resumo.ACEITA.SUGESTAO }}</b> na pasta</span>
+      <span class="sp-contagem off"><b>{{ resumo.RECUSADA.BUG + resumo.RECUSADA.SUGESTAO }}</b> não aceitos</span>
+    </div>
+  </div>
+</section>
+
+{% if bugs %}
+<h2 class="sp-secao bug">{{ ic('bug', 20) }} Correções de bugs <span class="sp-urgente-selo">prioridade</span></h2>
+<div class="sp-lista">{% for i in bugs %}{{ cartao(i, False, loop.index0) }}{% endfor %}</div>
+{% endif %}
+
+{% if sugestoes %}
+<h2 class="sp-secao sugestao">{{ ic('lightbulb', 20) }} Sugestões</h2>
+<div class="sp-lista">{% for i in sugestoes %}{{ cartao(i, False, loop.index0) }}{% endfor %}</div>
+{% endif %}
+
+{% if not bugs and not sugestoes %}
+<div class="cartao"><p class="vazio" style="margin:0">Nenhum formulário esperando decisão.</p></div>
+{% endif %}
+
+<details class="sp-recusados" {% if recusados %}open{% endif %}>
+  <summary>{{ ic('circle-x', 16) }} Não aceitos ({{ recusados|length }})</summary>
+  {% if recusados %}<div class="sp-lista">{% for i in recusados %}{{ cartao(i, True, loop.index0) }}{% endfor %}</div>
+  {% else %}<p class="ajuda">Nenhum formulário recusado.</p>{% endif %}
+</details>
+{% endblock %}

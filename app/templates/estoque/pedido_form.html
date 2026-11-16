@@ -1,0 +1,233 @@
+{% extends 'base.html' %}
+{% from '_ic.html' import ic %}
+{% block titulo %}{% if pedido %}Pedido {{ pedido.numero }}{% else %}Novo pedido de compra{% endif %}{% endblock %}
+{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/estoque.css') }}">{% endblock %}
+{% block conteudo %}
+<div class="cabecalho">
+  <div>
+    <h1>{{ ic('clipboard-check', 22) }} {% if pedido %}Pedido {{ pedido.numero }}{% else %}Novo pedido de compra{% endif %}</h1>
+    {% if pedido %}
+      <p class="sub">Data {{ pedido.data|data_br }} · <span class="etiqueta {{ etiqueta }}">{{ status_nome }}</span></p>
+    {% else %}
+      <p class="sub">Ao salvar, o pedido fica como rascunho e pode ser reaberto e editado.</p>
+    {% endif %}
+  </div>
+  <div class="acoes"><a class="btn sec" href="{{ url_for('est.pedidos') }}">Voltar aos pedidos</a></div>
+</div>
+
+{% if pedido %}
+<div class="acoes ped-acoes">
+  <a class="btn sec" href="{{ url_for('est.pedido_imprimir', pid=pedido.id) }}" target="_blank" rel="noopener">Imprimir</a>
+  <a class="btn sec" href="{{ url_for('est.pedido_pdf', pid=pedido.id) }}" target="_blank" rel="noopener">PDF</a>
+  {% if pedido.status == 'ENVIADO' %}
+    <a class="btn" href="{{ url_for('est.pedido_receber', pid=pedido.id) }}">Registrar recebimento</a>
+  {% endif %}
+  {% if pedido.status == 'RASCUNHO' %}
+  <form method="post" action="{{ url_for('est.pedido_enviar', pid=pedido.id) }}">
+    {{ csrf_input }}<button class="btn" type="submit">Marcar como enviado</button>
+  </form>
+  {% endif %}
+  <form method="post" action="{{ url_for('est.pedido_duplicar', pid=pedido.id) }}">
+    {{ csrf_input }}<button class="btn sec" type="submit">Duplicar pedido</button>
+  </form>
+  {% if pedido.status in ('RASCUNHO', 'ENVIADO') %}
+  <form method="post" action="{{ url_for('est.pedido_cancelar', pid=pedido.id) }}" onsubmit="return confirm('Cancelar este pedido? Ele deixa de poder ser recebido.');">
+    {{ csrf_input }}<button class="btn sec" type="submit">Cancelar pedido</button>
+  </form>
+  {% endif %}
+</div>
+{% endif %}
+
+{% if editavel %}
+<form method="post" class="cartao" id="form-pedido">
+  {{ csrf_input }}
+  <div class="grade">
+    <div class="c6"><label for="p-forn">Fornecedor cadastrado</label>
+      <select id="p-forn" name="fornecedor_id"><option value="">(digitar abaixo)</option>{% for f in fornecedores %}<option value="{{ f.id }}" {% if dados.get('fornecedor_id')|string == f.id|string %}selected{% endif %}>{{ f.nome }}</option>{% endfor %}</select>
+    </div>
+    <div class="c6"><label for="p-fnome">Ou nome do fornecedor</label><input id="p-fnome" name="fornecedor_nome" value="{{ dados.get('fornecedor_nome') or '' }}"></div>
+    <div class="c6"><label for="p-cond">Condições (prazo e forma de pagamento)</label><input id="p-cond" name="condicoes" value="{{ dados.get('condicoes') or '' }}" placeholder="Ex.: 30 dias, boleto"></div>
+    <div class="c6"><label for="p-sol">Solicitante</label><input id="p-sol" name="solicitante" value="{{ dados.get('solicitante') or solicitante_padrao }}"></div>
+    <div class="c12"><label for="p-obs">Observação</label><input id="p-obs" name="observacao" value="{{ dados.get('observacao') or '' }}"></div>
+  </div>
+
+  <h2 class="ped-titulo">Itens do pedido</h2>
+  <div class="acoes">
+    <button class="btn sec" type="button" id="btn-adicionar">Adicionar item</button>
+    <button class="btn sec" type="button" id="btn-sugerir">Sugerir itens abaixo do mínimo</button>
+  </div>
+  <p class="sub" id="msg-sugestao" role="status" aria-live="polite"></p>
+
+  <div class="tabela-wrap"><table class="tabela" id="tabela-itens">
+    <thead><tr><th>Item</th><th>Unidade</th><th class="num">Qtd</th><th class="num">Valor unit. previsto (R$)</th><th class="num">Total (R$)</th><th>Obs.</th><th></th></tr></thead>
+    <tbody id="corpo-itens"></tbody>
+    <tfoot><tr><td colspan="4"><strong>Total do pedido</strong></td><td class="num"><strong id="total-pedido">0,00</strong></td><td colspan="2"></td></tr></tfoot>
+  </table></div>
+
+  <div class="acoes">
+    <button class="btn" type="submit">Salvar</button>
+    <span class="sub">Salvar guarda o pedido como rascunho. Depois, marque-o como enviado.</span>
+  </div>
+</form>
+{% else %}
+  <div class="msg aviso">Este pedido está {{ status_nome|lower }} e não pode mais ser alterado.</div>
+  <div class="cartao">
+    <p><strong>Fornecedor:</strong> {{ pedido.fornecedor_nome or 'Não informado' }}</p>
+    <p><strong>Condições:</strong> {{ pedido.condicoes or '-' }}</p>
+    <p><strong>Solicitante:</strong> {{ pedido.solicitante or '-' }}</p>
+    {% if pedido.observacao %}<p><strong>Observação:</strong> {{ pedido.observacao }}</p>{% endif %}
+  </div>
+  <div class="tabela-wrap"><table class="tabela">
+    <thead><tr><th>Item</th><th>Unidade</th><th class="num">Qtd</th><th class="num">Recebido</th><th class="num">Valor unit. previsto (R$)</th><th class="num">Total (R$)</th></tr></thead>
+    <tbody>
+    {% for l in linhas %}
+      <tr><td>{{ l.item_nome }}{% if l.obs %}<br><small>{{ l.obs }}</small>{% endif %}</td><td>{{ l.unidade }}</td><td class="num">{{ l.qtd }}</td>
+          <td class="num">{{ l.qtd_recebida|est_qtd }}</td><td class="num">{{ l.valor_unitario }}</td><td class="num">{{ l.total|moeda }}</td></tr>
+    {% endfor %}
+    </tbody>
+    <tfoot><tr><td colspan="5"><strong>Total do pedido</strong></td><td class="num"><strong>{{ linhas|sum(attribute='total')|moeda }}</strong></td></tr></tfoot>
+  </table></div>
+{% endif %}
+{% endblock %}
+{% block scripts %}
+{% if editavel %}
+<script>
+(function () {
+  var ITENS = {{ estoque_js|tojson }};
+  var LINHAS = {{ linhas_js|tojson }};
+  var corpo = document.getElementById('corpo-itens');
+  var totalEl = document.getElementById('total-pedido');
+  var msg = document.getElementById('msg-sugestao');
+  if (!corpo) return;
+
+  function numero(txt) {
+    var t = String(txt == null ? '' : txt).trim();
+    if (t.indexOf(',') >= 0) t = t.replace(/\./g, '').replace(',', '.');
+    var n = parseFloat(t);
+    return isNaN(n) ? 0 : n;
+  }
+  function dinheiro(n) {
+    return n.toFixed(2).replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  }
+  function itemPor(id) {
+    for (var i = 0; i < ITENS.length; i++) {
+      if (String(ITENS[i].id) === String(id)) return ITENS[i];
+    }
+    return null;
+  }
+  function recalcular() {
+    var soma = 0;
+    Array.prototype.forEach.call(corpo.querySelectorAll('tr'), function (tr) {
+      var q = numero(tr.querySelector('input[name="qtd"]').value);
+      var v = numero(tr.querySelector('input[name="valor_unitario"]').value);
+      tr.querySelector('.tot').textContent = dinheiro(q * v);
+      soma += q * v;
+    });
+    totalEl.textContent = dinheiro(soma);
+  }
+  function campo(nome, valor, rotulo, classe) {
+    var i = document.createElement('input');
+    i.name = nome;
+    i.value = valor || '';
+    i.className = classe;
+    i.setAttribute('aria-label', rotulo);
+    i.setAttribute('inputmode', 'decimal');
+    return i;
+  }
+  function criarLinha(l) {
+    l = l || {};
+    var tr = document.createElement('tr');
+    var sel = document.createElement('select');
+    sel.name = 'item_id';
+    sel.setAttribute('aria-label', 'Item');
+    var vazio = document.createElement('option');
+    vazio.value = '';
+    vazio.textContent = 'Escolha o item';
+    sel.appendChild(vazio);
+    ITENS.forEach(function (it) {
+      var o = document.createElement('option');
+      o.value = String(it.id);
+      o.textContent = it.nome;
+      sel.appendChild(o);
+    });
+    if (l.item_id && !itemPor(l.item_id)) {   // item que hoje está desativado: continua na linha
+      var extra = document.createElement('option');
+      extra.value = String(l.item_id);
+      extra.textContent = l.nome || ('Item ' + l.item_id);
+      sel.appendChild(extra);
+    }
+    sel.value = l.item_id ? String(l.item_id) : '';
+
+    var unidade = document.createElement('td');
+    unidade.textContent = l.unidade || (itemPor(l.item_id) || {}).unidade || '';
+    var qtd = campo('qtd', l.qtd, 'Quantidade', 'ped-qtd');
+    var valor = campo('valor_unitario', l.valor_unitario, 'Valor unitário previsto', 'ped-valor');
+    var obs = campo('item_obs', l.obs, 'Observação do item', 'ped-obs');
+    var tot = document.createElement('td');
+    tot.className = 'num tot';
+    var del = document.createElement('button');
+    del.type = 'button';
+    del.className = 'btn sec peq';
+    del.textContent = 'Remover';
+
+    sel.addEventListener('change', function () {   // ao trocar o item, o valor previsto volta para o último valor comprado
+      var it = itemPor(sel.value);
+      unidade.textContent = it ? it.unidade : '';
+      if (it) valor.value = it.valor || '';
+      recalcular();
+    });
+    qtd.addEventListener('input', recalcular);
+    valor.addEventListener('input', recalcular);
+    del.addEventListener('click', function () {
+      tr.parentNode.removeChild(tr);
+      recalcular();
+    });
+
+    [sel, unidade, qtd, valor, tot, obs, del].forEach(function (x, i) {
+      var td = x.tagName === 'TD' ? x : document.createElement('td');
+      if (x.tagName !== 'TD') td.appendChild(x);
+      if (i === 2 || i === 3) td.className = 'num';
+      tr.appendChild(td);
+    });
+    corpo.appendChild(tr);
+    recalcular();
+    return tr;
+  }
+
+  if (LINHAS.length) LINHAS.forEach(criarLinha);
+  else criarLinha();
+  recalcular();
+
+  document.getElementById('btn-adicionar').addEventListener('click', function () {
+    criarLinha().querySelector('select').focus();
+  });
+
+  document.getElementById('btn-sugerir').addEventListener('click', function () {
+    msg.textContent = 'Buscando itens abaixo do mínimo...';
+    fetch('{{ url_for("est.pedido_sugestoes") }}', {credentials: 'same-origin', headers: {'Accept': 'application/json'}})
+      .then(function (r) {
+        if (!r.ok) throw new Error('falha');
+        return r.json();
+      })
+      .then(function (lista) {
+        var presentes = {};
+        Array.prototype.forEach.call(corpo.querySelectorAll('select[name="item_id"]'), function (s) {
+          if (s.value) presentes[s.value] = true;
+        });
+        var novos = 0;
+        lista.forEach(function (s) {
+          if (presentes[String(s.item_id)]) return;
+          criarLinha({item_id: s.item_id, nome: s.nome, unidade: s.unidade, qtd: String(s.qtd).replace('.', ','),
+                      valor_unitario: s.valor_unitario == null ? '' : dinheiro(s.valor_unitario), obs: ''});
+          novos++;
+        });
+        msg.textContent = lista.length ? (novos + ' item(ns) sugerido(s) incluído(s).') : 'Nenhum item abaixo do mínimo.';
+      })
+      .catch(function () {
+        msg.textContent = 'Não foi possível buscar as sugestões. Tente de novo.';
+      });
+  });
+})();
+</script>
+{% endif %}
+{% endblock %}

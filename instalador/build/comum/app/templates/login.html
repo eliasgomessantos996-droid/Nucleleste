@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Entrar · Nucleleste</title>
+<link rel="icon" href="{{ url_for('static', filename='img/icone.svg') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/animacoes.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/tema.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/campanhas.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/tema-escuro.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/corporativo.css') }}">
+<script>try { var t = localStorage.getItem('nucleleste.tema'); if (t) document.documentElement.dataset.tema = t; var b = localStorage.getItem('nucleleste.brilho'); if (b) document.documentElement.dataset.brilho = b; } catch (e) {}</script>
+</head>
+<body>
+<div class="login-pagina">
+  <div class="ph-fundo" aria-hidden="true"><span class="ph-blob ph-b1"></span><span class="ph-blob ph-b2"></span><span class="ph-blob ph-b3"></span></div>
+  <svg class="ph-atomo" viewBox="0 0 200 200" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.4"><ellipse cx="100" cy="100" rx="86" ry="30"/><ellipse cx="100" cy="100" rx="86" ry="30" transform="rotate(60 100 100)"/><ellipse cx="100" cy="100" rx="86" ry="30" transform="rotate(120 100 100)"/></g><circle cx="100" cy="100" r="9" fill="currentColor"/></svg>
+  <form class="login-caixa" method="post">
+    {{ csrf_input }}
+    <div class="login-logo">
+      <img id="logo-login" data-base="{{ url_for('static', filename='img/logo/') }}" src="{{ url_for('static', filename='img/logo/verde-claro.png') }}" alt="Nucleleste - Centro de Medicina Nuclear">
+      <svg class="logo-atomo" viewBox="0 0 200 200" aria-hidden="true">
+        <g class="orbitas" fill="none" stroke-width="2.2">
+          <ellipse class="orb" cx="100" cy="100" rx="86" ry="30"/>
+          <ellipse class="orb" cx="100" cy="100" rx="86" ry="30" transform="rotate(60 100 100)"/>
+          <ellipse class="orb" cx="100" cy="100" rx="86" ry="30" transform="rotate(120 100 100)"/>
+        </g>
+        <g class="nucleo"><circle cx="92" cy="94" r="8"/><circle cx="108" cy="94" r="8"/><circle cx="100" cy="106" r="8"/><circle cx="86" cy="108" r="7"/><circle cx="114" cy="108" r="7"/><circle cx="100" cy="86" r="7"/></g>
+        <g><circle class="eletron" r="4.5"><animateMotion dur="3.4s" repeatCount="indefinite" path="M14,100 a86,30 0 1,0 172,0 a86,30 0 1,0 -172,0"/></circle></g>
+        <g transform="rotate(60 100 100)"><circle class="eletron" r="4.5"><animateMotion dur="4.6s" repeatCount="indefinite" path="M14,100 a86,30 0 1,0 172,0 a86,30 0 1,0 -172,0"/></circle></g>
+        <g transform="rotate(120 100 100)"><circle class="eletron" r="4.5"><animateMotion dur="5.8s" begin="-2s" repeatCount="indefinite" path="M14,100 a86,30 0 1,0 172,0 a86,30 0 1,0 -172,0"/></circle></g>
+      </svg>
+    </div>
+    <script>try { var lg = document.getElementById('logo-login'), tm = localStorage.getItem('nucleleste.tema'), br = localStorage.getItem('nucleleste.brilho'); if (['verde', 'azul', 'vinho', 'roxo', 'terracota', 'grafite', 'oceano', 'indigo'].indexOf(tm) < 0) tm = 'verde'; if (['claro', 'escuro'].indexOf(br) < 0) br = 'claro'; lg.src = lg.dataset.base + tm + '-' + br + '.png'; } catch (e) {}</script>
+    {% if request.args.get('motivo') == 'outro_login' %}<div class="msg aviso" role="alert">Sua sessão foi encerrada porque você entrou em outro computador</div>{% endif %}
+    {% with msgs = get_flashed_messages(with_categories=true) %}
+      {% for cat, m in msgs %}<div class="msg {{ cat }}">{{ m }}</div>{% endfor %}
+    {% endwith %}
+    <div class="campo"><label for="usuario">Usuário</label>
+      <input type="text" id="usuario" name="usuario" autocomplete="username" list="usuarios-lembrados"{% if lembrados %} value="{{ lembrados[0] }}"{% else %} autofocus{% endif %} data-maiusculas required>
+      <datalist id="usuarios-lembrados">{% for n in lembrados %}<option value="{{ n }}"></option>{% endfor %}</datalist></div>
+    <div class="campo"><label for="senha">Senha</label>
+      <input type="password" id="senha" name="senha" autocomplete="current-password"{% if lembrados %} autofocus{% endif %} required></div>
+    <button class="btn" type="submit">Entrar</button>
+  </form>
+{% from '_campanha.html' import laco %}
+{% if campanha %}{% set cp = campanha.principal %}
+  <div class="camp-entrada" style="--camp-cor:{{ cp.cor|e }};--camp-laco:{{ cp.laco|e }}">
+    {{ laco(cp, 44) }}
+    <div><p><strong>{{ cp.nome }} · {{ cp.tema }}</strong></p><p>{{ cp.mensagem }}</p></div>
+  </div>
+{% endif %}
+</div>
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+<script src="{{ url_for('static', filename='js/tema.js') }}"></script>
+<script>try { localStorage.removeItem('nl_batida'); localStorage.removeItem('nl_ativo'); } catch (e) {}</script>
+</body>
+</html>

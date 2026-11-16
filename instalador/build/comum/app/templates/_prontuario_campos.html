@@ -1,0 +1,51 @@
+{# Campos de um modelo de documento clínico. Uso: {% from '_prontuario_campos.html' import campo with context %}
+   Recebe do contexto: sinais_sub (sub-campos dos sinais vitais) e opcoes_de (opções de escolha). #}
+
+{% macro sugestoes_de(c, v, ro) -%}
+{% if c.sugestoes and not ro %}
+<div class="sugestoes">{% for s in c.sugestoes %}<button type="button" class="chip{% if v and s in v %} usado{% endif %}" data-alvo="{{ c.chave }}" data-texto="{{ s }}">{{ s }}</button>{% endfor %}</div>
+{% endif %}
+{%- endmacro %}
+
+{% macro campo(c, dados, ro, erros) -%}
+{% set v = dados.get(c.chave) %}
+<div class="c{{ c.largura or 12 }} pr-campo{% if c.chave in erros %} pr-erro{% endif %}"{% if c.cond %} data-cond="{{ c.cond[0] }}" data-cond-valor="{{ c.cond[1] }}"{% endif %}>
+  {% if c.tipo == 'calculado' %}
+    <label for="{{ c.chave }}">{{ c.rotulo }}</label>
+    <input type="text" id="{{ c.chave }}" name="{{ c.chave }}" value="{{ v or '' }}" readonly class="pr-calc" data-calc="{{ c.chave }}">
+  {% elif c.tipo == 'sinais' %}
+    <span class="rotulo-campo{% if c.obrig %} obrig{% endif %}">{{ c.rotulo }}</span>
+    <div class="pr-sinais">
+      {% for k, rot, unid in sinais_sub %}
+      <label class="pr-sinal"><small>{{ rot }}{% if unid %} ({{ unid }}){% endif %}</small>
+        <input type="text" inputmode="decimal" name="{{ c.chave }}_{{ k }}" id="{{ c.chave }}_{{ k }}" value="{{ dados.get(c.chave ~ '_' ~ k) or '' }}" {{ 'disabled' if ro }}>
+      </label>
+      {% endfor %}
+    </div>
+  {% elif c.tipo == 'area' %}
+    <label for="{{ c.chave }}" class="{{ 'obrig' if c.obrig }}">{{ c.rotulo }}</label>
+    <textarea id="{{ c.chave }}" name="{{ c.chave }}" rows="3" {{ 'disabled' if ro }}>{{ v or '' }}</textarea>
+    {{ sugestoes_de(c, v, ro) }}
+  {% elif c.tipo == 'multipla' %}
+    <span class="rotulo-campo">{{ c.rotulo }}</span>
+    <div class="pr-opcoes">
+      {% for o in c.opcoes %}
+      <label class="inline"><input type="checkbox" name="{{ c.chave }}" value="{{ o }}" {{ 'checked' if v and o in v }} {{ 'disabled' if ro }}> {{ o }}</label>
+      {% endfor %}
+    </div>
+  {% elif c.tipo in ('escolha', 'simnao', 'simnao_na') %}
+    <span class="rotulo-campo{% if c.obrig %} obrig{% endif %}">{{ c.rotulo }}</span>
+    <div class="pr-opcoes">
+      {% for o in opcoes_de(c) %}
+      <label class="inline"><input type="radio" name="{{ c.chave }}" value="{{ o }}" {{ 'checked' if v == o }} {{ 'disabled' if ro }}> {{ o }}</label>
+      {% endfor %}
+    </div>
+  {% else %}
+    {% set tipo_input = {'data': 'date', 'hora': 'time', 'numero': 'number'}.get(c.tipo, 'text') %}
+    <label for="{{ c.chave }}" class="{{ 'obrig' if c.obrig }}">{{ c.rotulo }}</label>
+    <input type="{{ tipo_input }}" id="{{ c.chave }}" name="{{ c.chave }}" value="{{ v or '' }}"{% if c.tipo == 'numero' %} step="any"{% endif %} {{ 'disabled' if ro }}>
+    {{ sugestoes_de(c, v, ro) }}
+  {% endif %}
+  {% if c.ajuda %}<div class="ajuda">{{ c.ajuda }}</div>{% endif %}
+</div>
+{%- endmacro %}

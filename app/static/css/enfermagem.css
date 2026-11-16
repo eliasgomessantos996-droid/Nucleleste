@@ -1,0 +1,32 @@
+/* Enfermagem e Segurança: áreas, situação (verde/amarelo/vermelho), formulários compactos e desenho animado do batimento. */
+.enf-heroi { display: flex; gap: 16px; align-items: center; border-left: 4px solid var(--verde); }
+.enf-arte { flex: 0 0 auto; color: #d6453d; }
+.enf-pulso { fill: none; stroke: currentColor; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 300; stroke-dashoffset: 300; animation: enf-traco 3.2s ease-in-out infinite; }
+.enf-ponto { fill: currentColor; offset-path: path('M0 30h50l10-22 14 44 12-34 8 12h126'); animation: enf-ponto 3.2s ease-in-out infinite; }
+@keyframes enf-traco { 0% { stroke-dashoffset: 300; } 55%, 85% { stroke-dashoffset: 0; } 100% { stroke-dashoffset: -300; } }
+@keyframes enf-ponto { 0% { offset-distance: 0; opacity: 1; } 55% { offset-distance: 100%; opacity: 1; } 56%, 100% { opacity: 0; } }
+.enf-areas { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; margin-bottom: 16px; }
+.enf-area { display: flex; flex-direction: column; gap: 5px; padding: 14px; border-radius: 14px; border: 1px solid var(--borda, #d5ddd8); border-left: 6px solid #2e7d32; background: var(--sup, #fff); color: inherit; text-decoration: none; transition: transform .15s, box-shadow .15s; }
+a.enf-area:hover { transform: translateY(-2px); box-shadow: 0 8px 18px -12px rgba(0, 0, 0, .45); }
+.enf-area.vermelho { border-left-color: #c62828; background: color-mix(in srgb, #c62828 7%, var(--sup, #fff)); }
+.enf-area-ico { color: var(--verde); } .enf-area.vermelho .enf-area-ico { color: #c62828; }
+.enf-area small { color: var(--suave, #5d6b64); font-size: 12px; }
+.enf-chip { display: inline-block; align-self: flex-start; padding: 2px 10px; border-radius: 99px; font-size: 12px; font-weight: 700; background: #eef1ef; color: #44514a; }
+.enf-chip.verde { background: #d8f0df; color: #1e5631; } .enf-chip.amarelo { background: #fff0c2; color: #7a5200; } .enf-chip.vermelho { background: #fbdcd8; color: #8e2a1f; }
+.enf-alerta { display: flex; gap: 8px; align-items: center; border-left: 4px solid #ef6c00; }
+.enf-alerta.vermelho { border-left-color: #c62828; background: color-mix(in srgb, #c62828 8%, var(--sup, #fff)); } .enf-alerta.amarelo { border-left-color: #f9a825; } .enf-alerta.verde { border-left-color: #2e7d32; }
+.enf-linha-vermelha td { background: color-mix(in srgb, #c62828 10%, transparent) !important; }
+.enf-form label { display: flex; flex-direction: column; gap: 3px; font-size: 12.5px; margin-bottom: 8px; }
+.enf-form input[type=text], .enf-form input[type=number], .enf-form input[type=date], .enf-form select, .enf-form textarea { width: 100%; box-sizing: border-box; }
+.enf-form-inline { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 6px 0; }
+.enf-form-inline input, .enf-form-inline select { flex: 1; min-width: 120px; max-width: 220px; }
+.enf-form-inline input[type=number] { max-width: 90px; }
+.enf-checklist { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 4px 12px; margin: 8px 0; }
+.enf-equip details { margin-top: 4px; font-size: 12.5px; } .enf-equip details summary { cursor: pointer; color: var(--verde); }
+.enf-ass-previa { display: block; max-height: 90px; background: repeating-conic-gradient(#eee 0 25%, #fff 0 50%) 0 0 / 14px 14px; border: 1px solid var(--borda, #d5ddd8); border-radius: 8px; padding: 4px; }
+.enf-ass-mini { max-height: 36px; background: #fff; border-radius: 4px; }
+.enf-atual { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-bottom: 12px; }
+@media (prefers-reduced-motion: reduce) { .enf-pulso { animation: none; stroke-dashoffset: 0; } .enf-ponto { display: none; } }
+html[data-brilho="escuro"] .enf-area, html[data-brilho="escuro"] .enf-ass-mini { background: var(--sup); color: var(--texto); border-color: var(--borda); }
+html[data-brilho="escuro"] .enf-area.vermelho { background: color-mix(in srgb, #c62828 18%, var(--sup)); }
+@media print { .enf-nao-imprime, .menu, .barra-pagina { display: none !important; } }

@@ -1,0 +1,82 @@
+{% extends 'base.html' %}
+{% block titulo %}{{ 'Perfil de ' ~ u.usuario if u else 'Novo usuário' }}{% endblock %}
+{% block conteudo %}
+<h1>{{ 'Perfil de ' ~ u.usuario if u else 'Novo usuário' }}</h1>
+<p class="sub">Marque os módulos que este usuário poderá ver e usar. Módulos desmarcados somem do menu e ficam bloqueados.</p>
+<form method="post" autocomplete="off" id="form-perfil">
+  {{ csrf_input }}
+  <div class="cartao">
+    <h2>Acesso</h2>
+    <div class="grade">
+      <div class="c4"><label class="obrig">Nome de usuário</label>
+        {% if u and pode_login %}<input type="text" name="usuario" value="{{ request.form.get('usuario', u.usuario) }}" required minlength="3" maxlength="80" data-maiusculas><div class="ajuda">Só o login muda; o nome da pessoa continua o mesmo. Avise o usuário.</div>{% elif u %}<input type="text" value="{{ u.usuario }}" readonly>{% else %}<input type="text" name="usuario" required data-maiusculas autofocus>{% endif %}</div>
+      <div class="c4"><label {% if not u %}class="obrig"{% endif %}>{{ 'Nova senha (deixe em branco para manter)' if u else 'Senha inicial' }}</label>
+        <input type="password" name="senha" {% if not u %}required{% endif %} autocomplete="new-password"><div class="ajuda">O usuário pode trocar depois em “Alterar senha”.</div></div>
+      <div class="c4"><label>Perfil</label>
+        <label class="inline" style="margin-top:6px"><input type="radio" name="perfil" value="usuario" id="perfil-usuario" {% if not admin_flag %}checked{% endif %}> <span><b>Usuário</b> (funcionário normal: usa só os módulos marcados)</span></label>
+        <label class="inline" style="margin-top:6px"><input type="radio" name="perfil" value="admin" id="chk-admin" {% if admin_flag %}checked{% endif %}> <span><b>Administrador</b> (acessa tudo, inclusive usuários)</span></label></div>
+    </div>
+  </div>
+
+  <div class="cartao" id="bloco-modulos">
+    <div class="cabecalho" style="margin-bottom:6px"><h2 style="margin:0">Módulos liberados</h2>
+      <div class="acoes" style="margin:0">
+        {% for k, nome in preset_nomes.items() %}<button class="btn sec peq" type="button" data-preset="{{ k }}">{{ nome }}</button>{% endfor %}
+      </div></div>
+    <p class="ajuda" id="aviso-admin" style="display:none">Administradores têm acesso a todos os módulos; a seleção abaixo é ignorada.</p>
+    <div class="modulos-grade">
+    {% for grupo, itens in grupos.items() %}
+      <fieldset class="grupo-mod"><legend>{{ grupo }}</legend>
+        {% for m in itens %}
+        <label class="mod-item"><input type="checkbox" name="modulos" value="{{ m.chave }}" {% if m.marcado %}checked{% endif %}>
+          <span><b>{{ m.nome }}</b><small>{{ m.desc }}</small></span></label>
+        {% endfor %}
+      </fieldset>
+    {% endfor %}
+    </div>
+  </div>
+  <div class="cartao" id="bloco-laudos">
+    <h2 style="margin-top:0">Mapa de laudos</h2>
+    <p class="ajuda">Vale para quem tem o módulo “Mapa de laudos”. Administração e gerência sempre têm acesso completo.</p>
+    <label class="inline"><input type="radio" name="laudo_acesso" value="completo" {% if not laudo_perm %}checked{% endif %}> <b>Acesso completo</b> (vê todas as situações e muda para qualquer uma)</label>
+    <label class="inline"><input type="radio" name="laudo_acesso" value="restrito" {% if laudo_perm %}checked{% endif %}> <b>Restringir</b> às situações abaixo</label>
+    <table class="tabela" id="tab-laudo-perm" style="margin-top:8px;max-width:560px">
+      <thead><tr><th>Situação</th><th>Pode ver</th><th>Pode passar para a próxima etapa</th></tr></thead>
+      <tbody>
+      {% for chave, rotulo in laudo_situacoes %}
+        <tr><td>{{ rotulo }}</td>
+          <td><input type="checkbox" name="ver_{{ chave }}" {% if laudo_perm and chave in laudo_perm.ver %}checked{% endif %}></td>
+          <td>{% if laudo_proximas[chave] %}<input type="checkbox" name="mover_{{ chave }}" {% if laudo_perm and chave in laudo_perm.mover %}checked{% endif %}> <small>→ {{ laudo_situacoes_nomes[laudo_proximas[chave]] }}</small>{% else %}<small>última etapa</small>{% endif %}</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    <p class="ajuda">Quem pode passar de uma etapa para a próxima também enxerga a etapa de origem. Quem tem acesso restrito só avança uma etapa por vez (não volta). Ex.: marque só “Processando imagem” nas duas colunas para o usuário ver apenas essa etapa e passá-la para “Laudando”.</p>
+  </div>
+  <div class="acoes"><button class="btn" type="submit">{{ 'Salvar perfil' if u else 'Criar usuário' }}</button><a class="btn sec" href="{{ url_for('admin.usuarios') }}">Voltar</a></div>
+</form>
+<style>
+  .modulos-grade { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; margin-top: 10px; }
+  .grupo-mod { border: 1px solid var(--borda); border-radius: 14px; padding: 8px 12px 10px; margin: 0; }
+  .grupo-mod legend { font-size: 12px; text-transform: uppercase; letter-spacing: .6px; color: var(--suave); padding: 0 6px; font-weight: 700; }
+  .mod-item { display: flex; gap: 10px; align-items: flex-start; padding: 7px 6px; margin: 0; border-radius: 10px; cursor: pointer; font-weight: 500; color: var(--texto); transition: background .2s; }
+  .mod-item:hover { background: var(--verde-claro); }
+  .mod-item input { margin-top: 3px; width: 17px; height: 17px; accent-color: var(--verde); flex: none; }
+  .mod-item small { display: block; color: var(--suave); font-size: 12px; font-weight: 400; }
+  .mod-item:has(input:checked) { background: #eef7f1; }
+  #tab-laudo-perm td:not(:first-child), #tab-laudo-perm th:not(:first-child) { text-align: center; }
+  #bloco-modulos.admin .modulos-grade { opacity: .45; pointer-events: none; }
+</style>
+{% endblock %}
+{% block scripts %}
+<script>
+(function () {
+  const presets = {{ presets|tojson }};
+  const caixas = [...document.querySelectorAll('input[name=modulos]')], adm = document.getElementById('chk-admin');
+  document.querySelectorAll('[data-preset]').forEach((b) => b.addEventListener('click', () => {
+    const set = new Set(presets[b.dataset.preset]); caixas.forEach((c) => { c.checked = set.has(c.value); });
+  }));
+  function modoAdmin() { document.getElementById('bloco-laudos').style.display = adm.checked ? 'none' : ''; document.getElementById('bloco-modulos').classList.toggle('admin', adm.checked); document.getElementById('aviso-admin').style.display = adm.checked ? '' : 'none'; }
+  document.querySelectorAll('input[name=perfil]').forEach((r) => r.addEventListener('change', modoAdmin)); modoAdmin();
+})();
+</script>
+{% endblock %}

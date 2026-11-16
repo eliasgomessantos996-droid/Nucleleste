@@ -1,0 +1,234 @@
+{% extends 'base.html' %}
+{% block titulo %}Movimento de caixa{% endblock %}
+{% block conteudo %}
+<div class="cabecalho">
+  <div><h1>Movimento de caixa</h1><p class="sub">Abra o seu caixa no início do dia, receba os pagamentos (dinheiro ou PIX, com nota fiscal) e feche no fim do dia para assinar o relatório.</p></div>
+  <div class="acoes"><a class="btn sec" href="{{ url_for('atend.caixa') }}">Lançamentos do caixa</a></div>
+</div>
+
+<form method="get" class="cartao mov-filtro" style="display:flex;gap:12px;align-items:end;flex-wrap:wrap;margin-bottom:14px">
+  <div><label for="f-dia">Lançamentos do dia</label><input type="date" id="f-dia" name="dia" value="{{ dia or hoje }}" {% if not dia %}disabled{% endif %}></div>
+  <label class="inline" style="margin:0 0 6px"><input type="checkbox" id="f-todas" {% if not dia %}checked{% endif %}> todas as datas</label>
+  {% if privilegiado %}<label class="inline" style="margin:0 0 6px"><input type="checkbox" name="usuarios" value="todos" {% if todos_usuarios %}checked{% endif %}> lançamentos de todos os usuários</label>{% endif %}
+  <button class="btn sec" type="submit">Mostrar</button>
+  <small>{% if dia %}Mostrando {{ 'o dia ' ~ fmt(dia) }}{% else %}Mostrando todas as datas{% endif %}, {% if todos_usuarios %}de todos os usuários{% else %}só o que {{ 'você' }} lançou{% endif %}.
+    {% if dia != hoje %}<a href="{{ url_for('mov.pagina') }}">Voltar para hoje</a>{% endif %}</small>
+</form>
+
+{% if atual and atual.data != hoje %}
+<div class="msg erro" style="margin-bottom:14px">Você tem o caixa de {{ fmt(atual.data) }} aberto. Feche-o antes de abrir o de hoje ou de lançar recebimentos.</div>
+<div class="cartao">
+  <h2 style="margin-top:0">Caixa de {{ fmt(atual.data) }} (aberto)</h2>
+  <form method="post" action="{{ url_for('mov.fechar') }}" onsubmit="return confirm('Fechar o caixa de {{ fmt(atual.data) }}?')">
+    {{ csrf_input }}<input type="hidden" name="sessao" value="{{ atual.id }}">
+    <button class="btn" type="submit">Fechar caixa de {{ fmt(atual.data) }}</button>
+  </form>
+</div>
+{% elif aberta_hoje %}
+<div class="cartao" style="margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap">
+  <div><strong>Caixa de hoje aberto</strong><br><small>Fundo de troco: R$ {{ aberta_hoje.fundo|moeda }} · recebimentos: {{ recebidos|length }}</small></div>
+  <form method="post" action="{{ url_for('mov.fechar') }}" onsubmit="return confirm('Fechar o caixa de hoje? Depois disso só a gerência corrige.')">
+    {{ csrf_input }}<input type="hidden" name="sessao" value="{{ aberta_hoje.id }}">
+    <button class="btn perigo" type="submit">Fechar caixa</button>
+  </form>
+</div>
+{% else %}
+<form method="post" action="{{ url_for('mov.abrir') }}" class="cartao" style="display:flex;gap:12px;align-items:end;flex-wrap:wrap">
+  {{ csrf_input }}
+  <div><strong>Caixa de hoje ({{ fmt(hoje) }}) fechado</strong><br><small>Abra o caixa para começar a receber.</small></div>
+  <div><label for="fundo">Fundo de troco (R$)</label><input type="text" id="fundo" name="fundo" value="0,00" inputmode="decimal" style="width:140px"></div>
+  <button class="btn" type="submit">Abrir caixa</button>
+</form>
+{% endif %}
+
+<h2>A receber{% if dia %} · {{ fmt(dia) }}{% else %} · todas as datas{% endif %}</h2>
+{% if privilegiado %}
+<form id="form-pend" method="post" action="{{ url_for('mov.excluir_varios') }}" class="mov-selecao" data-selecao data-total="{{ pendentes|length }}" data-nome="a receber">
+  {{ csrf_input }}
+  <input type="hidden" name="dia" value="{{ dia or 'todas' }}">{% if todos_usuarios %}<input type="hidden" name="usuarios" value="todos">{% endif %}
+  <span data-contagem>Nenhum selecionado</span>
+  <button class="btn perigo peq" type="submit" data-excluir-marcados disabled>Excluir selecionados</button>
+  <button class="btn perigo peq" type="submit" name="todos" value="pendentes" data-excluir-todos {% if not pendentes %}disabled{% endif %}>Excluir todos ({{ pendentes|length }})</button>
+</form>
+{% endif %}
+<div class="tabela-wrap" style="margin-bottom:18px"><table class="tabela">
+  <thead><tr>{% if privilegiado %}<th class="mov-chk"><input type="checkbox" form="form-pend" data-marcar-todos aria-label="Marcar todos os lançamentos a receber"></th>{% endif %}<th>Data</th><th>Cliente</th><th>Procedimento</th><th>Convênio</th><th class="num">Valor</th><th></th></tr></thead>
+  <tbody>
+  {% for p in pendentes %}
+    <tr>{% if privilegiado %}<td class="mov-chk"><input type="checkbox" form="form-pend" name="ids" value="{{ p.id }}" aria-label="Selecionar {{ p.cliente }}"></td>{% endif %}<td>{{ p.data|data_br }}</td><td>{{ p.cliente }}</td><td>{{ p.procedimento or '' }}</td><td>{{ p.convenio or '' }}</td>
+      <td class="num">{{ p.valor|moeda }}</td>
+      <td class="num">{% if p.usuario and p.usuario|upper != eu|upper %}<small title="Só quem lançou o atendimento recebe o valor">lançado por {{ p.usuario }}</small>
+        {% elif aberta_hoje and not (atual and atual.data != hoje) %}
+        <button class="btn peq" type="button" data-receber data-cid="{{ p.id }}" data-cliente="{{ p.cliente }}" data-valor="{{ p.valor|moeda }}">Receber</button>
+        {% else %}<small>abra o caixa para receber</small>{% endif %}
+        {% if privilegiado %}<form method="post" action="{{ url_for('mov.excluir', cid=p.id) }}" data-confirmar="Excluir este lançamento do movimento de caixa?" style="display:inline">{{ csrf_input }}<button class="btn perigo peq" type="submit">Excluir</button></form>{% endif %}</td></tr>
+  {% else %}<tr><td colspan="7" class="vazio">Nenhum recebimento pendente{% if dia %} neste dia{% endif %}. {% if dia %}Para ver outras datas, escolha a data acima ou marque “todas as datas”.{% endif %}</td></tr>{% endfor %}
+  </tbody>
+</table></div>
+
+{% if aberta_hoje %}
+<h2>Recebido hoje neste caixa</h2>
+<div class="tabela-wrap" style="margin-bottom:18px"><table class="tabela">
+  <thead><tr><th>Hora</th><th>Cliente</th><th>Forma</th><th>NF</th><th class="num">Valor</th><th class="num">Recebido</th><th class="num">Troco</th><th></th></tr></thead>
+  <tbody>
+  {% for r in recebidos %}
+    <tr><td>{{ (r.pago_em or '')[11:16] }}</td><td>{{ r.cliente }}</td><td>{{ formas_texto(r) }}</td><td>{{ r.nota_fiscal }}</td>
+      <td class="num">{{ r.valor|moeda }}</td><td class="num">{{ r.valor_recebido|moeda }}</td><td class="num">{{ r.troco|moeda }}</td>
+      <td><a class="btn sec peq" href="{{ url_for('mov.quitacao', cid=r.id) }}" target="_blank" rel="noopener">Quitação</a></td></tr>
+  {% else %}<tr><td colspan="8" class="vazio">Nenhum recebimento ainda.</td></tr>{% endfor %}
+  </tbody>
+</table></div>
+{% endif %}
+
+{% if privilegiado %}
+<h2>Recebimentos lançados (gerência){% if dia %} · {{ fmt(dia) }}{% else %} · todas as datas{% endif %}</h2>
+<p class="sub">{{ recentes|length }} recebimento(s) {% if todos_usuarios %}de todos os caixas{% else %}do seu caixa{% endif %} (no máximo 100). Só a gerência exclui um lançamento; a exclusão fica registrada na auditoria.</p>
+<form id="form-rec" method="post" action="{{ url_for('mov.excluir_varios') }}" class="mov-selecao" data-selecao data-total="{{ recentes|length }}" data-nome="recebidos">
+  {{ csrf_input }}
+  <input type="hidden" name="dia" value="{{ dia or 'todas' }}">{% if todos_usuarios %}<input type="hidden" name="usuarios" value="todos">{% endif %}
+  <span data-contagem>Nenhum selecionado</span>
+  <button class="btn perigo peq" type="submit" data-excluir-marcados disabled>Excluir selecionados</button>
+  <button class="btn perigo peq" type="submit" name="todos" value="recebidos" data-excluir-todos {% if not recentes %}disabled{% endif %}>Excluir todos os listados ({{ recentes|length }})</button>
+</form>
+<div class="tabela-wrap" style="margin-bottom:18px"><table class="tabela">
+  <thead><tr><th class="mov-chk"><input type="checkbox" form="form-rec" data-marcar-todos aria-label="Marcar todos os recebimentos listados"></th><th>Caixa</th><th>Hora</th><th>Operador</th><th>Cliente</th><th>Forma</th><th>NF</th><th class="num">Valor</th><th></th></tr></thead>
+  <tbody>
+  {% for r in recentes %}
+    <tr><td class="mov-chk"><input type="checkbox" form="form-rec" name="ids" value="{{ r.id }}" aria-label="Selecionar {{ r.cliente }}"></td><td>{{ fmt(r.caixa_data) if r.caixa_data else '' }}</td><td>{{ (r.pago_em or '')[11:16] }}</td><td>{{ r.recebido_por or '' }}</td><td>{{ r.cliente }}</td>
+      <td>{{ formas_texto(r) }}</td><td>{{ r.nota_fiscal }}</td><td class="num">{{ r.valor|moeda }}</td>
+      <td class="num"><form method="post" action="{{ url_for('mov.excluir', cid=r.id) }}" data-confirmar="Excluir este lançamento ({{ r.cliente }}, R$ {{ r.valor|moeda }}) do movimento de caixa? Isso não pode ser desfeito." style="display:inline">{{ csrf_input }}<button class="btn perigo peq" type="submit">Excluir</button></form></td></tr>
+  {% else %}<tr><td colspan="9" class="vazio">Nenhum recebimento lançado{% if dia %} neste dia{% endif %}.</td></tr>{% endfor %}
+  </tbody>
+</table></div>
+{% endif %}
+
+<h2>Caixas</h2>
+<div class="tabela-wrap"><table class="tabela">
+  <thead><tr><th>Dia</th>{% if privilegiado %}<th>Operador</th>{% endif %}<th>Situação</th><th class="num">Fundo</th><th class="num">Recebimentos</th><th></th></tr></thead>
+  <tbody>
+  {% for s in sessoes %}
+    <tr><td>{{ fmt(s.data) }}</td>{% if privilegiado %}<td>{{ s.usuario }}</td>{% endif %}
+      <td>{{ 'Aberto' if s.status == 'ABERTO' else 'Fechado' }}</td><td class="num">{{ s.fundo|moeda }}</td><td class="num">{{ s.n }}</td>
+      <td style="white-space:nowrap">{% if s.status == 'FECHADO' %}<a class="btn sec peq" href="{{ url_for('mov.relatorio_pdf', sessao_id=s.id) }}" target="_blank" rel="noopener">Relatório (PDF)</a>
+        {% if privilegiado %}<form method="post" action="{{ url_for('mov.reabrir', sessao_id=s.id) }}" style="display:inline" data-confirmar="Reabrir o caixa de {{ s.usuario }} de {{ fmt(s.data) }}? Use quando ele foi fechado sem querer.">{{ csrf_input }}<button class="btn sec peq" type="submit" title="Só a gerência reabre um caixa fechado">↺ Reabrir caixa</button></form>{% endif %}{% endif %}</td></tr>
+  {% else %}<tr><td colspan="6" class="vazio">Nenhum caixa ainda.</td></tr>{% endfor %}
+  </tbody>
+</table></div>
+
+<dialog id="dlg-receber" class="ag-dialogo">
+  <form method="post" id="form-receber">
+    {{ csrf_input }}
+    <h2 style="margin-top:0">Receber</h2>
+    <p><strong data-campo="cliente"></strong></p>
+    <div class="grade">
+      <div class="c6"><label for="rv-valor">Valor a receber (R$)</label><input type="text" id="rv-valor" name="valor" inputmode="decimal"></div>
+      <div class="c6"><label for="rv-forma">Forma de pagamento</label>
+        <select id="rv-forma" name="forma" required>{% for f in formas %}<option value="{{ f }}">{{ f|capitalize }}</option>{% endfor %}</select></div>
+      <div class="c12"><label class="inline"><input type="checkbox" id="rv-dividir"> Dividir em duas formas de pagamento (dinheiro e PIX)</label></div>
+      <div class="c6" data-so-dividido hidden><label for="rv-forma2">Segunda forma</label>
+        <select id="rv-forma2" name="forma2" disabled>{% for f in formas %}<option value="{{ f }}">{{ f|capitalize }}</option>{% endfor %}</select></div>
+      <div class="c6" data-so-dividido hidden><label for="rv-valor2">Valor pago na segunda forma (R$)</label><input type="text" id="rv-valor2" name="valor2" inputmode="decimal" disabled></div>
+      <div class="c12" data-so-dividido hidden><small id="rv-resumo"></small></div>
+      <div class="c6" data-so-dinheiro><label for="rv-recebido" id="rv-rotulo-recebido">Valor entregue pelo cliente (R$)</label><input type="text" id="rv-recebido" name="recebido" inputmode="decimal"></div>
+      <div class="c6" data-so-dinheiro><label>Troco</label><input type="text" id="rv-troco" readonly></div>
+      <div class="c12"><label for="rv-nf">Número da nota fiscal emitida</label><input type="text" id="rv-nf" name="nota_fiscal" required></div>
+    </div>
+    <div class="acoes"><button class="btn" type="submit">Confirmar recebimento</button><button class="btn sec" type="button" data-fechar>Cancelar</button></div>
+  </form>
+</dialog>
+{% endblock %}
+{% block scripts %}
+<script>
+(() => {
+  const dlg = document.getElementById('dlg-receber');
+  const form = document.getElementById('form-receber');
+  const forma = document.getElementById('rv-forma');
+  const valor = document.getElementById('rv-valor');
+  const recebido = document.getElementById('rv-recebido');
+  const troco = document.getElementById('rv-troco');
+  const emNumero = (s) => parseFloat(String(s || '0').replace(/\./g, '').replace(',', '.')) || 0;
+  const dividir = document.getElementById('rv-dividir');
+  const forma2 = document.getElementById('rv-forma2');
+  const valor2 = document.getElementById('rv-valor2');
+  const resumo = document.getElementById('rv-resumo');
+  const moeda = (n) => n.toFixed(2).replace('.', ',');
+  const outraForma = () => (forma.value === 'DINHEIRO' ? 'PIX' : 'DINHEIRO');
+  const atualizarTroco = () => {
+    const dividido = dividir.checked;
+    document.querySelectorAll('[data-so-dividido]').forEach((el) => { el.hidden = !dividido; });
+    forma2.disabled = valor2.disabled = !dividido;
+    if (dividido) forma2.value = outraForma();   // com só duas formas, a segunda é sempre a outra
+    const total = emNumero(valor.value);
+    const parte2 = dividido ? emNumero(valor2.value) : 0;
+    const parte1 = total - parte2;
+    // quanto do pagamento é em dinheiro (para calcular o troco)
+    const emDinheiro = !dividido ? (forma.value === 'DINHEIRO' ? total : 0) : (forma.value === 'DINHEIRO' ? parte1 : parte2);
+    const temDinheiro = !dividido ? forma.value === 'DINHEIRO' : true;
+    document.querySelectorAll('[data-so-dinheiro]').forEach((el) => { el.hidden = !temDinheiro; });
+    recebido.required = temDinheiro;
+    document.getElementById('rv-rotulo-recebido').textContent = dividido ? 'Valor entregue em dinheiro (R$)' : 'Valor entregue pelo cliente (R$)';
+    if (dividido) {
+      resumo.textContent = 'Primeira forma (' + forma.value.toLowerCase() + '): R$ ' + moeda(Math.max(parte1, 0)) + ' · segunda forma (' +
+        forma2.value.toLowerCase() + '): R$ ' + moeda(parte2) + (parte1 <= 0 ? ' — a segunda parte precisa ser menor que o total.' : '');
+    }
+    const t = emNumero(recebido.value) - emDinheiro;
+    troco.value = temDinheiro && recebido.value ? (t > 0 ? moeda(t) : '0,00') : '';
+  };
+  document.querySelectorAll('[data-receber]').forEach((b) => b.addEventListener('click', () => {
+    form.action = '/movimento-caixa/receber/' + b.dataset.cid;
+    dlg.querySelector('[data-campo="cliente"]').textContent = b.dataset.cliente;
+    valor.value = b.dataset.valor;
+    recebido.value = '';
+    valor2.value = '';
+    dividir.checked = false;
+    document.getElementById('rv-nf').value = '';
+    forma.value = 'DINHEIRO';
+    atualizarTroco();
+    dlg.showModal();
+  }));
+  dividir.addEventListener('change', atualizarTroco);
+  valor2.addEventListener('input', atualizarTroco);
+  forma.addEventListener('change', atualizarTroco);
+  recebido.addEventListener('input', atualizarTroco);
+  valor.addEventListener('input', atualizarTroco);
+  dlg.querySelector('[data-fechar]').addEventListener('click', () => dlg.close());
+  const todasDatas = document.getElementById('f-todas');
+  const campoDia = document.getElementById('f-dia');
+  todasDatas.addEventListener('change', () => { campoDia.disabled = todasDatas.checked; });
+  document.querySelector('.mov-filtro').addEventListener('submit', () => {
+    if (todasDatas.checked) {   // sem data no formulário, o servidor assume hoje: manda "todas" de forma explícita
+      const h = document.createElement('input'); h.type = 'hidden'; h.name = 'dia'; h.value = 'todas';
+      document.querySelector('.mov-filtro').append(h);
+    }
+  });
+
+{% if privilegiado %}
+  // seleção múltipla: marcar vários (ou todos) e excluir de uma vez, com confirmação
+  document.querySelectorAll('[data-selecao]').forEach((f) => {
+    const caixas = () => [...document.querySelectorAll('input[name="ids"][form="' + f.id + '"]')];
+    const geral = document.querySelector('[data-marcar-todos][form="' + f.id + '"]');
+    const contagem = f.querySelector('[data-contagem]');
+    const botao = f.querySelector('[data-excluir-marcados]');
+    const atualizar = () => {
+      const n = caixas().filter((c) => c.checked).length;
+      contagem.textContent = n ? n + ' selecionado(s)' : 'Nenhum selecionado';
+      botao.disabled = n === 0;
+      botao.textContent = n ? 'Excluir selecionados (' + n + ')' : 'Excluir selecionados';
+      if (geral) { geral.checked = n > 0 && n === caixas().length; geral.indeterminate = n > 0 && n < caixas().length; }
+      caixas().forEach((c) => c.closest('tr').classList.toggle('mov-marcada', c.checked));
+    };
+    caixas().forEach((c) => c.addEventListener('change', atualizar));
+    if (geral) geral.addEventListener('change', () => { caixas().forEach((c) => { c.checked = geral.checked; }); atualizar(); });
+    f.addEventListener('submit', (ev) => {
+      const todos = ev.submitter && ev.submitter.hasAttribute('data-excluir-todos');
+      const n = todos ? Number(f.dataset.total) : caixas().filter((c) => c.checked).length;
+      const texto = todos ? 'Excluir TODOS os ' + n + ' lançamentos desta lista do movimento de caixa? Isso não pode ser desfeito.'
+                          : 'Excluir os ' + n + ' lançamentos selecionados do movimento de caixa? Isso não pode ser desfeito.';
+      if (!confirm(texto)) ev.preventDefault();
+    });
+    atualizar();
+  });
+{% endif %}
+})();
+</script>
+{% endblock %}

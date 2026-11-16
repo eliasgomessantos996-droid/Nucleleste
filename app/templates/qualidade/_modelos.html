@@ -1,0 +1,105 @@
+{% from '_ic.html' import ic %}
+{# Peças comuns da Qualidade: galeria de modelos prontos para medicina nuclear e botões de PDF (com assinatura e validação).
+   Uso: {% from 'qualidade/_modelos.html' import galeria, cartao, pdf_botoes with context %} #}
+
+{# PDF para apresentar a órgãos e auditorias: "PDF" abre para conferir, "Baixar" salva o arquivo. Os dois levam o quadro de validação. #}
+{% macro pdf_botoes(url, rotulo='PDF') -%}
+{%- set sep = '&' if '?' in url else '?' -%}
+<a class="btn sec q-nao-imprime" href="{{ url }}" target="_blank" rel="noopener" title="Abrir o PDF (com a análise e o quadro de assinaturas e validação)">{{ ic('file-text', 16) }} {{ rotulo }}</a><a class="btn sec q-nao-imprime" href="{{ url }}{{ sep }}baixar=1" title="Baixar o PDF com a análise e os campos de assinatura e validação">{{ ic('file-down', 16) }} Baixar</a>
+{%- endmacro %}
+
+{# Desenho animado: modelo (folha) sendo preenchido #}
+{% macro arte() -%}
+<svg class="q-arte" viewBox="0 0 64 48" width="58" height="44" aria-hidden="true" focusable="false">
+  <rect class="q-arte-f1" x="6" y="5" width="34" height="38" rx="4"/>
+  <rect class="q-arte-f2" x="20" y="4" width="36" height="40" rx="4"/>
+  <path class="q-arte-l l1" d="M27 14h22"/><path class="q-arte-l l2" d="M27 21h22"/><path class="q-arte-l l3" d="M27 28h13"/>
+  <circle class="q-arte-c" cx="46" cy="34" r="6"/><path class="q-arte-ok" d="M43 34l2.4 2.4 4-4.6"/>
+</svg>
+{%- endmacro %}
+
+{# Moldura recolhível da galeria. Dentro dela, use cartao(...) para cada modelo. #}
+{% macro galeria(titulo, intro, total, aberto=false, agrupado=false) -%}
+<details class="cartao q-modelos q-nao-imprime"{{ ' open' if aberto }}>
+  <summary>{{ arte() }}<span class="q-modelos-tit"><b>{{ titulo }}</b><small>{{ total }} modelo{{ '' if total == 1 else 's' }} pronto{{ '' if total == 1 else 's' }} para medicina nuclear · você só altera os dados importantes</small></span></summary>
+  <p class="sub">{{ intro }}</p>
+  {% if agrupado %}{{ caller() }}{% else %}<div class="q-modelos-grade">{{ caller() }}</div>{% endif %}
+  <p class="q-modelos-aviso">{{ ic('shield-check', 14) }} Modelos de partida: revise com o responsável técnico e o supervisor de proteção radiológica e confira a legislação vigente antes de apresentar a um órgão.</p>
+</details>
+{%- endmacro %}
+
+{# Um modelo: título, frase, etiquetas e o botão que aplica. Com {% call %} dá para incluir opções extras (ex.: "substituir"). #}
+{% macro cartao(titulo, frase, chips, action, botao='Usar este modelo', campos=none) -%}
+<form class="q-modelo" method="post" action="{{ action }}">{{ csrf_input }}
+  {% if campos %}{% for k, v in campos.items() %}<input type="hidden" name="{{ k }}" value="{{ v }}">{% endfor %}{% endif %}
+  <h3>{{ titulo }}</h3>
+  {% if frase %}<p>{{ frase }}</p>{% endif %}
+  {% if chips %}<div class="q-modelo-chips">{% for c in chips %}{% if c %}<span>{{ c }}</span>{% endif %}{% endfor %}</div>{% endif %}
+  {% if caller %}{{ caller() }}{% endif %}
+  <button class="btn peq" type="submit">{{ ic('check', 16) }} {{ botao }}</button>
+</form>
+{%- endmacro %}
+
+{# Grade de cartões (para galerias agrupadas) #}
+{% macro grade() -%}<div class="q-modelos-grade">{{ caller() }}</div>{%- endmacro %}
+
+{# ---------------------------------------------------------------- galerias prontas, uma por ferramenta #}
+{% macro galeria_problemas(modelos, destino, aberto=false) -%}
+{% call galeria('Modelos prontos de análise de problemas', 'Cada modelo já abre o problema com meta, causas por 6M (Ishikawa), cinco porquês, prioridade GUT e plano de ação 5W2H. Escolha o que se parece com a sua situação e ajuste responsáveis, prazos e detalhes.', modelos|length, aberto) %}
+{% for m in modelos %}{{ cartao(m.titulo, m.descricao, [m.area, 'GUT ' ~ m.gut, m.causas ~ ' causas', m.acoes ~ ' ações'], url_for('qual.modelo_problema', chave=m.chave), campos={'destino': destino}) }}{% endfor %}
+{% endcall %}
+{%- endmacro %}
+
+{% macro galeria_planos(modelos, aberto=false) -%}
+{% call galeria('Modelos prontos de plano de ação 5W2H', 'Conjuntos de ações (o quê, por quê, onde, quem, como e prazo) para rotinas do serviço. As ações entram no plano com prazo contado a partir de hoje; ajuste os responsáveis.', modelos|length, aberto) %}
+{% for m in modelos %}{{ cartao(m.titulo, m.descricao, [m.area, m.acoes ~ ' ações'], url_for('qual.modelo_plano', chave=m.chave), botao='Incluir no plano') }}{% endfor %}
+{% endcall %}
+{%- endmacro %}
+
+{% macro galeria_riscos(modelos, aberto=false) -%}
+{% call galeria('Modelos prontos de riscos', 'Riscos típicos de um centro de medicina nuclear já com causa, consequência, probabilidade, impacto, resposta e ação. Reavalie a probabilidade e o impacto para a sua realidade.', modelos|length, aberto) %}
+{% for m in modelos %}{{ cartao(m.titulo, m.descricao, [m.itens ~ ' riscos'], url_for('qual.modelo_riscos', chave=m.chave), botao='Incluir na matriz') }}{% endfor %}
+{% endcall %}
+{%- endmacro %}
+
+{% macro galeria_swot(modelos, aberto=false) -%}
+{% call galeria('Modelos prontos de análise SWOT', 'Forças, fraquezas, oportunidades e ameaças já preenchidas e com peso. Revise com a equipe e troque o que não vale para o seu serviço.', modelos|length, aberto) %}
+{% for m in modelos %}{{ cartao(m.titulo, m.descricao, [m.itens ~ ' itens'], url_for('qual.modelo_swot', chave=m.chave), botao='Criar análise') }}{% endfor %}
+{% endcall %}
+{%- endmacro %}
+
+{% macro galeria_fluxos(galeria_fx, aberto=false) -%}
+{% set total = namespace(n=0) %}{% for g, itens in galeria_fx %}{% set total.n = total.n + itens|length %}{% endfor %}
+{% call galeria('Fluxogramas prontos (com raias por setor)', 'Desenhos completos da rotina do serviço, que abrem direto no editor. Mude os nomes dos setores, as etapas e os responsáveis e aprove a versão.', total.n, aberto, true) %}
+{% for g, itens in galeria_fx %}
+<h4 class="q-modelos-grupo">{{ g }}</h4>
+<div class="q-modelos-grade">
+{% for m in itens %}{{ cartao(m.nome, m.frase, [m.etapas ~ ' etapas', m.raias ~ ' setores'], url_for('qual.modelo_fluxo', chave=m.chave), botao='Criar e abrir o editor') }}{% endfor %}
+</div>
+{% endfor %}
+{% endcall %}
+{%- endmacro %}
+
+{% macro galeria_organogramas(modelos, tem_cargos, aberto=false) -%}
+{% call galeria('Organogramas prontos', 'Estruturas típicas de um serviço de medicina nuclear. Depois de aplicar, informe o nome das pessoas e ajuste os cargos.', modelos|length, aberto) %}
+{% for m in modelos %}{% call cartao(m.titulo, m.descricao, [m.cargos ~ ' cargos'], url_for('qual.modelo_organograma', chave=m.chave), botao='Usar este organograma') %}
+{% if tem_cargos %}<label class="q-check q-modelo-opcao"><input type="checkbox" name="substituir" value="1"> substituir o organograma atual</label>{% endif %}
+{% endcall %}{% endfor %}
+{% endcall %}
+{%- endmacro %}
+
+{% macro galeria_criterios(modelos, aberto=false) -%}
+{% call galeria('Conjuntos prontos de critérios de avaliação', 'Critérios e pesos por tipo de fornecedor. Os critérios entram na lista abaixo; marque "substituir" para desativar os atuais.', modelos|length, aberto) %}
+{% for m in modelos %}{% call cartao(m.titulo, m.descricao, [m.criterios ~ ' critérios'], url_for('qual.modelo_criterios', chave=m.chave), botao='Aplicar critérios') %}
+<label class="q-check q-modelo-opcao"><input type="checkbox" name="substituir" value="1"> desativar os critérios atuais</label>
+{% endcall %}{% endfor %}
+{% endcall %}
+{%- endmacro %}
+
+{% macro galeria_perguntas(modelos, aberto=false) -%}
+{% call galeria('Modelos prontos de perguntas da pesquisa', 'Escolha um conjunto de perguntas para o QR Code. As respostas já recebidas continuam guardadas com o texto que tinham.', modelos|length, aberto) %}
+{% for m in modelos %}{% call cartao(m.titulo, m.descricao, [m.perguntas|length ~ ' perguntas'], url_for('qual.modelo_perguntas', chave=m.chave), botao='Usar estas perguntas') %}
+<details class="q-modelo-perguntas"><summary>Ver as perguntas</summary><ol>{% for t in m.perguntas %}<li>{{ t }}</li>{% endfor %}</ol></details>
+{% endcall %}{% endfor %}
+{% endcall %}
+{%- endmacro %}

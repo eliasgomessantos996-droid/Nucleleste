@@ -1,0 +1,23 @@
+{% if ocorrencias_pendentes and pode('bh_gestao') %}
+<div class="cartao" id="ocorrencias-pendentes">
+  <h2>{{ ico('clipboard-list') }} Ocorrências de ponto pendentes ({{ ocorrencias_pendentes|length }})</h2>
+  <p class="sub">Confira os horários e a classificação do dia antes de concluir o fechamento.</p>
+  {% for item in ocorrencias_pendentes %}
+  <details class="bh-ocorrencia">
+    <summary><strong>{{ item.name }} · {{ item.data|bh_data }}</strong> · {{ item.tipo_label }} · PENDENTE</summary>
+    <p class="bh-texto-livre">{{ item.observacao }}</p><p>Horários informados: <strong>{{ item.horarios|join(' · ') or 'Não informados' }}</strong></p>
+    <p><a href="{{ url_for('bh.extrato', employee_id=item.employee_id, month=item.data[:7]) }}">Conferir extrato do mês</a></p>
+    <form method="post" action="{{ url_for('bh.ocorrencia_tratar', ocorrencia_id=item.id) }}">
+      {{ csrf_input }}<input type="hidden" name="month" value="{{ month }}">
+      <div class="grade">
+        <div class="c4"><label for="oc_status_{{ item.id }}">Decisão</label><select id="oc_status_{{ item.id }}" name="status" required><option value="APROVADA">Aprovar horários informados</option><option value="CORRIGIDA">Corrigir horários / classificação</option><option value="RECUSADA">Recusar ocorrência</option></select></div>
+        <div class="c8"><label for="oc_batidas_{{ item.id }}">Batidas completas do dia (ao corrigir)</label><input type="text" id="oc_batidas_{{ item.id }}" name="horarios" value="{{ item.horarios|join(' ') }}" placeholder="08:00 12:00 13:00 17:00"></div>
+        <div class="c4"><label for="oc_classe_{{ item.id }}">Classificação (ao corrigir)</label><select id="oc_classe_{{ item.id }}" name="classificacao"><option value="normal">Normal</option><option value="falta">Falta</option><option value="abono">Abono</option><option value="folga">Folga</option><option value="feriado">Feriado</option></select></div>
+        <div class="c8"><label class="obrig" for="oc_parecer_{{ item.id }}">Justificativa / resposta ao funcionário</label><textarea id="oc_parecer_{{ item.id }}" name="parecer" rows="2" maxlength="1800" required></textarea></div>
+      </div>
+      <div class="acoes"><button class="btn" type="submit">{{ ico('check', 16) }} Registrar decisão</button></div>
+    </form>
+  </details>
+  {% endfor %}
+</div>
+{% endif %}

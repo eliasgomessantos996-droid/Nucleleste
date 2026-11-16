@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% block titulo %}Meus favoritos{% endblock %}
+{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/favoritos.css') }}">{% endblock %}
+{% block conteudo %}
+<div class="cabecalho">
+  <div><h1>★ Meus favoritos</h1><p class="sub">Atalhos dos módulos que você mais usa. Só você vê este painel. Clique em “Personalizar” para escolher os módulos e arrumar cada atalho onde quiser.</p></div>
+  <div class="acoes">
+    <div class="fav-modos" role="group" aria-label="Forma de exibição">
+      <button type="button" class="btn sec" data-modo="grade">▦ Grade</button>
+      <button type="button" class="btn sec" data-modo="lista">☰ Lista</button>
+    </div>
+    <button type="button" class="btn" id="fav-editar" aria-pressed="false">Personalizar</button>
+  </div>
+</div>
+
+<div class="fav-corpo" data-fav>
+  <section>
+    <div id="fav-area" class="fav-area" aria-live="polite"></div>
+    <p class="fav-vazio" id="fav-vazio" hidden>Nenhum favorito ainda. Clique em “Personalizar” e marque os módulos que você mais usa.</p>
+  </section>
+  <aside class="fav-editor cartao" id="fav-editor" hidden>
+    <h3 style="margin-top:0">Escolha os módulos</h3>
+    <input type="search" id="fav-busca" placeholder="Procurar módulo" aria-label="Procurar módulo" autocomplete="off">
+    <div id="fav-lista" class="fav-lista"></div>
+    <small class="fav-dica">Arraste os atalhos para mudar a posição (ou use ◀ ▶). “⇔” alarga o atalho; a bolinha muda a cor. Tudo é salvo na hora.</small>
+  </aside>
+</div>
+
+<script type="application/json" id="fav-dados">{{ {'disponiveis': disponiveis, 'estado': estado, 'cores': cores, 'icones': icones}|tojson }}</script>
+{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='js/favoritos.js') }}"></script>{% endblock %}

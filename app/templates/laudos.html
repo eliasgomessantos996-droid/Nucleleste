@@ -1,0 +1,113 @@
+{% extends 'base.html' %}
+{% block titulo %}Mapa de laudos{% endblock %}
+{% block conteudo %}
+<div class="cabecalho">
+  <div><h1>Mapa de laudos</h1><p class="sub">Acompanhe cada exame depois do atendimento. Ao liberar um laudo, todos os funcionários recebem um aviso pelo contato “LAUDOS DO SISTEMA” (some sozinho em {{ dias }} dias).</p></div>
+</div>
+
+<div class="cartao" style="padding:10px 14px">
+  <strong>Prazo de entrega dos laudos:</strong> {{ prazo_texto }}{% if prazo.tipo != 'horas' %} (sábados, domingos e feriados de Governador Valadares não contam){% endif %}.
+  {% if pode_prazo %}
+  <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px">
+    <button class="btn sec peq" type="button" onclick="document.getElementById('det-prazo').open=!document.getElementById('det-prazo').open">Alterar prazo (gerência)</button>
+    <form method="post" action="{{ url_for('laudo.limpar') }}" style="margin:0" data-confirmar="Tirar do mapa os laudos entregues de {{ de|data_br }} a {{ ate|data_br }}? Eles continuam na página Laudos entregues.">
+      {{ csrf_input }}<input type="hidden" name="de" value="{{ de }}"><input type="hidden" name="ate" value="{{ ate }}">
+      <button class="btn sec peq" type="submit">🧹 Limpar entregues do período</button></form>
+    <a class="btn sec peq" href="{{ url_for('laudo.entregues') }}">📁 Laudos entregues</a>
+  </div>
+  <details id="det-prazo" style="margin-top:8px"><summary style="display:none"></summary>
+    <form method="post" action="{{ url_for('laudo.prazo') }}" style="margin-top:10px;max-width:640px">
+      {{ csrf_input }}
+      <div class="grade">
+        <div class="c3"><label>Quantidade</label><input type="number" name="valor" min="1" max="720" value="{{ prazo.valor }}" required></div>
+        <div class="c4"><label>Contar em</label><select name="tipo">{% for t, rot in prazo_tipos %}<option value="{{ t }}" {{ 'selected' if t == prazo.tipo }}>{{ rot }}</option>{% endfor %}</select></div>
+      </div>
+      <p class="ajuda">Exemplos: 24 horas corridas; 7 dias corridos; 6 dias úteis. A previsão do atendimento e do mapa pula sábados, domingos e feriados (nacionais, Sexta-feira Santa, aniversário da cidade em 30/01 e Santo Antônio em 13/06).</p>
+      <label class="inline"><input type="checkbox" name="carnaval" {{ 'checked' if prazo.carnaval }}> Carnaval (segunda e terça) sem expediente</label>
+      <label class="inline"><input type="checkbox" name="corpus" {{ 'checked' if prazo.corpus }}> Corpus Christi sem expediente</label>
+      <label style="margin-top:8px">Outros dias sem expediente (um por linha: dd/mm ou dd/mm/aaaa)</label>
+      <textarea name="extras" rows="3" maxlength="2000">{{ prazo.extras }}</textarea>
+      <div class="acoes"><button class="btn" type="submit">Salvar prazo</button></div>
+    </form>
+  </details>
+  {% endif %}
+</div>
+
+<form class="cartao filtros" method="get">
+  <div><label for="de">De</label><input type="date" id="de" name="de" value="{{ de }}"></div>
+  <div><label for="ate">Até</label><input type="date" id="ate" name="ate" value="{{ ate }}"></div>
+  <div><button class="btn" type="submit">Mostrar</button></div>
+  <div class="ajuda" style="align-self:center">{{ q.total }} exame(s) no período.</div>
+</form>
+
+<style>
+  .mapa-laudos{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;align-items:start}
+  @media (max-width:1100px){.mapa-laudos{grid-template-columns:repeat(2,minmax(0,1fr))}}
+  @media (max-width:640px){.mapa-laudos{grid-template-columns:minmax(0,1fr)}}
+  .laudo-cartao.destaque{animation:laudo-entregue 2.8s ease-out 1;position:relative}
+  .laudo-cartao.destaque::after{content:'✔ Entregue';position:absolute;top:-10px;right:10px;background:#1a7f37;color:#fff;
+    font-size:12px;font-weight:700;padding:2px 10px;border-radius:999px;animation:laudo-selo 2.8s ease-out 1 both}
+  @keyframes laudo-entregue{
+    0%{transform:scale(.92);box-shadow:0 0 0 0 rgba(26,127,55,.75);background:#d6f5df}
+    15%{transform:scale(1.06);box-shadow:0 0 0 12px rgba(26,127,55,.35)}
+    30%{transform:scale(.98)}
+    45%{transform:scale(1.03);box-shadow:0 0 0 18px rgba(26,127,55,0)}
+    100%{transform:scale(1);box-shadow:0 0 0 0 rgba(26,127,55,0);background:#fff}}
+  @keyframes laudo-selo{0%{opacity:0;transform:translateY(8px) scale(.6)}20%{opacity:1;transform:none}80%{opacity:1}100%{opacity:0}}
+</style>
+<div class="mapa-laudos">
+{% for chave, rotulo, itens in q.colunas %}
+  <section class="cartao" style="margin:0;padding:12px">
+    <h2 style="margin:0 0 10px;font-size:15px">{{ rotulo }} <span class="ajuda">({{ itens|length }})</span></h2>
+    {% for r in itens %}
+      <div class="laudo-cartao{{ ' destaque' if destaque == r.id }}" id="laudo-{{ r.id }}" style="border:1px solid var(--borda);border-radius:8px;padding:9px 10px;margin-bottom:8px;background:#fff">
+        <div><strong>{{ r.paciente }}</strong></div>
+        <div style="font-size:13px">{{ r.exame or '—' }} · {{ r.data|data_br }}{% if r.hora_exame %} às {{ r.hora_exame }}{% endif %}</div>
+        <div class="ajuda">{{ r.convenio or '' }}{% if r.medico %} · {{ r.medico }}{% endif %}{% if r.codigo %} · código {{ r.codigo }}{% endif %}</div>
+        {% if r.previsao and chave in ('PROCESSANDO', 'LAUDANDO') %}<div class="ajuda" {% if r.previsao < hoje %}style="color:#b42318;font-weight:600"{% endif %}>Entrega prevista: {{ r.previsao|data_br }}{% if r.previsao < hoje %} (atrasado){% endif %}</div>{% endif %}
+        {% if chave == 'LIBERADO' and r.laudo_liberado_por %}<div class="ajuda">liberado por {{ r.laudo_liberado_por }}</div>{% endif %}
+        {% if chave == 'ENTREGUE' and r.laudo_entregue_por %}<div class="ajuda">entregue por {{ r.laudo_entregue_por }}{% if r.laudo_entregue_em %} em {{ r.laudo_entregue_em[8:10] }}/{{ r.laudo_entregue_em[5:7] }} às {{ r.laudo_entregue_em[11:16] }}{% endif %}</div>{% endif %}
+        {% if chave == 'ENTREGUE' and pode_prazo %}
+          {% if r.laudo_retificado_em %}<div class="ajuda" style="color:#b54708;font-weight:600">✎ Retificado em {{ r.laudo_retificado_em[8:10] }}/{{ r.laudo_retificado_em[5:7] }}</div>
+          {% else %}<form method="post" action="{{ url_for('laudo.retificar', rid=r.id) }}" style="margin-top:4px" data-confirmar="Marcar o laudo de {{ r.paciente }} como retificado? Isso entra no indicador da ONA.">
+            {{ csrf_input }}<input type="hidden" name="voltar" value="{{ request.full_path }}"><button class="btn sec peq" type="submit">✎ Retificar laudo</button></form>{% endif %}
+        {% endif %}
+        {% set prox = proximas.get(chave) %}
+        {% set pode = perm is none or (chave in perm.mover) or (chave in perm.ver and chave in ('LIBERADO', 'ENTREGUE')) %}
+        {% if pode %}
+        <form method="post" action="{{ url_for('laudo.situacao', rid=r.id) }}" class="form-situacao" style="margin-top:6px">
+          {{ csrf_input }}<input type="hidden" name="voltar" value="{{ request.full_path }}">
+          <div style="display:flex;gap:6px;align-items:center">
+          <select name="situacao" style="flex:1">
+            {% for sc, srot in situacoes %}{% if perm is none or sc == chave or (sc == prox and chave in perm.mover) %}<option value="{{ sc }}" {{ 'selected' if sc == chave }}>{{ srot }}</option>{% endif %}{% endfor %}
+          </select>
+          <button class="btn sec peq" type="submit">Mudar</button>
+          </div>
+          <label class="campo-liberacao ajuda" style="display:none;margin-top:5px">Liberado em (se foi antes de agora)
+            <input type="datetime-local" name="liberado_em" value="{{ (r.laudo_liberado_em or '')[:16].replace(' ', 'T') }}" max="{{ agora_local }}" style="width:100%"></label>
+        </form>
+        {% endif %}
+      </div>
+    {% else %}
+      <div class="ajuda">Nenhum exame nesta situação.</div>
+    {% endfor %}
+  </section>
+{% endfor %}
+</div>
+<script>
+  // a data de liberação só aparece quando a nova situação é "Liberado" ou "Entregue"
+  document.querySelectorAll('.form-situacao').forEach(function (f) {
+    var sel = f.querySelector('select'), campo = f.querySelector('.campo-liberacao'), inp = campo.querySelector('input');
+    function ajustar() { var v = sel.value === 'LIBERADO' || sel.value === 'ENTREGUE'; campo.style.display = v ? 'block' : 'none'; inp.disabled = !v; }
+    sel.addEventListener('change', ajustar); ajustar();
+  });
+</script>
+{% if destaque %}
+<script>
+  (function () {
+    var alvo = document.getElementById('laudo-{{ destaque }}');
+    if (alvo) setTimeout(function () { alvo.scrollIntoView({behavior: 'smooth', block: 'center'}); }, 150);
+  })();
+</script>
+{% endif %}
+{% endblock %}

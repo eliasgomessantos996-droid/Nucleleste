@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ titulo }}</title>
+<link rel="icon" href="{{ url_for('static', filename='img/icone.svg') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/fichas.css') }}">
+</head>
+<body class="pagina-impressao">
+<div class="barra-impressao">
+  <div class="barra-topo">
+    <div>
+      <strong>{{ titulo }}</strong>
+      {% if novo %}<div class="msg ok" style="margin:6px 0 0">Salvo com sucesso! Deseja imprimir as fichas? Clique em <b>Imprimir</b>.</div>{% endif %}
+      {% with msgs = get_flashed_messages(with_categories=true) %}{% for cat, m in msgs %}{% if not novo %}<div class="msg {{ cat }}" style="margin:6px 0 0">{{ m }}</div>{% endif %}{% endfor %}{% endwith %}
+    </div>
+    <div class="acoes" style="margin:0">
+      <button class="btn" type="button" onclick="window.print()">Imprimir</button>
+      <a class="btn sec" href="{{ voltar }}">Voltar</a>
+    </div>
+  </div>
+  {% if mc and mc.estado == 'sem_estudo' %}
+  <div class="msg aviso" style="margin:6px 0 0">Impressão <b>sem o estudo</b> na Medcloud, por escolha do usuário{% if mc.usuario %}: o protocolo de acesso sai no final das fichas, mas o exame ainda não aparece no portal do paciente{% else %}, e sem o protocolo de acesso (o acesso do paciente não foi criado){% endif %}.
+    <form method="post" action="{{ url_for('atend.medcloud_tentar', aid=at.id) }}" style="display:inline">{{ csrf_input }}<button class="btn sec peq" type="submit">Gerar o estudo agora</button></form></div>
+  {% endif %}
+  {% if opcoes %}
+  <details class="docs-detalhe" style="margin-top:6px">
+  <summary style="cursor:pointer;font-weight:600">Personalizar as fichas a imprimir ({{ docs|length }} selecionada{{ '' if docs|length == 1 else 's' }})</summary>
+  <form method="get" class="docs-escolha">
+    <span class="ajuda">Fichas a imprimir (marque as que quiser, inclusive as fichas personalizadas):</span>
+    {% for o in opcoes %}
+      <label class="inline"><input type="checkbox" value="{{ o.slug }}" data-doc {% if o.marcado %}checked{% endif %}> {{ o.titulo }}
+        <input type="number" min="1" max="10" value="{{ o.copias }}" data-copias="{{ o.slug }}" title="cópias" style="width:52px;padding:2px 4px"></label>
+    {% endfor %}
+    <button class="btn sec peq" type="submit">Atualizar</button>
+  </form>
+  </details>
+  {% endif %}
+  <p class="ajuda" style="margin:6px 0 0">Para salvar em PDF, clique em Imprimir e escolha “Salvar como PDF”. Margens: “Nenhuma” ou “Padrão”; escala 100%.</p>
+</div>
+
+<div class="folhas">
+{% for slug, copias in docs %}{% for _ in range(copias) %}
+  {% if slug in extras %}{% set x = extras[slug] %}
+  <section class="folha retrato" data-ficha="{{ slug }}" style="--ml:0.75in;--mr:0.75in;--mt:0.5in;--mb:0.6in">
+    <div class="ficha-extra">{% if x.cabecalho %}<img class="fx-cab" src="{{ url_for('static', filename='fichas/image1.jpeg') }}" alt="">{% endif %}
+      {{ texto_extra(x.conteudo, f, f.previsao_laudo|default('')) }}</div>
+  </section>
+  {% elif slug == 'pedido_exame' %}
+  <section class="folha retrato" data-ficha="pedido_exame" style="--ml:16mm;--mr:16mm;--mt:14mm;--mb:14mm">
+    <div class="pe-corpo">
+      <header class="pe-cabecalho">
+        <div class="pe-cab-topo">
+          <img class="pe-logo" src="{{ url_for('static', filename='fichas/image1.jpeg') }}" alt="Logo da clínica">
+          <div class="pe-clinica-dados">
+            <div class="pe-clinica-nome">{{ f.clinica_nome or 'CENTRO DE MEDICINA NUCLEAR DO LESTE MINEIRO LTDA' }}</div>
+            <div class="pe-clinica-sub">Medicina Nuclear · Diagnóstico por Imagem</div>
+            <div class="pe-clinica-info">
+              {% if f.clinica_cnpj %}<span><strong>CNPJ:</strong> {{ f.clinica_cnpj }}</span>{% endif %}
+              {% if f.clinica_endereco %}<span><strong>End.:</strong> {{ f.clinica_endereco }}</span>{% endif %}
+              {% if f.clinica_telefone %}<span><strong>Tel.:</strong> {{ f.clinica_telefone }}</span>{% endif %}
+              {% if f.clinica_cidade %}<span>{{ f.clinica_cidade }}</span>{% endif %}
+            </div>
+          </div>
+        </div>
+        <div class="pe-titulo-faixa">
+          <span class="pe-titulo-doc">PEDIDO MÉDICO</span>
+          <span class="pe-meta-doc">{% if f.numero %}Nº {{ f.numero }} · {% endif %}Data: {{ f.data }}</span>
+        </div>
+      </header>
+
+      <div class="pe-bloco pe-bloco-paciente">
+        <div class="pe-bloco-titulo">Dados do Paciente</div>
+        <div class="pe-grade-paciente">
+          <div class="pe-campo pe-campo-paciente">
+            <span class="pe-rotulo">Paciente</span>
+            <span class="pe-valor pe-valor-destaque">{{ f.paciente }}</span>
+          </div>
+          <div class="pe-campo">
+            <span class="pe-rotulo">Data da Solicitação</span>
+            <span class="pe-valor">{{ f.data }}</span>
+          </div>
+          <div class="pe-campo">
+            <span class="pe-rotulo">Convênio</span>
+            <span class="pe-valor">{{ f.convenio or '—' }}</span>
+          </div>
+          {% if f.nascimento or f.idade %}
+          <div class="pe-campo">
+            <span class="pe-rotulo">Nascimento / Idade</span>
+            <span class="pe-valor">{{ f.nascimento }}{% if f.nascimento and f.idade %} ({{ f.idade }}){% elif f.idade %}{{ f.idade }}{% endif %}</span>
+          </div>
+          {% endif %}
+          {% if f.cpf %}
+          <div class="pe-campo">
+            <span class="pe-rotulo">CPF</span>
+            <span class="pe-valor">{{ f.cpf }}</span>
+          </div>
+          {% endif %}
+          {% if f.cliente_id %}
+          <div class="pe-campo">
+            <span class="pe-rotulo">Código do Paciente</span>
+            <span class="pe-valor">#{{ f.cliente_id }}</span>
+          </div>
+          {% endif %}
+          {% if f.hipotese %}
+          <div class="pe-campo pe-campo-largo">
+            <span class="pe-rotulo">Hipótese Diagnóstica / Indicação Clínica</span>
+            <span class="pe-valor">{{ f.hipotese }}</span>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="pe-bloco pe-bloco-exames">
+        <div class="pe-bloco-titulo">
+          <span>Exames Solicitados</span>
+          <span class="pe-qtd-exames">{{ f.exames|length }} {{ 'item' if f.exames|length == 1 else 'itens' }}</span>
+        </div>
+        <div class="pe-bloco-conteudo">
+          <p class="pe-intro-solicitacao">Solicito a realização do(s) seguinte(s) exame(s):</p>
+          <ol class="pe-lista-exames">
+            {% for ex in f.exames %}
+            <li class="pe-item-exame">
+              <span class="pe-num-exame">{{ '%02d'|format(loop.index) }}</span>
+              <span class="pe-nome-exame">{{ ex }}</span>
+            </li>
+            {% endfor %}
+          </ol>
+        </div>
+      </div>
+
+      <div class="pe-bloco pe-bloco-obs">
+        <div class="pe-bloco-titulo">Observações</div>
+        <div class="pe-bloco-conteudo pe-obs-conteudo">
+          {% if f.observacoes %}
+          <div class="pe-obs-texto">{{ f.observacoes }}</div>
+          {% else %}
+          <div class="pe-obs-linhas"><span></span><span></span></div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <footer class="pe-rodape">
+      <div class="pe-local-data">{{ f.cidade_data or f.data }}</div>
+      <div class="pe-assinatura-area">
+        <div class="pe-assinatura-linha"></div>
+        <div class="pe-assinatura-medico">{{ f.medico or 'Assinatura e Carimbo do Médico Solicitante' }}</div>
+        {% if f.especialidade or f.registro %}
+        <div class="pe-assinatura-detalhe">
+          {{ f.especialidade }}{% if f.especialidade and f.registro %} · {% endif %}{% if f.registro %}{{ f.registro if 'CRM' in f.registro.upper() else 'CRM ' ~ f.registro }}{% endif %}
+        </div>
+        {% else %}
+        <div class="pe-assinatura-detalhe">CRM / Registro do Médico</div>
+        {% endif %}
+      </div>
+      <div class="pe-rodape-clinica">
+        <span>{{ f.clinica_nome or 'CENTRO DE MEDICINA NUCLEAR DO LESTE MINEIRO LTDA' }}</span>
+        {% if f.clinica_endereco %}<span> · {{ f.clinica_endereco }}</span>{% endif %}
+        {% if f.clinica_telefone %}<span> · Tel.: {{ f.clinica_telefone }}</span>{% endif %}
+        {% if f.clinica_cidade %}<span> · {{ f.clinica_cidade }}</span>{% endif %}
+      </div>
+    </footer>
+  </section>
+  {% else %}{% include 'fichas/' ~ slug ~ '.html' %}{% endif %}
+{% endfor %}{% else %}
+  <p style="text-align:center;padding:40px">Nenhuma ficha selecionada.</p>
+{% endfor %}
+{% if mc and mc.usuario %}
+  <section class="folha retrato" data-ficha="medcloud" style="--ml:16mm;--mr:16mm;--mt:14mm;--mb:14mm">
+    <div class="mp-corpo">
+      <header class="mp-cabecalho">
+        <div class="mp-cab-topo">
+          <img class="mp-logo" src="{{ url_for('static', filename='fichas/image1.jpeg') }}" alt="Logo da clínica">
+          <div class="mp-clinica-dados">
+            <div class="mp-clinica-nome">{{ clinica.nome or 'CENTRO DE MEDICINA NUCLEAR DO LESTE MINEIRO LTDA' }}</div>
+            <div class="mp-clinica-sub">Medicina Nuclear · Diagnóstico por Imagem</div>
+            <div class="mp-clinica-info">
+              {% if clinica.cnpj %}<span><strong>CNPJ:</strong> {{ clinica.cnpj }}</span>{% endif %}
+              {% if clinica.endereco %}<span><strong>End.:</strong> {{ clinica.endereco }}</span>{% endif %}
+              {% if clinica.telefone %}<span><strong>Tel.:</strong> {{ clinica.telefone }}</span>{% endif %}
+              {% if clinica.cidade %}<span>{{ clinica.cidade }}</span>{% endif %}
+            </div>
+          </div>
+        </div>
+        <div class="mp-faixa">
+          <span class="mp-faixa-titulo">Acesso ao portal de exames</span>
+          <span class="mp-faixa-meta">Data: {{ f.data }}</span>
+        </div>
+      </header>
+
+      <p class="mp-boas-vindas">Seus exames ficam disponíveis <strong>online</strong>, no portal do paciente, assim que forem liberados. Guarde esta folha: ela traz o seu usuário e a sua senha.</p>
+
+      <div class="mp-bloco">
+        <div class="mp-bloco-titulo">Dados do paciente</div>
+        <div class="mp-grade">
+          <div class="mp-campo mp-campo-largo"><span class="mp-rotulo">Paciente</span><span class="mp-valor mp-valor-destaque">{{ f.nome }}</span></div>
+          <div class="mp-campo"><span class="mp-rotulo">Exame</span><span class="mp-valor">{{ f.exame }}</span></div>
+          <div class="mp-campo"><span class="mp-rotulo">Data do atendimento</span><span class="mp-valor">{{ f.data }}</span></div>
+        </div>
+      </div>
+
+      <div class="mp-bloco mp-bloco-acesso">
+        <div class="mp-bloco-titulo">Seu acesso</div>
+        <div class="mp-acesso">
+          <div class="mp-credenciais">
+            <div class="mp-cred"><span class="mp-rotulo">Usuário</span><strong class="mp-cred-valor">{{ mc.usuario }}</strong></div>
+            <div class="mp-cred"><span class="mp-rotulo">Senha</span><strong class="mp-cred-valor">{{ mc.senha }}</strong></div>
+            <div class="mp-link"><span class="mp-rotulo">Endereço do portal</span><strong>{{ mc.link }}</strong></div>
+          </div>
+          {% if mc.qr %}
+          <div class="mp-qr">
+            <img src="{{ mc.qr }}" alt="QR Code de acesso">
+            <span>Escaneie no aplicativo</span>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="mp-bloco">
+        <div class="mp-bloco-titulo">Como acessar</div>
+        <ol class="mp-passos">
+          <li><span class="mp-num">1</span><span>No computador, abra o endereço do portal e digite o <strong>usuário</strong> e a <strong>senha</strong> acima.</span></li>
+          {% if mc.qr %}<li><span class="mp-num">2</span><span>No celular, instale o aplicativo da <strong>Medcloud</strong>, escolha <em>Login com QR Code</em> e escaneie o código ao lado.</span></li>{% endif %}
+          <li><span class="mp-num">{{ 3 if mc.qr else 2 }}</span><span>Depois de entrar, você pode trocar a senha nas configurações do portal.</span></li>
+        </ol>
+      </div>
+
+      <div class="mp-bloco mp-bloco-laudo">
+        <div class="mp-bloco-titulo">Entrega do laudo</div>
+        <div class="mp-laudo">
+          <span class="mp-rotulo">Data de entrega do laudo</span>
+          <div class="mp-data-linha" aria-label="Data de entrega do laudo, para preencher à mão"><span></span><i>/</i><span></span><i>/</i><span class="mp-ano"></span></div>
+          <span class="mp-laudo-dica">Preenchimento manual. O laudo será disponibilizado no portal a partir desta data.</span>
+        </div>
+      </div>
+    </div>
+
+    <footer class="mp-rodape">
+      <span>{{ clinica.nome or 'CENTRO DE MEDICINA NUCLEAR DO LESTE MINEIRO LTDA' }}</span>
+      {% if clinica.endereco %}<span> · {{ clinica.endereco }}</span>{% endif %}
+      {% if clinica.telefone %}<span> · Tel.: {{ clinica.telefone }}</span>{% endif %}
+      {% if clinica.cidade %}<span> · {{ clinica.cidade }}</span>{% endif %}
+    </footer>
+  </section>
+{% endif %}
+</div>
+<script>
+document.querySelector('.docs-escolha')?.addEventListener('submit', (e) => {
+  e.preventDefault();
+  const p = new URLSearchParams();
+  document.querySelectorAll('[data-doc]:checked').forEach((c) => {
+    const n = document.querySelector('[data-copias="' + c.value + '"]').value || 1;
+    p.append('d', c.value + ':' + n);
+  });
+  if (!p.toString()) p.append('d', '-');
+  location.search = p.toString();
+});
+</script>
+</body>
+</html>

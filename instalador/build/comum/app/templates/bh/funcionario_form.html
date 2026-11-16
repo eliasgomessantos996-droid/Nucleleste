@@ -1,0 +1,108 @@
+{% extends 'bh/layout.html' %}
+{% set editing = not is_new %}
+{% set atual = schedules[-1] if schedules else none %}
+{% set F = bh_form %}
+{% block titulo %}{{ 'Editar funcionário' if editing else 'Cadastrar funcionário' }}{% endblock %}
+{% block conteudo %}
+<div class="cabecalho">
+  <div><a href="{{ url_for('bh.funcionarios') }}">← Funcionários</a><h1>{{ 'Editar funcionário' if editing else 'Cadastrar funcionário' }}</h1>
+    <p class="sub">{{ 'Atualize os dados e mantenha o histórico da equipe.' if editing else 'O Número I deve ser o mesmo utilizado no relógio de ponto.' }}</p></div>
+  {% if editing and not employee.is_intern %}<div class="acoes"><a class="btn sec" href="{{ url_for('bh.extrato', employee_id=employee.id) }}">Ver extrato</a></div>{% endif %}
+</div>
+<div class="bh-form-layout">
+<form class="cartao" method="post" autocomplete="off">
+  {{ csrf_input }}
+  <h2>Dados do funcionário</h2>
+  <div class="grade">
+    <div class="c4"><label class="obrig" for="clock_id">Número I</label><input type="text" id="clock_id" name="clock_id" value="{{ F.get('clock_id', employee.clock_id or '') }}" required maxlength="50" {% if editing %}readonly{% endif %}>
+      <div class="ajuda">{{ 'Identificação preservada para proteger a associação do histórico.' if editing else 'Número exibido no relatório do relógio de ponto.' }}</div></div>
+    <div class="c8"><label class="obrig" for="name">Nome completo</label><input type="text" id="name" name="name" value="{{ F.get('name', employee.name or '') }}" required maxlength="160"></div>
+    <div class="c4"><label class="obrig" for="start_date">Data de admissão</label><input type="date" id="start_date" name="start_date" value="{{ F.get('start_date', employee.start_date or '') }}" required></div>
+    <div class="c4"><label for="end_date">Data de desligamento</label><input type="date" id="end_date" name="end_date" value="{{ F.get('end_date', employee.end_date or '') }}"><div class="ajuda">Preencha quando o funcionário deixar a empresa.</div></div>
+    <div class="c4"><label class="obrig" for="opening_balance_date">Início do controle do banco de horas</label><input type="date" id="opening_balance_date" name="opening_balance_date" value="{{ F.get('opening_balance_date', employee.opening_balance_date or employee.start_date or '') }}" required {{ 'readonly' if editing }}>
+      <div class="ajuda">O saldo inicial vale nesta data. Lançamentos anteriores ficam fora do controle.</div></div>
+    {% if not editing %}
+    <div class="c4"><label for="opening_balance">Saldo inicial do controle</label><input type="text" id="opening_balance" name="opening_balance" value="{{ F.get('opening_balance', '00:00') }}" placeholder="Ex.: +12:30 ou -04:00"><div class="ajuda">Use horas:minutos. Débitos começam com −.</div></div>
+    {% else %}
+    <div class="c4"><label>Saldo inicial do controle</label><input type="text" value="{{ employee.opening_balance_minutes|bh_smin }}" readonly><div class="ajuda">Para acertar o saldo, registre um ajuste no extrato com a justificativa.</div></div>
+    {% endif %}
+    <div class="c4"><label class="bh-check"><input type="checkbox" name="is_intern" value="1" {{ 'checked' if (F.get('is_intern') if F else employee.is_intern) }}> Estagiário · somente escala</label>
+      <div class="ajuda">Não calcula créditos ou débitos. Para estágio sem relógio, use um ID exclusivo, como EST-001.</div></div>
+    <div class="c4"><label class="bh-check"><input type="checkbox" name="active" value="1" {{ 'checked' if (F.get('active') if F else (not editing or employee.active)) }}> Funcionário ativo</label><div class="ajuda">Inativos continuam disponíveis para consulta.</div></div>
+    {% if editing %}<div class="c12"><label class="obrig" for="reason">Motivo da alteração</label><textarea id="reason" name="reason" rows="3" required maxlength="1000" placeholder="Explique o que foi atualizado e por quê.">{{ F.get('reason', '') }}</textarea></div>{% endif %}
+  </div>
+  <div class="acoes"><button class="btn" type="submit">{{ 'Salvar alterações' if editing else 'Cadastrar funcionário' }}</button><a class="btn sec" href="{{ url_for('bh.funcionarios') }}">Cancelar</a></div>
+</form>
+<aside class="bh-ajuda"><h3>Cadastro e importação</h3>
+  <p>A associação das batidas é feita pelo Número I. O nome na planilha pode variar sem mudar o vínculo.</p>
+  <p>Ao cadastrar uma pessoa cujo número já foi importado, seus lançamentos ficam disponíveis para conferência.</p>
+  <p>Informe o início do controle e o saldo acumulado nessa data. Depois, configure a jornada semanal para calcular créditos e débitos.</p></aside>
+</div>
+
+{% if editing %}
+<form class="cartao" method="post" action="{{ url_for('bh.funcionario_jornada', employee_id=employee.id) }}">
+  {{ csrf_input }}
+  <h2>Jornada de trabalho</h2><p class="sub">Cadastre uma vigência para cada mudança de jornada. Os valores são horas de trabalho por dia.</p>
+  <div class="grade">
+    <div class="c4"><label class="obrig" for="effective_date">Início da vigência</label><input type="date" id="effective_date" name="effective_date" value="{{ atual.effective_date if atual else (employee.opening_balance_date or employee.start_date) }}" required></div>
+    <div class="c4"><label for="two_punch_policy">Dias com duas batidas</label><select id="two_punch_policy" name="two_punch_policy">
+      <option value="review" {{ 'selected' if not atual or atual.two_punch_policy == 'review' }}>Exigir conferência da gerência</option>
+      <option value="continuous" {{ 'selected' if atual and atual.two_punch_policy == 'continuous' }}>Contar todo o tempo entre as batidas</option>
+      <option value="deduct" {{ 'selected' if atual and atual.two_punch_policy == 'deduct' }}>Descontar um intervalo fixo</option></select>
+      <div class="ajuda">Quatro ou mais batidas são pareadas em entrada e saída.</div></div>
+    <div class="c4"><label class="obrig" for="break_minutes">Intervalo mínimo / desconto fixo</label><input type="text" id="break_minutes" name="break_minutes" value="{{ atual.required_break_minutes|bh_min if atual else '00:00' }}" placeholder="00:00" required>
+      <div class="ajuda">Mínimo para dias com quatro batidas; também descontado nos dias de duas batidas quando a opção de desconto estiver selecionada.</div></div>
+    <div class="c6"><label for="schedule_preset">Distribuição sugerida — ajuste aos dias reais</label><select id="schedule_preset" data-schedule-preset><option value="">Personalizar jornada</option><option value="44">44 horas semanais · seg–sex 8h, sáb 4h</option><option value="20">20 horas semanais · seg–sex 4h</option></select></div>
+  </div>
+  <div class="bh-semana">
+    {% for nome in ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo'] %}
+    <div><label for="weekday_{{ loop.index0 }}">{{ nome }}</label><input type="text" id="weekday_{{ loop.index0 }}" name="weekday_{{ loop.index0 }}" value="{{ atual.weekdays.get(loop.index0|string, 0)|bh_min if atual else '00:00' }}" required placeholder="08:00"></div>
+    {% endfor %}
+  </div>
+  <p class="ajuda">Informe 00:00 para dias de folga. A jornada fica sem definição até você salvar os valores. Para corrigir uma jornada, use a mesma data de vigência: o histórico é preservado e os saldos recalculados.</p>
+  <div><label class="obrig" for="schedule_reason">Motivo / descrição da jornada</label><textarea id="schedule_reason" name="reason" rows="2" required placeholder="Ex.: Jornada contratual, de segunda a sexta, a partir da admissão."></textarea></div>
+  <div class="acoes"><button class="btn" type="submit">Salvar jornada</button></div>
+  {% if schedules %}
+  <h3>Vigências registradas</h3>
+  <div class="tabela-wrap"><table class="tabela"><thead><tr><th>Vigência</th><th>Jornada semanal</th><th>Duas batidas</th><th>Motivo</th></tr></thead><tbody>
+    {% for s in schedules %}<tr><td>{{ s.effective_date|bh_data }}</td>
+      <td><div class="bh-historico-dias">{% for d in ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'] %}<span>{{ d }} <strong>{{ s.weekdays.get(loop.index0|string, 0)|bh_min }}</strong></span>{% endfor %}</div></td>
+      <td>{{ {'review': 'Conferência obrigatória', 'continuous': 'Período contínuo', 'deduct': 'Intervalo fixo'}.get(s.two_punch_policy, s.two_punch_policy) }}</td><td>{{ s.reason }}</td></tr>{% endfor %}
+  </tbody></table></div>
+  {% endif %}
+</form>
+
+{% if not employee.is_intern %}
+<div class="cartao">
+  <h2>Acesso do funcionário ao sistema</h2>
+  <p class="sub">O funcionário vê apenas o próprio banco de horas e quais documentos dele estão no sistema (sem abrir os arquivos), e conversa com a gerência.</p>
+  {% if portal_account %}
+  <form method="post" action="{{ url_for('bh.portal_acesso_atualizar', employee_id=employee.id) }}">
+    {{ csrf_input }}
+    <p>Usuário: <strong>{{ portal_account.usuario }}</strong> <span class="etiqueta {{ 'pago' if portal_account.ativo }}">{{ 'Ativo' if portal_account.ativo else 'Inativo' }}</span>
+      {% if portal_account.trocar_senha %}<span class="etiqueta aberto">Aguardando troca da senha provisória</span>{% endif %}</p>
+    <div class="grade">
+      <div class="c4"><label class="bh-check"><input type="checkbox" name="active" value="1" {{ 'checked' if portal_account.ativo }}> Acesso ativo</label></div>
+      <div class="c4"><label for="acc_password">Nova senha provisória (opcional)</label><input type="password" id="acc_password" name="password" autocomplete="new-password"></div>
+      <div class="c4"><label for="acc_confirm">Confirmar senha</label><input type="password" id="acc_confirm" name="password_confirm" autocomplete="new-password"></div>
+      <div class="c12"><label class="obrig" for="acc_reason">Justificativa</label><input type="text" id="acc_reason" name="reason" required maxlength="2000"></div>
+    </div>
+    <div class="acoes"><button class="btn sec" type="submit">Salvar acesso</button></div>
+  </form>
+  {% else %}
+  <form method="post" action="{{ url_for('bh.portal_acesso_criar', employee_id=employee.id) }}" autocomplete="off">
+    {{ csrf_input }}
+    <div class="grade">
+      <div class="c4"><label class="obrig" for="acc_username">Usuário</label><input type="text" id="acc_username" name="username" minlength="3" maxlength="80" required value="{{ employee.clock_id }}" data-maiusculas></div>
+      <div class="c4"><label class="obrig" for="acc_password">Senha provisória</label><input type="password" id="acc_password" name="password" required autocomplete="new-password"></div>
+      <div class="c4"><label class="obrig" for="acc_confirm">Confirmar senha</label><input type="password" id="acc_confirm" name="password_confirm" required autocomplete="new-password"></div>
+    </div>
+    <p class="ajuda">Entregue o usuário e a senha ao funcionário. No primeiro login o sistema exige a troca da senha.</p>
+    <div class="acoes"><button class="btn" type="submit">Criar acesso</button></div>
+  </form>
+  {% endif %}
+</div>
+{% endif %}
+{% endif %}
+{% endblock %}
+{% block scripts_bh %}{% endblock %}

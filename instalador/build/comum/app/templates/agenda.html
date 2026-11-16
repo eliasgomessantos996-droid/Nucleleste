@@ -1,0 +1,159 @@
+{% extends 'base.html' %}
+{% block titulo %}Agenda de exames{% endblock %}
+{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/agenda.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/tema-escuro-agenda.css') }}">{% endblock %}
+{% block conteudo %}
+<div class="cabecalho ag-cabecalho">
+  <div><h1>Agenda de exames</h1><p class="sub">Escolha o dia no calendário, crie a agenda de cada exame e preencha a grade. Tudo é salvo ao sair de cada célula.</p></div>
+</div>
+
+<div class="ag-controles">
+  {% if abas %}<div class="ag-areas" id="ag-areas">
+    <button type="button" class="btn sec peq" id="ag-areas-botao" aria-haspopup="menu" aria-expanded="false" aria-controls="ag-areas-opcoes">
+      {{ ico('calendar-days', 16) }} <span>Áreas da agenda</span> <svg class="ag-areas-seta" width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path d="m4 6 4 4 4-4" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+    </button>
+    <nav class="ag-areas-opcoes" id="ag-areas-opcoes" role="menu" aria-label="Áreas da agenda" hidden>
+      {% for a in abas.itens %}<a href="{{ a.url }}" role="menuitem" tabindex="-1"{% if a.ativo %} aria-current="page"{% endif %}>{{ ico(a.icone, 16) }}<span>{{ a.rotulo }}</span></a>{% endfor %}
+    </nav>
+  </div>{% endif %}
+  <button type="button" class="btn sec peq" id="ag-formato-alternar" aria-expanded="false" aria-controls="ag-formato">{{ ico('settings', 16) }} <span>Mostrar formatação</span></button>
+</div>
+
+<div class="ag" data-agenda data-hoje="{{ hoje }}"{% if pode_excluir %} data-pode-excluir="1"{% endif %}{% if somente_leitura %} data-somente-leitura="1"{% endif %}>
+  <aside class="ag-lado">
+    <div class="cartao ag-cal{% if cor_calendario %} personalizado{% endif %}" id="ag-calendario" aria-label="Calendário" data-cor="{{ cor_calendario }}"></div>
+    <div class="cartao ag-painel" id="ag-painel"></div>
+    <div class="cartao ag-legenda">
+      <strong>Legenda</strong>
+      <span><i class="ag-cor st-agendado"></i> Agendado</span>
+      <span><i class="ag-cor st-veio"></i> Veio</span>
+      <span><i class="ag-cor st-faltou"></i> Faltou</span>
+      <span><i class="ag-cor st-retorno"></i> Retorno (cor do Veio)</span>
+      <span><i class="ag-cor st-resgatado"></i> Reagendado</span>
+      <span><i class="ag-cor st-desistiu"></i> Desistiu</span>
+      <span><i class="ag-cor protocolo"></i> Protocolo (MIBI, ainda agendado)</span>
+      <span><i class="ag-cor unacon"></i> Reservado para convênio</span>
+      <span><i class="ag-cor livre"></i> Horário livre</span>
+    </div>
+  </aside>
+  <section class="ag-principal">
+    <div class="ag-formato" id="ag-formato" role="toolbar" aria-label="Formatação do texto da agenda" hidden>
+      <span class="ag-formato-rotulo">Texto da agenda:</span>
+      <button type="button" data-fmt="menos" title="Diminuir o texto" aria-label="Diminuir o texto">A−</button>
+      <button type="button" data-fmt="mais" title="Aumentar o texto" aria-label="Aumentar o texto">A+</button>
+      <button type="button" data-fmt="neg" title="Negrito" aria-label="Negrito" aria-pressed="false"><b>N</b></button>
+      <button type="button" data-fmt="ita" title="Itálico" aria-label="Itálico" aria-pressed="false"><i>I</i></button>
+      <button type="button" data-fmt="sub" title="Sublinhado" aria-label="Sublinhado" aria-pressed="false"><u>S</u></button>
+      <button type="button" data-fmt="caixa" title="Tudo em maiúsculas" aria-label="Tudo em maiúsculas" aria-pressed="false">Aa</button>
+      <button type="button" data-fmt="limpar" title="Voltar ao padrão" aria-label="Voltar ao padrão">Padrão</button>
+      <span class="ag-formato-sep"></span>
+      <span class="ag-formato-rotulo">Colunas:</span>
+      <button type="button" data-colunas="idade" title="Mostrar ou ocultar a coluna da idade" aria-pressed="true">Ocultar idade</button>
+      <button type="button" data-colunas="acoes" title="Mostrar ou ocultar a coluna das ações (depois do status)" aria-pressed="true">Ocultar ações ◂</button>
+      <button type="button" data-colunas="fixar" title="Guarda a largura atual das colunas como padrão: a agenda volta assim sempre que for aberta. Sem clicar aqui, a mudança vale só até recarregar">Tornar padrão</button>
+      <button type="button" data-colunas="padrao" title="Voltar as colunas à largura original (arraste a borda de um título para mudar a largura)">Largura original</button>
+    </div>
+    <div id="ag-aviso" class="ag-aviso" hidden role="status"></div>
+    <div id="ag-dia"></div>
+  </section>
+</div>
+
+<datalist id="ag-exames">{% for e in exames %}<option value="{{ e }}">{% endfor %}</datalist>
+
+<dialog id="dlg-criar" class="ag-dialogo">
+  <form id="form-criar" autocomplete="off">
+    <h2 style="margin-top:0">Criar agenda</h2>
+    <div class="ag-campos">
+      <div class="largo"><label for="c-modelo">Usar um modelo salvo</label><select id="c-modelo" name="modelo"><option value="">(sem modelo)</option></select></div>
+      <div><label class="obrig" for="c-data">Data</label><input type="date" id="c-data" name="data" required></div>
+      <div class="largo"><label class="obrig" for="c-exame-id">Exame vinculado (cadastrado)</label><select id="c-exame-id" name="exame_id" required><option value="">Escolha o exame…</option>{% for e in exames_cad %}<option value="{{ e.id }}">{{ e.nome }}</option>{% endfor %}</select>
+        <div class="ajuda">É o exame que vale nos relatórios e no financeiro; não muda depois que a agenda é criada.</div></div>
+      <div class="largo"><label class="obrig" for="c-exame">Nome da agenda</label><input type="text" id="c-exame" name="exame" maxlength="80" required placeholder="Ex.: MIBI manhã"></div>
+      <div class="largo" id="c-etapa-bloco" hidden><label class="obrig" for="c-etapa">Etapa do MIBI</label>
+        <select id="c-etapa" name="etapa"><option value="">Escolha…</option><option>Repouso</option><option>Estresse</option></select>
+        <div class="ajuda">A coluna passa a se chamar “Etapa” e a escolha já vem em todas as linhas; em cada linha ainda dá para trocar para Estresse, Repouso ou Protocolo.</div></div>
+      <div class="largo" id="c-coluna-bloco"><label for="c-coluna">Título da 6ª coluna</label><input type="text" id="c-coluna" name="coluna_titulo" maxlength="30" value="Exame">
+        <div class="ajuda">Já vem com o nome do exame vinculado em todas as linhas (dá para editar em cada uma). O título pode ser trocado.</div></div>
+      <div><label class="obrig" for="c-inicio">Início</label><input type="time" id="c-inicio" name="inicio" required></div>
+      <div><label class="obrig" for="c-intervalo">Intervalo (min)</label><input type="number" id="c-intervalo" name="intervalo" min="1" max="240" required></div>
+      <div><label for="c-qtd">Quantos exames</label><input type="number" id="c-qtd" name="qtd" min="1" max="200"></div>
+      <div><label for="c-fim">Término</label><input type="time" id="c-fim" name="fim"><div class="ajuda">Calculado; se preferir, informe o término.</div></div>
+      <div><label for="c-vagas">Pacientes por horário</label><input type="number" id="c-vagas" name="vagas" min="1" max="10"></div>
+      <div><label for="c-semanas">Repetir por mais (semanas)</label><input type="number" id="c-semanas" name="semanas" min="0" max="26"><div class="ajuda">Mesmo dia da semana.</div></div>
+      <div class="largo"><label for="c-obs">Observação (lembrete, aparece em vermelho ao lado da data)</label><input type="text" id="c-obs" name="observacao" maxlength="200" placeholder="Ex.: levar jejum de 4 horas"></div>
+      <div class="largo ag-reserva">
+        <button type="button" class="ag-aba" id="c-reserva-aba" aria-expanded="false" aria-controls="c-reserva-corpo">
+          <span>📌 Reservar horários para um convênio</span><span class="seta" aria-hidden="true">▾</span></button>
+        <div class="ag-reserva-corpo" id="c-reserva-corpo" hidden>
+          <input type="hidden" name="reserva_ativa" id="c-reserva-ativa" value="">
+          <div class="ag-campos ag-campos-4">
+            <div><label for="r-convenio">Convênio</label><select id="r-convenio" name="reserva_convenio"></select></div>
+            <div><label for="r-inicio">A partir das</label><input type="time" id="r-inicio" name="reserva_inicio"></div>
+            <div><label for="r-qtd">Quantos horários</label><input type="number" id="r-qtd" name="reserva_qtd" min="1" max="200" value="5"></div>
+            <div><label for="r-passo">De quantos em quantos</label><input type="number" id="r-passo" name="reserva_passo" min="1" max="50" value="1"></div>
+          </div>
+          <p class="ajuda" id="r-previa"></p>
+          <p class="ajuda">Os horários reservados ficam rosa, só aparecem como livres para pacientes desse convênio e não contam como livres no resto da agenda. Use “De quantos em quantos”: 1 = horários seguidos; 2 = um sim, um não; e assim por diante.</p>
+        </div>
+      </div>
+      <div class="largo"><label class="inline"><input type="checkbox" name="salvar_modelo" id="c-salvar"> Salvar como modelo</label>
+        <input type="text" name="nome_modelo" id="c-nome-modelo" maxlength="60" placeholder="Nome do modelo" hidden></div>
+    </div>
+    <p class="ag-erro" data-erro hidden></p>
+    <div class="acoes"><button class="btn" type="submit">Criar agenda</button><button class="btn sec" type="button" data-fechar>Cancelar</button></div>
+  </form>
+</dialog>
+
+<dialog id="dlg-historico" class="ag-dialogo">
+  <h2 style="margin-top:0" id="historico-titulo">Histórico da linha</h2>
+  <ul id="historico-lista" class="ag-historico"></ul>
+  <div class="acoes"><button class="btn sec" type="button" data-fechar>Fechar</button></div>
+</dialog>
+
+<dialog id="dlg-copiar" class="ag-dialogo">
+  <form id="form-copiar" autocomplete="off">
+    <h2 style="margin-top:0">Copiar para outro dia</h2>
+    <div class="ag-campos">
+      <div class="largo"><label for="k-agenda">O que copiar</label><select id="k-agenda" name="agenda_id"></select></div>
+      <div class="largo"><label class="obrig" for="k-destino">Copiar para o dia</label><input type="date" id="k-destino" name="destino" required></div>
+      <div class="largo"><label class="inline"><input type="checkbox" name="com_pacientes" value="1" checked> Copiar também os pacientes (voltam como “Agendado”)</label>
+        <div class="ajuda">Sem marcar, o outro dia recebe só os horários vazios. No MIBI, Repouso vira Estresse e Estresse vira Repouso nos pacientes copiados.</div></div>
+      <fieldset class="largo ag-pergunta"><legend>Deseja apagar a data atual e colar na nova data selecionada?</legend>
+        <label class="inline"><input type="radio" name="apagar_origem" value="1"> Sim, apagar o dia atual (os dados passam para a nova data)</label>
+        <label class="inline"><input type="radio" name="apagar_origem" value="0"> Não, manter nas duas datas</label></fieldset>
+    </div>
+    <p class="ag-erro" data-erro hidden></p>
+    <div class="acoes"><button class="btn" type="submit">Copiar e abrir o dia</button><button class="btn sec" type="button" data-fechar>Cancelar</button></div>
+  </form>
+</dialog>
+
+<dialog id="dlg-imprimir" class="ag-dialogo">
+  <form id="form-imprimir" autocomplete="off">
+    <h2 style="margin-top:0">Imprimir a agenda do dia</h2>
+    <p class="ajuda">O relatório sai em uma página só, com horário, nome do paciente e convênio.</p>
+    <div class="ag-campos"><div class="largo" id="imprimir-opcoes"></div></div>
+    <div class="acoes"><button class="btn" type="submit">Imprimir</button><button class="btn sec" type="button" data-fechar>Cancelar</button></div>
+  </form>
+</dialog>
+
+<dialog id="dlg-horario" class="ag-dialogo">
+  <form id="form-horario" autocomplete="off">
+    <h2 style="margin-top:0" data-titulo></h2>
+    <p class="ajuda" data-texto></p>
+    <div class="ag-campos">
+      <div><label for="h-data">Dia</label><input type="date" id="h-data" name="data" required></div>
+      <div class="largo"><label for="h-destino">Horário livre</label><select id="h-destino" name="destino"></select></div>
+    </div>
+    <p class="ag-erro" data-erro hidden></p>
+    <div class="acoes"><button class="btn" type="submit" data-confirmar-horario></button>
+      <button class="btn sec" type="button" data-extra hidden></button>
+      <button class="btn sec" type="button" data-fechar>Cancelar</button></div>
+  </form>
+</dialog>
+
+<script type="application/json" id="ag-inicial">{{ inicial|tojson }}</script>
+<script type="application/json" id="ag-mensagens">{{ mensagens|tojson }}</script>
+<script type="application/json" id="ag-destacar">{{ destacar|tojson }}</script>
+<script type="application/json" id="ag-usuario">{{ usuario_envio|tojson }}</script>
+{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='js/agenda.js') }}"></script>{% endblock %}

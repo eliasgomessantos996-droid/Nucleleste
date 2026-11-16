@@ -1,0 +1,8 @@
+{% if problemas %}
+<form class="cartao filtros q-nao-imprime" method="get">
+  <div style="flex:1"><label for="p">Problema</label>
+    <select id="p" name="p" onchange="this.form.submit()">{% for x in problemas %}<option value="{{ x.id }}" {{ 'selected' if x.id == pid }}>{{ x.titulo }} ({{ x.status }})</option>{% endfor %}</select></div>
+</form>
+{% else %}
+<div class="cartao">Nenhum problema aberto ainda. Abra um em <a href="{{ url_for('qual.pdca') }}">Ciclo PDCA</a> ou rode o <a href="{{ url_for('qual.robo_pagina') }}">Robô do PDCA</a>.</div>
+{% endif %}

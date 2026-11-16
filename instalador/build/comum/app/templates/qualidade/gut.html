@@ -1,0 +1,31 @@
+{% extends 'qualidade/_base.html' %}
+{% from 'qualidade/_modelos.html' import galeria_problemas, pdf_botoes with context %}
+{% block titulo %}Matriz GUT{% endblock %}
+{% block titulo_q %}Matriz GUT{% endblock %}
+{% block sub_q %}Prioridade = Gravidade × Urgência × Tendência (cada um de 1 a 5; máximo 125). Os problemas abertos aparecem do mais para o menos prioritário.{% endblock %}
+{% block acoes_q %}{{ pdf_botoes(url_for('qual.gut_pdf')) }}{% endblock %}
+{% block corpo_q %}
+{{ galeria_problemas(modelos, 'gut', not lista) }}
+<details class="cartao q-legenda-gut"><summary>Como pontuar</summary>
+  <table class="tabela"><thead><tr><th>Nota</th><th>Gravidade</th><th>Urgência</th><th>Tendência</th></tr></thead><tbody>
+    <tr><td>5</td><td>Extremamente grave</td><td>Ação imediata</td><td>Piora rápido se nada for feito</td></tr>
+    <tr><td>4</td><td>Muito grave</td><td>Com alguma urgência</td><td>Piora em pouco tempo</td></tr>
+    <tr><td>3</td><td>Grave</td><td>O mais cedo possível</td><td>Piora a médio prazo</td></tr>
+    <tr><td>2</td><td>Pouco grave</td><td>Pode esperar um pouco</td><td>Piora a longo prazo</td></tr>
+    <tr><td>1</td><td>Sem gravidade</td><td>Não tem pressa</td><td>Não vai piorar</td></tr></tbody></table>
+</details>
+<div class="tabela-wrap"><table class="tabela">
+  <thead><tr><th class="num">#</th><th>Problema</th><th class="num">G</th><th class="num">U</th><th class="num">T</th><th class="num">G×U×T</th><th>Situação</th><th class="q-nao-imprime"></th></tr></thead>
+  <tbody>
+  {% for p in lista %}
+  <tr><td class="num">{{ loop.index }}</td><td><a href="{{ url_for('qual.problema_pagina', pid=p.id) }}">{{ p.titulo }}</a></td>
+    <td colspan="3"><span class="q-so-imprime">G {{ p.gut_g }} · U {{ p.gut_u }} · T {{ p.gut_t }}</span>
+      <form class="q-gut-form q-nao-imprime" method="post" action="{{ url_for('qual.gut_salvar', pid=p.id) }}">{{ csrf_input }}
+        <input type="number" name="gut_g" min="1" max="5" value="{{ p.gut_g }}" aria-label="Gravidade"><input type="number" name="gut_u" min="1" max="5" value="{{ p.gut_u }}" aria-label="Urgência"><input type="number" name="gut_t" min="1" max="5" value="{{ p.gut_t }}" aria-label="Tendência"><button class="btn sec peq" type="submit">ok</button></form></td>
+    <td class="num"><span class="q-gut-barra" style="--v: {{ p.gut }}">{{ p.gut }}</span></td><td>{{ p.status }}</td><td></td></tr>
+  {% else %}
+  <tr><td colspan="8" class="sub">Nenhum problema aberto.</td></tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+{% endblock %}

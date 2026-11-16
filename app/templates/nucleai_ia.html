@@ -1,0 +1,417 @@
+{% extends 'base.html' %}
+{% block titulo %}NucleAI: IA online{% endblock %}
+{% macro ic(nome, tam=16) %}<svg class="ic" width="{{ tam }}" height="{{ tam }}" aria-hidden="true"><use href="{{ url_for('static', filename='img/icones.svg') }}#i-{{ nome }}"></use></svg>{% endmacro %}
+{% block conteudo %}
+<div class="cabecalho">
+  <div class="nia-hero">
+    <svg class="nia-atomo{{ '' if ligada and estado != 'DESATIVADA' else ' desligada' }}" viewBox="0 0 64 64" aria-hidden="true">
+      <ellipse class="orb a" cx="32" cy="32" rx="28" ry="10"></ellipse>
+      <ellipse class="orb b" cx="32" cy="32" rx="28" ry="10" transform="rotate(60 32 32)"></ellipse>
+      <ellipse class="orb c" cx="32" cy="32" rx="28" ry="10" transform="rotate(120 32 32)"></ellipse>
+      <circle class="nucleo" cx="32" cy="32" r="6"></circle>
+    </svg>
+    <div>
+      <h1>NucleAI: IA online</h1>
+      <p class="sub">Treinamento, níveis de acesso, memória e liberação da NucleAI com inteligência artificial (OpenRouter).
+        <span class="nia-estado {{ estado }}">{{ ic('atom', 13) }} {{ {'TREINO': 'Em treino (só a gerência)', 'LIBERADA': 'Liberada para o time', 'DESATIVADA': 'Desativada'}[estado] }}</span>
+        {% if not ligada and estado != 'DESATIVADA' %}<span class="nia-estado DESATIVADA">IA desligada nas configurações</span>{% endif %}</p>
+    </div>
+  </div>
+</div>
+
+{% if not tem_chave %}
+<div class="cartao" style="border-left:4px solid var(--aviso);margin-bottom:14px">
+  <b>{{ ic('triangle-alert') }} Falta a chave da IA neste servidor.</b>
+  <p class="ajuda" style="margin:6px 0 0">Cadastre a chave do OpenRouter nas configurações abaixo. Sem arquivo de chave, o servidor usa <code>{{ var_chave }}</code>.</p>
+</div>
+{% endif %}
+
+<div class="cartao" id="saude" style="margin-bottom:18px">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:14px">
+    <div>
+      <h2 style="margin:0 0 4px;display:flex;align-items:center;gap:8px">
+        {{ ic('activity', 20) }} Saúde da NucleAI
+      </h2>
+      <div style="display:flex;align-items:center;gap:10px;margin-top:6px">
+        <span class="ajuda">Estado atual:</span>
+        {% if saude.estado == 'LIBERADA' and saude.ligada %}
+          <span class="nia-estado LIBERADA" style="font-size:14px;padding:4px 10px;font-weight:700">
+            {{ ic('circle-check', 14) }} Ligada para os usuários
+          </span>
+        {% elif saude.estado == 'TREINO' and saude.ligada %}
+          <span class="nia-estado TREINO" style="font-size:14px;padding:4px 10px;font-weight:700">
+            {{ ic('user-cog', 14) }} Em teste — só gerência
+          </span>
+        {% else %}
+          <span class="nia-estado DESATIVADA" style="font-size:14px;padding:4px 10px;font-weight:700">
+            {{ ic('circle-x', 14) }} Desligada
+          </span>
+        {% endif %}
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      {% if saude.estado != 'LIBERADA' or not saude.ligada %}
+        <form method="post" action="{{ url_for('nucleaiia.liberar') }}" style="display:inline" onsubmit="return confirm('Ligar a NucleAI com IA para todos os usuários autorizados?')">
+          {{ csrf_input }}
+          <input type="hidden" name="confirmar" value="1">
+          <button class="btn" type="submit">{{ ic('shield-check', 14) }} Ligar para os usuários</button>
+        </form>
+      {% endif %}
+      {% if saude.estado != 'TREINO' or not saude.ligada %}
+        <form method="post" action="{{ url_for('nucleaiia.treinar') }}" style="display:inline" onsubmit="return confirm('Voltar a NucleAI para o modo de teste (só a gerência terá acesso)?')">
+          {{ csrf_input }}
+          <button class="btn sec" type="submit">{{ ic('rotate-ccw', 14) }} Voltar ao teste</button>
+        </form>
+      {% endif %}
+      {% if saude.estado != 'DESATIVADA' and saude.ligada %}
+        <form method="post" action="{{ url_for('nucleaiia.desativar') }}" style="display:inline" onsubmit="return confirm('Desativar a IA para todos os usuários? Todos voltam ao motor de regras.')">
+          {{ csrf_input }}
+          <button class="btn sec" type="submit" style="color:var(--aviso)">{{ ic('circle-x', 14) }} Desativar</button>
+        </form>
+      {% endif %}
+      <a class="btn sec" href="{{ url_for('nucleaiia.tokens') }}">{{ ic('chart-column', 14) }} Gráficos de tokens</a>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(150px, 1fr));gap:10px;margin-top:10px">
+    <div class="cartao" style="margin:0;padding:10px 14px;background:var(--fundo)">
+      <small class="sub" style="display:block;margin:0">{{ ic('clock', 13) }} Última resposta OK</small>
+      <b style="font-size:15px">{{ saude.ultima_resposta_ok }}</b>
+    </div>
+    <div class="cartao" style="margin:0;padding:10px 14px;background:var(--fundo)">
+      <small class="sub" style="display:block;margin:0">{{ ic('timer', 13) }} Tempo médio (hoje)</small>
+      <b style="font-size:15px">{{ saude.tempo_medio_hoje }}</b>
+    </div>
+    <div class="cartao" style="margin:0;padding:10px 14px;background:var(--fundo)">
+      <small class="sub" style="display:block;margin:0">{{ ic('percent', 13) }} Taxa de erro</small>
+      <b style="font-size:15px;color:{{ 'var(--aviso)' if saude.taxa_erro != '0%' and saude.taxa_erro != '0.0%' else 'var(--verde-2)' }}">{{ saude.taxa_erro }}</b>
+    </div>
+    <div class="cartao" style="margin:0;padding:10px 14px;background:var(--fundo)">
+      <small class="sub" style="display:block;margin:0">{{ ic('pause-circle', 13) }} Pausa por cota</small>
+      <b style="font-size:15px;color:{{ 'var(--aviso)' if saude.modelos_pausa > 0 else 'var(--texto)' }}">
+        {{ saude.modelos_pausa }} {{ 'modelo(s)' if saude.modelos_pausa != 1 else 'modelo' }}
+      </b>
+    </div>
+    <div class="cartao" style="margin:0;padding:10px 14px;background:var(--fundo)">
+      <small class="sub" style="display:block;margin:0">{{ ic('repeat', 13) }} Trocas de hoje</small>
+      <b style="font-size:15px">{{ saude.trocas_hoje }}</b>
+    </div>
+    <div class="cartao" style="margin:0;padding:10px 14px;background:var(--fundo)">
+      <small class="sub" style="display:block;margin:0">{{ ic('key', 13) }} Chave configurada</small>
+      <b style="font-size:15px;color:{{ 'var(--verde-2)' if saude.tem_chave else 'var(--aviso)' }}">
+        {{ 'Sim' if saude.tem_chave else 'Não' }}
+      </b>
+    </div>
+  </div>
+</div>
+
+<div class="nia-kpis">
+  <div class="nia-kpi"><small>{{ ic('timer', 13) }} Ativa para o time há</small><b>{{ tempo_ativa }}</b></div>
+  <div class="nia-kpi"><small>{{ ic('message-square', 13) }} Respostas da IA (total)</small><b>{{ contadores.respostas }}</b></div>
+  <div class="nia-kpi"><small>{{ ic('gauge', 13) }} Autoavaliação (30 dias)</small>
+    <b>{{ '%.1f'|format(auto.media) if auto.media else '—' }}<span class="ajuda" style="font-size:13px"> / 5 · {{ auto.qtd }} resp.</span></b>
+    {% set maior = (auto.dist.values()|max) or 1 %}
+    <div class="nia-dist" title="Distribuição das notas de 1 a 5">{% for n in range(1, 6) %}<span style="height:{{ (100 * auto.dist[n] / maior)|round }}%;animation-delay:{{ n * 60 }}ms" title="{{ n }}: {{ auto.dist[n] }}"></span>{% endfor %}</div>
+  </div>
+  <div class="nia-kpi"><small>{{ ic('chart-column', 13) }} Uso hoje</small><b>{{ uso.qtd }}</b><span class="ajuda"> perguntas · {{ uso.tokens }} tokens</span></div>
+</div>
+
+<div class="nia-pagina">
+  <section>
+    <div class="nia-treino" data-nia-treino data-url="{{ url_for('nucleaiia.treino') }}">
+      <div class="nia-treino-topo" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+        <div><b>{{ ic('user-cog') }} Fake Chat (chat de teste)</b> <span class="ajuda">· <span data-nia-treinador>{{ treinador.nome }}</span>
+          · {{ 'alterações de verdade' if cfg.nucleai_llm_treino_real == '1' else 'alterações só simuladas' }}</span></div>
+        <div style="display:flex;gap:6px;align-items:center">
+          <form method="post" action="{{ url_for('nucleaiia.novo_teste') }}" style="display:inline">
+            {{ csrf_input }}
+            <button class="btn sec" type="submit" style="padding:2px 8px;font-size:12px" title="Iniciar nova conversa de teste (novo Teste#XXXX)">+ Nova conversa</button>
+          </form>
+          <form method="post" action="{{ url_for('nucleaiia.limpar_teste') }}" style="display:inline" onsubmit="return confirm('Apagar o histórico desta conversa de teste? As regras salvas no manual continuam guardadas.')">
+            {{ csrf_input }}
+            <button class="btn sec" type="submit" style="padding:2px 8px;font-size:12px" title="Apagar o histórico desta conversa de teste">{{ ic('trash-2', 12) }} Apagar conversa</button>
+          </form>
+        </div>
+      </div>
+      <div class="nia-treino-fio" data-nia-fio></div>
+      <form class="nia-treino-form" data-nia-form>
+        <textarea name="texto" maxlength="2000" placeholder="Converse com a NucleAI no Fake Chat (ela vê você como {{ treinador.nome }}), ensine regras ou use /ajuda" required></textarea>
+        <button class="btn" type="submit">{{ ic('send') }} Enviar</button>
+      </form>
+    </div>
+    <p class="ajuda">No Fake Chat a IA tem o nível Max e vê você como <b>{{ treinador.nome }}</b>. O contexto vale só para esta conversa; regras ensinadas vão para o manual compartilhado (seção "Como agir"), com versões e desfazer logo abaixo.</p>
+  </section>
+
+  <section>
+    <div class="cartao" id="liberar">
+      <h2 style="margin-top:0">{{ ic('shield-check') }} Liberação para o time</h2>
+      {% if estado == 'TREINO' %}
+        <p class="ajuda">Quando a gerência decidir que ela está pronta, gere o código e digite-o para liberar. Cada usuário passa a usar a IA conforme o nível dele (abaixo); quem estiver no nível Desligado continua com a NucleAI automática.</p>
+        {% if codigo %}
+          <p>Código (vale até {{ codigo.ate }}): <span class="nia-codigo">{{ codigo.codigo }}</span></p>
+          <form method="post" action="{{ url_for('nucleaiia.liberar') }}" style="display:flex;gap:8px;align-items:center">
+            {{ csrf_input }}
+            <input name="codigo" inputmode="numeric" maxlength="6" placeholder="Digite o código" required style="width:150px" autocomplete="off">
+            <button class="btn" type="submit">{{ ic('check') }} Liberar</button>
+          </form>
+        {% else %}
+          <form method="post" action="{{ url_for('nucleaiia.codigo') }}">{{ csrf_input }}<button class="btn" type="submit">{{ ic('shield') }} Liberar…</button></form>
+        {% endif %}
+      {% elif estado == 'LIBERADA' %}
+        <p>Liberada desde {{ contadores.desde }}. Se notar um comportamento estranho, desative: todos voltam à NucleAI automática na hora.</p>
+      {% else %}
+        <p>A IA está desativada. Volte ao treino para testá-la e aperfeiçoá-la de novo; depois, libere com um novo código.</p>
+        <form method="post" action="{{ url_for('nucleaiia.treinar') }}">{{ csrf_input }}<button class="btn" type="submit">{{ ic('rotate-ccw') }} Voltar ao treino</button></form>
+      {% endif %}
+      {% if estado != 'DESATIVADA' %}
+        <form method="post" action="{{ url_for('nucleaiia.desativar') }}" style="margin-top:10px" onsubmit="return confirm('Desativar a IA para todos?')">
+          {{ csrf_input }}<button class="btn sec" type="submit">{{ ic('circle-x') }} Desativar</button></form>
+      {% endif %}
+    </div>
+
+    <form class="cartao" id="config" method="post" action="{{ url_for('nucleaiia.config') }}" style="margin-top:14px">
+      {{ csrf_input }}
+      <h2 style="margin-top:0">{{ ic('settings') }} Configurações</h2>
+      <label style="display:flex;gap:8px;align-items:center;font-weight:600">
+        <input type="checkbox" name="ativo" value="1" {{ 'checked' if ligada }} {{ 'disabled' if estado == 'DESATIVADA' }}> IA ligada</label>
+      <p class="ajuda">Timeout e pausa valem para cada modelo da lista abaixo.</p>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <div><label>Timeout por modelo (s)</label><input type="number" name="timeout_s" min="1" max="120" value="{{ cfg.nucleai_llm_timeout_s }}"></div>
+        <div><label>Pausa por cota (min)</label><input type="number" name="pausa_min" min="1" max="1440" value="{{ cfg.nucleai_llm_pausa_min }}"></div>
+        <div><label>Tolerância para remarcar (min)</label><input type="number" name="tolerancia_remarcacao" min="0" max="240" value="{{ cfg.nucleai_llm_tolerancia_remarcacao }}"></div>
+      </div>
+      <h3>Limite de perguntas por dia, por nível</h3>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        {% for n in range(1, 5) %}<div><label>{{ niveis[n] }}</label><input type="number" name="limite_n{{ n }}" min="0" max="5000" value="{{ cfg['nucleai_llm_limite_dia_n%d' % n] }}" style="width:90px"></div>{% endfor %}
+        <div><label>Por minuto</label><input type="number" name="limite_min" min="1" max="60" value="{{ cfg.nucleai_llm_limite_min }}" style="width:80px"></div>
+        <div><label>Nível de quem é novo</label><select name="padrao_nivel">{% for n, nome in niveis.items() %}<option value="{{ n }}" {{ 'selected' if cfg.nucleai_llm_padrao_nivel == n|string }}>{{ nome }}</option>{% endfor %}</select></div>
+      </div>
+      <label style="display:flex;gap:8px;align-items:center;margin-top:10px">
+        <input type="checkbox" name="treino_real" value="1" {{ 'checked' if cfg.nucleai_llm_treino_real == '1' }}> No Fake Chat, executar as alterações de verdade</label>
+      <label style="display:flex;gap:8px;align-items:center;margin-top:6px">
+        <input type="checkbox" name="dados_pacientes" value="1" {{ 'checked' if cfg.nucleai_llm_dados_pacientes == '1' }}> Enviar à IA os nomes reais dos pacientes nas consultas da agenda</label>
+      <p class="ajuda">Desligado, a IA recebe só contagens; as listas com nomes vão direto do servidor para a tela.</p>
+      <button class="btn" type="submit">Salvar configurações</button>
+    </form>
+    <div class="cartao" style="margin-top:14px">
+      <h2>{{ ic('settings') }} Chave OpenRouter</h2>
+      <p>{{ resumo_chave }}</p>
+      <form method="post" action="{{ url_for('nucleaiia.config') }}">
+        {{ csrf_input }}
+        <label>Nova chave <input type="password" name="openrouter_chave" autocomplete="new-password" maxlength="1024" required></label>
+        <button class="btn" name="acao_ia" value="chave_salvar">Salvar / trocar chave</button>
+      </form>
+      <form method="post" action="{{ url_for('nucleaiia.config') }}" style="margin-top:8px">
+        {{ csrf_input }}<button class="btn sec" name="acao_ia" value="chave_apagar">Apagar chave do arquivo</button>
+      </form>
+      <p class="ajuda">Gravada em nucleai/openrouter_chave.txt na pasta de dados. Ao apagar o arquivo, a variável {{ var_chave }} volta a valer, se definida.</p>
+    </div>
+    <div class="cartao" style="margin-top:14px">
+      <h2>Modelos OpenRouter</h2>
+      <p class="ajuda">Preferência de cima para baixo. Em falha temporária, a pergunta segue para o próximo modelo ativo.</p>
+      <p class="ajuda">Atenção: os modelos terminados em <b>:free</b> dividem o mesmo limite da conta na OpenRouter (20 pedidos por minuto e 50 por dia, até a conta ter comprado US$ 10 em créditos; depois, 1.000 por dia). Trocar de um modelo gratuito para outro não escapa desse limite. Para mais folga, ative ao menos um modelo pago.</p>
+      {% if ultimo_erro %}
+      <div class="ajuda" style="border-left:3px solid var(--aviso);padding:4px 10px;margin:6px 0">
+        <b>Último limite informado pela OpenRouter</b> ({{ ultimo_erro.quando }}): modelo <b>{{ ultimo_erro.modelo }}</b>
+        {% if ultimo_erro.escopo == 'conta_dia' %}· limite <b>diário da conta</b>
+        {% elif ultimo_erro.escopo == 'conta_min' %}· limite <b>por minuto da conta</b>
+        {% elif ultimo_erro.escopo == 'credito' %}· <b>saldo insuficiente</b>
+        {% elif ultimo_erro.tipo == 'indisponivel' %}· <b>modelo indisponível</b>
+        {% else %}· limite <b>só deste modelo/provedor</b> (passageiro){% endif %}
+        {% if ultimo_erro.detalhe %}<br><span>“{{ ultimo_erro.detalhe }}”</span>{% endif %}
+        {% if ultimo_erro.ate %}<br>Em pausa até {{ ultimo_erro.ate }}.{% endif %}
+      </div>
+      {% endif %}
+      <ol>
+      {% for m in modelos %}
+        <li style="margin-bottom:12px">
+          <b>{{ m.slug }}</b> · {{ 'ativo' if m.ativo else 'desativado' }}
+          {% if m.slug in pausas %}<span class="ajuda"> · em pausa até {{ pausas[m.slug] }}</span>{% endif %}
+          <form method="post" action="{{ url_for('nucleaiia.config') }}">
+            {{ csrf_input }}<input type="hidden" name="modelo_slug" value="{{ m.slug }}">
+            <button class="btn sec" name="acao_ia" value="modelo_alternar">{{ 'Desativar' if m.ativo else 'Ativar' }}</button>
+            <button class="btn sec" name="acao_ia" value="modelo_subir" {{ 'disabled' if loop.first }}>Subir</button>
+            <button class="btn sec" name="acao_ia" value="modelo_descer" {{ 'disabled' if loop.last }}>Descer</button>
+            <button class="btn sec" name="acao_ia" value="modelo_remover">Remover</button>
+          </form>
+        </li>
+      {% else %}<li>Nenhum modelo cadastrado.</li>{% endfor %}
+      </ol>
+      <form method="post" action="{{ url_for('nucleaiia.config') }}">
+        {{ csrf_input }}
+        <label>Slug do modelo <input name="modelo_slug" placeholder="google/gemini-2.5-flash" maxlength="200" required></label>
+        <button class="btn" name="acao_ia" value="modelo_adicionar">Adicionar modelo</button>
+      </form>
+      <form method="post" action="{{ url_for('nucleaiia.teste') }}" style="margin-top:10px">
+        {{ csrf_input }}<button class="btn sec">{{ ic('refresh-cw') }} Testar conexão</button>
+      </form>
+    </div>
+  </section>
+</div>
+
+<form class="cartao" id="niveis" method="post" action="{{ url_for('nucleaiia.niveis') }}" style="margin-top:16px">
+  {{ csrf_input }}
+  <h2 style="margin-top:0">{{ ic('users') }} Nível de IA de cada usuário</h2>
+  <p class="ajuda">{% for n in range(1, 5) %}<b>{{ niveis[n] }}</b>: {{ descricoes[n] }}. {% endfor %}A IA nunca dá acesso a um módulo que a pessoa não tem.</p>
+  <div class="tabela-wrap"><table class="tabela">
+    <thead><tr><th>Usuário</th><th>Perfil</th><th>Nível da IA</th><th>Perguntas hoje</th></tr></thead>
+    <tbody>{% for u in usuarios %}
+      <tr><td><b>{{ u.usuario }}</b></td><td>{% if u.admin %}Administração{% elif u.gerencia %}Gerência{% else %}Funcionário{% endif %}</td>
+        <td><select name="nivel_{{ u.id }}">{% for n, nome in niveis.items() %}<option value="{{ n }}" {{ 'selected' if u.nivel == n }}>{{ nome }}</option>{% endfor %}</select></td>
+        <td>{{ u.hoje }}</td></tr>
+    {% endfor %}</tbody>
+  </table></div>
+  <button class="btn" type="submit" style="margin-top:10px">Salvar níveis</button>
+</form>
+
+<div class="cartao nia-memoria" id="memoria" style="margin-top:16px">
+  <h2 style="margin-top:0">{{ ic('notebook-pen') }} Memória da IA</h2>
+  <div class="nai-abas" style="display:flex;gap:8px;margin-bottom:8px">
+    {% for a in arquivos %}<a class="btn {{ '' if a == arquivo else 'sec' }}" href="{{ url_for('nucleaiia.pagina', arquivo=a) }}#memoria">{{ ic('file-text', 14) }} {{ a }}</a>{% endfor %}
+  </div>
+  <p class="ajuda">Guardado no banco (entra no backup e passa pelas atualizações). Cópia em arquivo: <code>{{ caminho or '—' }}</code>.
+    Se alguém editar o arquivo, a edição é importada na próxima leitura. Máximo {{ max_memoria // 1000 }} KB.</p>
+  <form method="post" action="{{ url_for('nucleaiia.memoria') }}">
+    {{ csrf_input }}<input type="hidden" name="arquivo" value="{{ arquivo }}">
+    <textarea name="conteudo" spellcheck="false">{{ conteudo }}</textarea>
+    <button class="btn" type="submit" style="margin-top:8px">Salvar {{ arquivo }}</button>
+  </form>
+  {% if versoes %}
+  <details style="margin-top:10px"><summary>{{ ic('history', 14) }} Versões anteriores ({{ versoes|length }})</summary>
+    <div class="tabela-wrap"><table class="tabela"><thead><tr><th>Quando</th><th>Por</th><th>Motivo</th><th></th></tr></thead><tbody>
+    {% for v in versoes %}<tr><td>{{ v.criado_em }}</td><td>{{ v.por }}</td><td>{{ v.motivo }}</td>
+      <td><form method="post" action="{{ url_for('nucleaiia.reverter') }}" onsubmit="return confirm('Voltar {{ arquivo }} para esta versão?')">{{ csrf_input }}
+        <input type="hidden" name="versao" value="{{ v.id }}"><button class="btn sec" type="submit">{{ ic('undo-2', 14) }} Reverter</button></form></td></tr>{% endfor %}
+    </tbody></table></div></details>
+  {% endif %}
+</div>
+
+<div class="cartao" id="trocas" style="margin-top:16px">
+  <h2 style="margin-top:0">{{ ic('repeat') }} Trocas de modelo</h2>
+  <p class="ajuda">Registro de quando a IA alternou entre modelos por cota, erro de servidor ou tempo esgotado.
+    Classifique as trocas como <b>Natural</b> (esperada pelo rodízio) ou <b>Estranha</b> (inesperada ou fora do padrão).</p>
+
+  <div style="display:flex;gap:12px;margin:12px 0 16px;flex-wrap:wrap">
+    <div class="cartao" style="padding:10px 14px;margin:0;flex:1;min-width:140px;background:var(--fundo)">
+      <small class="sub" style="display:block;margin:0">{{ ic('repeat', 13) }} Total de trocas</small>
+      <b style="font-size:18px">{{ trocas_contadores.total }}</b>
+    </div>
+    <div class="cartao" style="padding:10px 14px;margin:0;flex:1;min-width:140px;background:var(--fundo)">
+      <small class="sub" style="display:block;margin:0">{{ ic('circle-check', 13) }} Naturais</small>
+      <b style="font-size:18px;color:var(--verde-2)">{{ trocas_contadores.naturais }}</b>
+    </div>
+    <div class="cartao" style="padding:10px 14px;margin:0;flex:1;min-width:140px;background:var(--fundo)">
+      <small class="sub" style="display:block;margin:0">{{ ic('triangle-alert', 13) }} Estranhas</small>
+      <b style="font-size:18px;color:var(--aviso)">{{ trocas_contadores.estranhas }}</b>
+    </div>
+    <div class="cartao" style="padding:10px 14px;margin:0;flex:1;min-width:140px;background:var(--fundo)">
+      <small class="sub" style="display:block;margin:0">{{ ic('clock', 13) }} Pendentes</small>
+      <b style="font-size:18px;color:var(--suave)">{{ trocas_contadores.pendentes }}</b>
+    </div>
+  </div>
+
+  <form method="get" action="{{ url_for('nucleaiia.pagina') }}" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px">
+    <div>
+      <label class="ajuda" style="display:block;font-size:11px;margin-bottom:2px">Período</label>
+      <select name="periodo" style="padding:4px 8px">
+        <option value="">Todos os períodos</option>
+        <option value="hoje" {{ 'selected' if filtro_periodo == 'hoje' }}>Hoje</option>
+        <option value="7d" {{ 'selected' if filtro_periodo == '7d' }}>Últimos 7 dias</option>
+        <option value="30d" {{ 'selected' if filtro_periodo == '30d' }}>Últimos 30 dias</option>
+      </select>
+    </div>
+    <div>
+      <label class="ajuda" style="display:block;font-size:11px;margin-bottom:2px">Modelo</label>
+      <select name="modelo" style="padding:4px 8px">
+        <option value="">Todos os modelos</option>
+        {% for m in modelos_troca %}
+        <option value="{{ m }}" {{ 'selected' if filtro_modelo == m }}>{{ m }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div>
+      <label class="ajuda" style="display:block;font-size:11px;margin-bottom:2px">Classificação</label>
+      <select name="classificacao" style="padding:4px 8px">
+        <option value="">Todas</option>
+        <option value="pendente" {{ 'selected' if filtro_classificacao == 'pendente' }}>Pendentes</option>
+        <option value="Natural" {{ 'selected' if filtro_classificacao == 'Natural' }}>Natural</option>
+        <option value="Estranha" {{ 'selected' if filtro_classificacao == 'Estranha' }}>Estranha</option>
+      </select>
+    </div>
+    <div style="align-self:flex-end">
+      <button class="btn sec" type="submit">{{ ic('list-checks', 14) }} Filtrar</button>
+      {% if filtro_periodo or filtro_modelo or filtro_classificacao %}
+      <a class="btn sec" href="{{ url_for('nucleaiia.pagina') }}#trocas">Limpar</a>
+      {% endif %}
+    </div>
+  </form>
+
+  <div class="tabela-wrap"><table class="tabela">
+    <thead>
+      <tr>
+        <th>Hora</th>
+        <th>De → Para</th>
+        <th>Motivo</th>
+        <th>Situação</th>
+        <th>Classificação</th>
+        <th>Ações</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for t in trocas %}
+      <tr>
+        <td style="white-space:nowrap">{{ t.quando }}</td>
+        <td><code>{{ t.de }}</code> → <code>{{ t.para }}</code></td>
+        <td><span class="nia-estado" style="padding:2px 6px;font-size:12px">{{ t.motivo }}</span></td>
+        <td class="trecho">{{ t.situacao }}</td>
+        <td>
+          {% if t.classificacao == 'Natural' %}
+            <span style="color:var(--verde-2);font-weight:600">{{ ic('circle-check', 13) }} Natural</span>
+            {% if t.classificado_por %}<br><small class="ajuda">{{ t.classificado_por }} ({{ t.classificado_em[11:16] }})</small>{% endif %}
+          {% elif t.classificacao == 'Estranha' %}
+            <span style="color:var(--aviso);font-weight:600">{{ ic('triangle-alert', 13) }} Estranha</span>
+            {% if t.classificado_por %}<br><small class="ajuda">{{ t.classificado_por }} ({{ t.classificado_em[11:16] }})</small>{% endif %}
+          {% else %}
+            <span class="ajuda">—</span>
+          {% endif %}
+        </td>
+        <td>
+          <form method="post" action="{{ url_for('nucleaiia.classificar_troca') }}" style="display:inline-flex;gap:4px">
+            {{ csrf_input }}
+            <input type="hidden" name="id" value="{{ t.id }}">
+            <input type="hidden" name="periodo" value="{{ filtro_periodo }}">
+            <input type="hidden" name="modelo" value="{{ filtro_modelo }}">
+            <input type="hidden" name="classificacao" value="{{ filtro_classificacao }}">
+            <button class="btn sec" name="valor" value="Natural" title="Classificar como Natural" style="padding:4px 8px;font-size:12px;{{ 'background:var(--ok-fundo);color:var(--verde-2);font-weight:600' if t.classificacao == 'Natural' else '' }}">{{ ic('circle-check', 13) }} Natural</button>
+            <button class="btn sec" name="valor" value="Estranha" title="Classificar como Estranha" style="padding:4px 8px;font-size:12px;{{ 'background:var(--aviso-fundo);color:var(--aviso);font-weight:600' if t.classificacao == 'Estranha' else '' }}">{{ ic('triangle-alert', 13) }} Estranha</button>
+          </form>
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="6" class="ajuda">Nenhuma troca registrada.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table></div>
+</div>
+
+<div class="cartao" style="margin-top:16px">
+  <h2 style="margin-top:0">{{ ic('scroll-text') }} Últimas respostas</h2>
+  <p class="ajuda">Modo IA = respondida pela IA; REGRAS = sem internet ou sem cota (respondeu a automática); ACAO = Sim/Não de uma alteração; EVENTO = liberação/desativação.
+    Dê uma nota às respostas da IA para acompanhar a qualidade.</p>
+  <div class="tabela-wrap"><table class="tabela nia-log">
+    <thead><tr><th>Quando</th><th>Quem</th><th>Modo</th><th>Pergunta</th><th>Resposta</th><th>Ferramentas</th><th>Auto</th><th>Nota</th></tr></thead>
+    <tbody>{% for l in log %}
+      <tr><td>{{ l.criado_em[5:16] }}</td><td>{{ l.usuario or '' }}{% if l.treinador %}<br><small class="ajuda">{{ l.treinador }}</small>{% endif %}</td><td>{{ l.modo }}</td>
+        <td class="trecho">{{ (l.pergunta or '')[:220] }}</td><td class="trecho">{{ (l.resposta or '')[:300] }}</td>
+        <td><small>{{ (l.ferramentas or '')[:120] }}</small></td><td>{{ l.autoavaliacao or '' }}</td>
+        <td>{% if l.modo == 'IA' %}<select data-nia-nota="{{ url_for('nucleaiia.nota', lid=l.id) }}"><option value="">—</option>{% for n in range(1, 6) %}<option {{ 'selected' if l.nota == n }}>{{ n }}</option>{% endfor %}</select>{% endif %}</td></tr>
+    {% else %}<tr><td colspan="8" class="ajuda">Nenhuma resposta ainda.</td></tr>{% endfor %}</tbody>
+  </table></div>
+</div>
+<script type="application/json" id="nia-conversa">{{ conversa|tojson }}</script>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/nucleai_formatar.js') }}"></script>
+<script src="{{ url_for('static', filename='js/nucleai_cartoes.js') }}"></script>
+<script src="{{ url_for('static', filename='js/nucleai_treino.js') }}"></script>
+{% endblock %}

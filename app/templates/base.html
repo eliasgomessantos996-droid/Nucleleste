@@ -1,0 +1,100 @@
+{% from '_campanha.html' import selo %}{% macro ico(nome, tam=18) -%}<svg class="ic" width="{{ tam }}" height="{{ tam }}" aria-hidden="true" focusable="false"><use href="{{ url_for('static', filename='img/icones.svg') }}#i-{{ nome }}"/></svg>{%- endmacro %}
+<!doctype html>
+<html lang="pt-BR" data-tema="{{ tema_atual }}" data-brilho="{{ brilho_atual }}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#173d25">
+<meta name="csrf" content="{{ csrf_token }}">
+<title>{% block titulo %}Recepção{% endblock %} · Nucleleste</title>
+<link rel="icon" href="{{ url_for('static', filename='img/icone.svg') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/animacoes.css') }}">
+{% if usuario %}<link rel="stylesheet" href="{{ url_for('static', filename='css/chat.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/nucleai_ia.css') }}">{% endif %}
+{% block head %}{% endblock %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/tema.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/campanhas.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/tema-escuro.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/corporativo.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/mobile.css') }}">
+</head>
+<body data-icones="{{ url_for('static', filename='img/icones.svg') }}" data-tema="{{ tema_atual }}" data-brilho="{{ brilho_atual }}" data-versao="{{ versao }}"{% if menu_recolher %} data-menu-recolher{% endif %}{% if campanha %} class="com-campanha" style="--camp-cor:{{ campanha.principal.cor|e }};--camp-laco:{{ campanha.principal.laco|e }}"{% endif %}{% if chat_url %} data-chat-url="{{ chat_url }}" data-chat-ultimo="{{ chat_ultimo }}"{% endif %}>
+{% set ep = request.endpoint or '' %}
+<script>try { if (localStorage.getItem('nucleleste.menuOculto') === '1') document.body.classList.add('menu-oculto'); {% if usuario %}localStorage.setItem('nucleleste.tema', '{{ tema_atual }}'); localStorage.setItem('nucleleste.brilho', '{{ brilho_atual }}');{% endif %} } catch (e) { /* sem armazenamento */ }</script>
+{% if usuario and not travado %}<button type="button" class="menu-alternar" id="menu-alternar" title="Ocultar ou mostrar a barra lateral" aria-label="Ocultar ou mostrar a barra lateral" aria-expanded="true"><span aria-hidden="true">‹</span></button>{% endif %}
+<div class="topo-mobile"><button type="button" data-abrir-menu aria-label="Abrir o menu" aria-expanded="false"><span class="tm-barras" aria-hidden="true"></span></button>
+  <div class="tm-txt"><small>{{ aba_atual.grupo if aba_atual else 'Nucleleste' }}</small><strong>{% if aba_atual %}{{ aba_atual.rotulo }}{% else %}{{ self.titulo() }}{% endif %}</strong></div>
+  <span class="tm-atomo" aria-hidden="true">{% include '_atomo.html' %}</span></div>
+<div class="layout">
+  <aside class="menu">
+    <div class="marca"><strong>{% include '_atomo.html' %}NUCLELESTE</strong><span>Recepção · Medicina Nuclear</span>{% if campanha %}{{ selo(campanha.principal) }}{% endif %}</div>
+    {% if atalho_agenda and not travado %}<a class="menu-agenda{{ ' ativo' if atalho_agenda_ativo }}" href="{{ atalho_agenda }}" data-tut="agenda-atalho" title="Abrir a agenda de exames"><span class="ma-ico" aria-hidden="true">{{ ico('calendar-days', 20) }}</span><span class="ma-txt">Agenda</span></a>{% endif %}
+    {% if not travado %}<div class="busca-menu">
+      <input type="search" id="busca-menu" data-tut="busca" placeholder="Pesquisar no menu (tecla /)" aria-label="Pesquisar no menu" autocomplete="off">
+    </div>{% endif %}
+    <nav>
+      {% for grupo, itens in menu %}
+        {% if grupo %}<button type="button" class="grupo" data-tut-grupo="{{ grupo }}" aria-expanded="true" title="Mostrar ou ocultar este tema"><span>{{ ico(temas_icones.get(grupo, 'layout-grid'), 18) if grupo in temas_icones }}{{ grupo }}</span><span class="seta" aria-hidden="true">▾</span></button>{% endif %}
+        <div class="tema-itens" data-tema-itens>
+        {% for it in itens %}<a href="{{ it.url }}" data-tut-item="{{ it.rotulo }}" class="{{ 'ativo' if it.ativo }}"><span class="ico-item" aria-hidden="true">{{ ico(it.icone, 18) }}</span><span class="rot">{{ it.rotulo }}</span>{% if it.busca %}<span hidden>{{ it.busca }}</span>{% endif %}{% if it.selo %}<span class="selo-menu selo-suporte" title="Formulários esperando decisão">{{ it.selo }}</span>{% endif %}{% if it.badge is not none %}<span class="selo-menu" data-msg-badge{% if not it.badge %} hidden{% endif %}>{{ it.badge }}</span>{% endif %}</a>{% endfor %}
+        </div>
+      {% endfor %}
+      <p class="sem-resultado" hidden>Nenhum item encontrado.</p>
+    </nav>
+    <div class="rodape">
+      Logado: <strong>{{ usuario.usuario if usuario }}</strong> <small style="opacity:.6">v{{ versao }}</small><br>
+      {% if usuario %}<a class="rodape-conta" data-tut="conta" href="{{ url_for('auth.minha_senha') }}" title="Senha, tema e brilho">⚙️ Minha conta</a><br>
+      {% if tutorial_passos %}<a class="rodape-conta" href="#" data-tutorial-iniciar title="Rever o tutorial animado da NucleAI">🎓 Rever o tutorial</a><br>{% endif %}{% endif %}
+      <form method="post" action="{{ url_for('auth.logout') }}">{{ csrf_input }}<button type="submit">Sair (logoff)</button></form>
+    </div>
+  </aside>
+  <main class="conteudo">
+    {% if usuario %}<div class="barra-pagina">{% include '_atomo.html' %}
+      <span class="bp-ico" aria-hidden="true">{{ ico(aba_atual.icone if aba_atual else 'layout-grid', 22) }}</span>
+      <div class="bp-txt"><small>{{ aba_atual.grupo if aba_atual else 'Nucleleste' }}</small><strong>{% if aba_atual %}{{ aba_atual.rotulo }}{% else %}{{ self.titulo() }}{% endif %}</strong></div>
+      <span class="bp-data">{{ hoje_extenso }}</span></div>{% endif %}
+    {% if abas %}<nav class="abas-modulo" aria-label="Telas deste módulo">{% for a in abas.itens %}<a href="{{ a.url }}" class="btn {{ '' if a.ativo else 'sec' }}"{% if a.ativo %} aria-current="page"{% endif %}><span class="ico-item" aria-hidden="true">{{ ico(a.icone, 16) }}</span>{{ a.rotulo }}</a>{% endfor %}</nav>{% endif %}
+    {% with msgs = get_flashed_messages(with_categories=true) %}
+      {% if msgs %}<div class="mensagens">{% for cat, m in msgs %}<div class="msg {{ cat }}">{{ m }}</div>{% endfor %}</div>{% endif %}
+    {% endwith %}
+    {% block conteudo %}{% endblock %}
+  </main>
+</div>
+{% if chat_url and nucleai_ativa and not travado and not ep.startswith('chat.') %}
+<form class="nucleai-flutuante" data-tut="nucleai" method="post" action="{{ url_for('ajuda.iniciar') }}">{{ csrf_input }}
+  <button type="submit" title="Precisa de ajuda? Fale com a NucleAI" aria-label="Precisa de ajuda? Fale com a NucleAI">
+    <img src="{{ url_for('static', filename='img/nucleai.svg') }}" alt="">
+  </button>
+</form>
+{% endif %}
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+<script src="{{ url_for('static', filename='js/menu.js') }}"></script>
+<script src="{{ url_for('static', filename='js/mobile.js') }}"></script>
+<script src="{{ url_for('static', filename='js/tema.js') }}"></script>
+<script src="{{ url_for('static', filename='js/sessao.js') }}"></script>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/aguarde.css') }}">
+<script src="{{ url_for('static', filename='js/aguarde.js') }}"></script>
+<script src="{{ url_for('static', filename='js/boasvindas.js') }}"></script>
+<script src="{{ url_for('static', filename='js/atualizacao.js') }}"></script>
+{% if lembretes_auto %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/lembretes.css') }}">
+<dialog id="dlg-lembretes" class="lembretes-janela" aria-labelledby="lem-janela-titulo">
+  <h2 id="lem-janela-titulo">Seus lembretes</h2>
+  <p class="lem-sub">Marque as caixinhas: cada marcação é gravada na hora.</p>
+  <div id="lem-lista"></div>
+  <div class="acoes"><button class="btn sec" type="button" data-lem-fechar>Fechar</button></div>
+</dialog>
+<script src="{{ url_for('static', filename='js/lembretes.js') }}"></script>
+{% endif %}
+{% if tutorial_passos %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/tutorial.css') }}">
+<script type="application/json" id="tutorial-dados">{{ {'passos': tutorial_passos, 'auto': tutorial_auto, 'visto_url': url_for('ajuda.tutorial_visto')}|tojson }}</script>
+<script src="{{ url_for('static', filename='js/tutorial.js') }}"></script>
+{% endif %}
+{% if chat_url %}<script src="{{ url_for('static', filename='js/nucleai_formatar.js') }}"></script>
+<script src="{{ url_for('static', filename='js/nucleai_cartoes.js') }}"></script>
+<script src="{{ url_for('static', filename='js/chat.js') }}"></script>{% endif %}
+{% block scripts %}{% endblock %}
+</body>
+</html>

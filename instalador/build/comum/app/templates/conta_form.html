@@ -1,0 +1,143 @@
+{% extends 'base.html' %}
+{% block titulo %}Conta a pagar{% endblock %}
+{% block conteudo %}
+<h1>{{ 'Editar conta' if conta else 'Nova conta a pagar' }}</h1>
+{% if conta and parcela %}<p class="sub">Compra parcelada · parcela <strong>{{ parcela }}</strong></p>{% endif %}
+{% if conta %}<p class="sub">Status: <span class="etiqueta {{ conta.status|lower }}">{{ conta.status }}</span>{% if conta.data_pagamento %} · pago em {{ conta.data_pagamento|data_br }} ({{ conta.banco_pagamento }}){% endif %}</p>{% endif %}
+<form class="cartao" method="post">
+  {{ csrf_input }}
+  <div class="grade">
+    <div class="c8"><label class="obrig">Descrição</label><input type="text" name="descricao" value="{{ f.descricao }}" required data-maiusculas autofocus></div>
+    <div class="c4"><label class="obrig">Categoria</label>
+      <select name="categoria" required><option value=""></option>{% for c in categorias %}<option {% if c == f.categoria %}selected{% endif %}>{{ c }}</option>{% endfor %}
+        {% if f.categoria and f.categoria not in categorias %}<option selected>{{ f.categoria }}</option>{% endif %}</select></div>
+    <div class="c4"><label class="obrig">Vencimento</label><input type="date" name="vencimento" value="{{ f.vencimento }}" required></div>
+    <div class="c4"><label class="obrig">Valor (R$)</label><input type="text" name="valor" value="{{ f.valor }}" required inputmode="decimal" placeholder="0,00"></div>
+    <div class="c4"><label>Nota fiscal</label><input type="text" name="nota_fiscal" value="{{ f.nota_fiscal }}"></div>
+    <div class="c6"><label for="f-fornecedor">Fornecedor cadastrado</label>
+      <select name="fornecedor_id" id="f-fornecedor"><option value="">(sem cadastro)</option>
+        {% for x in fornecedores %}<option value="{{ x.id }}" {% if f.fornecedor_id|string == x.id|string %}selected{% endif %}>{{ x.nome }}{% if x.cnpj %} · {{ x.cnpj }}{% endif %}</option>{% endfor %}</select>
+      <div class="ajuda"><a href="{{ url_for('fin.conta_fornecedor_editar', para_conta=1) if not conta else url_for('fin.conta_fornecedor_editar') }}" {% if conta %}target="_blank" rel="noopener"{% endif %}>+ Cadastrar fornecedor</a>
+        {% if conta %}· <a href="#" id="f-atualizar">atualizar a lista</a>{% endif %}</div></div>
+    <div class="c6"><label for="f-fornecedor-txt">Ou digite o fornecedor (sem cadastro)</label><input type="text" name="fornecedor" id="f-fornecedor-txt" value="{{ f.fornecedor }}" data-maiusculas></div>
+    <div class="c12"><label>Observação</label><input type="text" name="obs" value="{{ f.obs }}"></div>
+    {% if not conta %}
+    <div class="c12"><label class="inline"><input type="checkbox" name="recorrente" value="1" id="f-recorrente" {% if f.recorrente == '1' %}checked{% endif %}> Conta recorrente (repete todo mês)</label></div>
+    <div class="c4" data-recorrente><label for="f-dia" class="obrig">Dia do vencimento (1 a 31)</label><input type="number" name="dia_vencimento" id="f-dia" min="1" max="31" value="{{ f.dia_vencimento }}">
+      <div class="ajuda">Todo mês a conta cai neste dia (em fevereiro, o último dia do mês). O mês do campo Vencimento acima é o primeiro lançamento.</div></div>
+    <div class="c12"><label class="inline"><input type="checkbox" name="parcelar" value="1" id="f-parcelar" {% if f.parcelar == '1' %}checked{% endif %}> Compra parcelada</label></div>
+    <div class="c4" data-parcelas><label for="f-parcelas">Número de parcelas</label><input type="number" name="parcelas" id="f-parcelas" min="2" max="60" value="{{ f.parcelas }}"></div>
+    <div class="c8" data-parcelas><label for="f-ptipo">O valor informado é</label>
+      <select name="parcela_tipo" id="f-ptipo"><option value="total" {% if f.parcela_tipo != 'cada' %}selected{% endif %}>o total da compra (será dividido)</option>
+        <option value="cada" {% if f.parcela_tipo == 'cada' %}selected{% endif %}>o valor de cada parcela</option></select></div>
+    <div class="c12" data-parcelas>
+      <div class="parcelas-cab"><strong>📅 Vencimento de cada parcela</strong>
+        <button type="button" class="btn sec peq" id="f-refazer" title="Voltar todas as datas para o mesmo dia dos meses seguintes">Refazer datas mensais</button></div>
+      <div class="ajuda">Cada parcela é lançada como uma conta (1/3, 2/3, 3/3). As datas começam no mesmo dia dos meses seguintes, mas você pode mudar qualquer uma: clique na data para abrir o calendário. A 1ª parcela acompanha o campo Vencimento acima.</div>
+      <div class="parcelas-grade" id="f-grade"></div>
+      <script type="application/json" id="f-datas">{{ datas_form|tojson }}</script>
+    </div>
+    {% endif %}
+  </div>
+  <div class="acoes">
+    <button class="btn" type="submit">Salvar</button>
+    {% if not conta %}<button class="btn sec" type="submit" name="continuar" value="1">Salvar e lançar outra</button>{% endif %}
+    <a class="btn sec" href="{{ url_for('fin.contas') }}">Voltar</a>
+  </div>
+</form>
+{% if conta %}
+<form method="post" action="{{ url_for('fin.conta_excluir', cid=conta.id) }}" data-confirmar="Excluir esta conta?" style="display:inline">{{ csrf_input }}<button class="btn perigo peq" type="submit">Excluir conta</button></form>
+{% if conta.parcela_total %}
+<form method="post" action="{{ url_for('fin.conta_excluir_parcelas', cid=conta.id) }}" data-confirmar="Excluir todas as parcelas EM ABERTO desta compra parcelada?" style="display:inline">{{ csrf_input }}<button class="btn perigo peq" type="submit">Excluir todas as parcelas em aberto</button></form>
+{% endif %}
+{% endif %}
+{% endblock %}
+{% block head %}<style>
+.parcelas-cab { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 4px; }
+.parcelas-grade { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; margin-top: 10px; }
+.parcela-item { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 4px 10px; padding: 10px 12px; margin: 0; border: 1px solid var(--borda); border-radius: 14px; background: #fff; font-weight: 500; color: var(--texto); transition: border-color .2s, box-shadow .2s, transform .2s; }
+.parcela-item:hover { transform: translateY(-2px); border-color: var(--verde-2); box-shadow: 0 8px 18px -10px rgba(var(--verde-rgb), .6); }
+.parcela-item.editada { border-color: var(--verde-2); background: var(--verde-claro); }
+.parcela-n { display: inline-flex; align-items: center; justify-content: center; min-width: 40px; height: 30px; border-radius: 10px; background: var(--verde); color: #fff; font-weight: 700; font-size: 13px; }
+.parcela-item input { grid-column: 1 / -1; width: 100%; }
+.parcela-item small { grid-column: 1 / -1; color: var(--suave); }
+</style>{% endblock %}
+{% block scripts %}
+<script>
+(() => {
+  const marca = document.getElementById('f-parcelar');
+  const blocos = document.querySelectorAll('[data-parcelas]');
+  const grade = document.getElementById('f-grade');
+  const qtd = document.getElementById('f-parcelas');
+  const venc = document.querySelector('input[name="vencimento"]');
+  const valorInput = document.querySelector('input[name="valor"]');
+  const tipo = document.getElementById('f-ptipo');
+  let datas = [];                 // datas atuais de cada parcela (texto AAAA-MM-DD)
+  let manual = new Set();         // parcelas cuja data foi mudada à mão: não são recalculadas
+  try { datas = JSON.parse(document.getElementById('f-datas').textContent) || []; } catch (e) { datas = []; }
+  datas.forEach((d, i) => { if (d) manual.add(i); });
+  manual.delete(0);               // a 1ª acompanha o campo Vencimento
+
+  const mais = (iso, n) => {      // mesmo dia n meses depois (31 vira o último dia do mês)
+    const [a, m, d] = iso.split('-').map(Number);
+    const alvo = new Date(a, m - 1 + n, 1);
+    const ultimo = new Date(alvo.getFullYear(), alvo.getMonth() + 1, 0).getDate();
+    alvo.setDate(Math.min(d, ultimo));
+    return `${alvo.getFullYear()}-${String(alvo.getMonth() + 1).padStart(2, '0')}-${String(alvo.getDate()).padStart(2, '0')}`;
+  };
+  const numero = (s) => parseFloat(String(s || '0').replace(/\./g, '').replace(',', '.')) || 0;
+  const moeda = (v) => v.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+  const desenhar = () => {
+    const n = Math.max(0, Math.min(60, parseInt(qtd.value, 10) || 0));
+    grade.replaceChildren();
+    if (!venc.value || n < 2) return;
+    const total = numero(valorInput.value);
+    const cada = tipo.value === 'cada' ? total : (n ? total / n : 0);
+    for (let i = 0; i < n; i += 1) {
+      if (i === 0 || !manual.has(i) || !datas[i]) datas[i] = i === 0 ? venc.value : mais(venc.value, i);
+      const caixa = document.createElement('label');
+      caixa.className = 'parcela-item' + (manual.has(i) ? ' editada' : '');
+      const t = document.createElement('span');
+      t.className = 'parcela-n';
+      t.textContent = `${i + 1}/${n}`;
+      const campo = document.createElement('input');
+      campo.type = 'date'; campo.name = `venc_parcela_${i + 1}`; campo.value = datas[i]; campo.required = true;
+      campo.addEventListener('change', () => {
+        datas[i] = campo.value;
+        if (i === 0) { venc.value = campo.value; manual = new Set([...manual].filter((k) => k === 0)); desenhar(); return; }
+        manual.add(i); caixa.classList.add('editada');
+      });
+      const v = document.createElement('small');
+      v.textContent = total ? 'R$ ' + moeda(cada) : '';
+      caixa.append(t, campo, v);
+      grade.append(caixa);
+    }
+  };
+  const mostrar = () => { blocos.forEach((b) => { b.hidden = !(marca && marca.checked); }); if (marca && marca.checked) desenhar(); else if (grade) grade.replaceChildren(); };
+  if (marca) {
+    marca.addEventListener('change', mostrar);
+    [qtd, tipo, valorInput].forEach((x) => x && x.addEventListener('input', desenhar));
+    venc.addEventListener('input', () => { datas[0] = venc.value; desenhar(); });
+    document.getElementById('f-refazer').addEventListener('click', () => { manual = new Set(); datas = []; desenhar(); });
+    mostrar();
+  }
+  const atualizar = document.getElementById('f-atualizar');
+  if (atualizar) atualizar.addEventListener('click', async (ev) => {
+    ev.preventDefault();
+    const sel = document.getElementById('f-fornecedor');
+    const atual = sel.value;
+    const lista = await (await fetch('/contas/fornecedores/lista.json')).json();
+    sel.replaceChildren(new Option('(sem cadastro)', ''), ...lista.map((x) => new Option(x.nome, x.id)));
+    sel.value = atual;
+  });
+})();
+(() => {
+  const rec = document.getElementById('f-recorrente');
+  const bloco = document.querySelector('[data-recorrente]');
+  if (!rec || !bloco) return;
+  const sincronizar = () => { bloco.hidden = !rec.checked; };
+  rec.addEventListener('change', sincronizar);
+  sincronizar();
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,25 @@
+{% extends 'enfermagem/_base.html' %}
+{% from '_ic.html' import ic %}
+{% block titulo %}Carrinho de emergência{% endblock %}
+{% block titulo_e %}Carrinho de emergência{% endblock %}
+{% block sub_e %}Itens com quantidade mínima, lote e validade, número do lacre e conferência em checklist. O carrinho fica vermelho se houver item vencido, faltando ou abaixo do mínimo.{% endblock %}
+{% block corpo_e %}
+<div class="enf-areas">
+  {% for c in lista %}
+  <a class="enf-area {{ 'vermelho' if c.vermelho else 'verde' }}" href="{{ url_for('enf.carrinho_detalhe', cid=c.id) }}">
+    <span class="enf-area-ico">{{ ic('heart-pulse', 26) }}</span><strong>{{ c.nome }}</strong>
+    <span class="enf-chip {{ 'vermelho' if c.vermelho else 'verde' }}">{% if c.vermelho %}{{ c.problemas|length }} problema(s){% else %}Completo{% endif %}</span>
+    <small>{{ c.local or 'sem local' }} · lacre {{ c.lacre_atual or '—' }} · {{ c.itens|length }} itens</small>
+    <small>{% if c.ultima %}última conferência {{ c.ultima.data_hora[8:10] }}/{{ c.ultima.data_hora[5:7] }} {{ c.ultima.data_hora[11:16] }}{% else %}nunca conferido{% endif %}{% if c.atrasada %} · <b>conferência atrasada</b>{% endif %}</small>
+  </a>
+  {% else %}<div class="cartao"><p class="vazio" style="margin:0">Nenhum carrinho cadastrado. Cadastre o primeiro abaixo.</p></div>{% endfor %}
+</div>
+<form class="cartao enf-form" method="post" action="{{ url_for('enf.carrinho_novo') }}">
+  {{ csrf_input }}<h2>Novo carrinho de emergência</h2>
+  <div class="q-linha3"><label>Nome<input type="text" name="nome" required maxlength="80" placeholder="Ex.: Carrinho da sala de estresse"></label>
+    <label>Onde fica<input type="text" name="local" maxlength="80"></label>
+    <label>Número do lacre atual<input type="text" name="lacre" maxlength="40"></label></div>
+  <label style="max-width:260px">Conferência periódica<select name="periodicidade"><option value="DIARIA">Diária</option><option value="SEMANAL" selected>Semanal</option></select></label>
+  <button class="btn" type="submit">Cadastrar e incluir os itens</button>
+</form>
+{% endblock %}

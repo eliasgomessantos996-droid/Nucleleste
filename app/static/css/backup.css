@@ -1,0 +1,53 @@
+/* Backup: cartões da cópia em outra pasta e do backup automático (SVG próprio, animado; cores pelas variáveis do tema). */
+.bk-externa, .bk-auto { position: relative; display: grid; grid-template-columns: 132px 1fr; gap: 18px; align-items: center; margin-bottom: 14px; overflow: hidden;
+  border-left: 5px solid var(--bk, var(--verde-2)); }
+.bk-auto { grid-template-columns: 92px 1fr; }
+.bk-auto.bk-desligado { --bk: #8b9a92; }
+.bk-ok { --bk: #2c9a52; } .bk-espera { --bk: #dc9a0d; } .bk-off { --bk: #8b9a92; }
+.bk-externa h2 { margin: 0 0 6px; }
+.bk-externa .ajuda { margin: 0 0 10px; color: var(--suave); }
+.bk-form { display: flex; flex-wrap: wrap; gap: 12px; align-items: end; }
+.bk-campo { display: grid; gap: 4px; }
+.bk-externa .bk-campo { flex: 1; min-width: 260px; }
+.bk-externa .bk-campo input { width: 100%; }
+.bk-status { margin-top: 12px; padding: 10px 12px; border-radius: 12px; background: color-mix(in srgb, var(--bk) 10%, transparent); line-height: 1.7; animation: bk-entra .5s var(--ease, ease) backwards; }
+.bk-pilula { display: inline-block; padding: 1px 10px; margin-right: 6px; border-radius: 99px; font-size: 12px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: #fff; background: var(--bk); }
+.bk-pilula.espera { animation: bk-pisca 2.2s ease-in-out infinite; }
+.bk-pilula.ok { --bk: #2c9a52; } .bk-pilula.espera { --bk: #dc9a0d; } .bk-pilula.erro { --bk: #c0392b; }   /* cada pasta com a cor da própria situação */
+.bk-erro { display: block; font-size: 12.5px; color: var(--suave); }
+
+/* nuvem com seta subindo e ondas */
+.bk-arte { display: grid; place-items: center; }
+.bk-svg { width: 100%; height: auto; overflow: visible; color: var(--bk, var(--verde-2)); }
+.bk-nuvem { fill: color-mix(in srgb, var(--bk) 16%, transparent); stroke: var(--bk); stroke-width: 4; stroke-linejoin: round; }
+.bk-seta path { fill: none; stroke: var(--bk); stroke-width: 5; stroke-linecap: round; stroke-linejoin: round; }
+.bk-seta { animation: bk-sobe 2.2s ease-in-out infinite; }
+.bk-off .bk-seta, .bk-ok .bk-seta { animation-duration: 3.4s; }
+.bk-off .bk-seta { animation: none; opacity: .5; }
+.bk-onda { fill: none; stroke: var(--bk); stroke-width: 2; opacity: 0; transform-origin: 60px 60px; }
+.bk-ok .bk-onda, .bk-espera .bk-onda { animation: bk-onda 3s ease-out infinite; }
+.bk-onda.w2 { animation-delay: 1.5s !important; }
+.bk-selo { transform-origin: 88px 86px; transform: scale(0); }
+.bk-selo circle { fill: var(--bk); }
+.bk-selo path { fill: none; stroke: #fff; stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 30; stroke-dashoffset: 30; }
+.bk-ok .bk-selo { animation: bk-pop .6s .2s var(--ease, ease) forwards; }
+.bk-ok .bk-selo path { animation: bk-traco .5s .6s ease forwards; }
+
+/* relógio do backup automático */
+.bk-relogio { fill: color-mix(in srgb, var(--verde-2) 12%, transparent); stroke: var(--verde-2); stroke-width: 4; }
+.bk-ponteiro { fill: none; stroke: var(--verde); stroke-width: 4; stroke-linecap: round; transform-origin: 40px 42px; }
+.bk-ponteiro.m { animation: bk-gira 8s linear infinite; }
+.bk-ponteiro.h { animation: bk-gira 96s linear infinite; }
+.bk-pino { fill: var(--verde); }
+.bk-sino { fill: none; stroke: var(--verde-2); stroke-width: 4; stroke-linecap: round; animation: bk-toca 3s ease-in-out infinite; transform-origin: 40px 30px; }
+
+@keyframes bk-entra { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes bk-pisca { 0%, 100% { box-shadow: 0 0 0 0 rgba(220, 154, 13, 0); } 50% { box-shadow: 0 0 0 5px rgba(220, 154, 13, .28); } }
+@keyframes bk-sobe { 0%, 100% { transform: translateY(3px); opacity: .85; } 50% { transform: translateY(-5px); opacity: 1; } }
+@keyframes bk-onda { 0% { transform: scale(.7); opacity: .55; } 100% { transform: scale(1.7); opacity: 0; } }
+@keyframes bk-pop { from { transform: scale(0); } 70% { transform: scale(1.18); } to { transform: scale(1); } }
+@keyframes bk-traco { to { stroke-dashoffset: 0; } }
+@keyframes bk-gira { to { transform: rotate(360deg); } }
+@keyframes bk-toca { 0%, 82%, 100% { transform: rotate(0); } 86% { transform: rotate(-6deg); } 90% { transform: rotate(6deg); } 94% { transform: rotate(-4deg); } 97% { transform: rotate(3deg); } }
+@media (max-width: 700px) { .bk-externa, .bk-auto { grid-template-columns: 1fr; } .bk-arte { max-width: 110px; } }
+@media (prefers-reduced-motion: reduce) { .bk-selo { transform: scale(1); } .bk-selo path { stroke-dashoffset: 0; } }

@@ -1,0 +1,9 @@
+{% extends 'base.html' %}
+{% block titulo %}Atestados e declarações{% endblock %}
+{% block conteudo %}
+<h1>Atestados, declarações e recibo</h1>
+<p class="sub">Documentos avulsos, com o mesmo layout da planilha.</p>
+<div class="atalhos">
+  {% for k, d in documentos.items() %}<a href="{{ url_for(d.url, **(d.url_args or {})) if d.url else url_for('doc.documento', tipo=k) }}">{{ d.titulo }}<small>Preencher e imprimir</small></a>{% endfor %}
+</div>
+{% endblock %}

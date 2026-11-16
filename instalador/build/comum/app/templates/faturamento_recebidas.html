@@ -1,0 +1,100 @@
+{% extends 'base.html' %}
+{% from '_ic.html' import ic %}
+{% from '_fat_macros.html' import pilula, selo_glosa, protocolo_acoes, visualizador %}
+{% block titulo %}Recebidas{% endblock %}
+{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/fat.css') }}">{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='js/fat.js') }}"></script>{% endblock %}
+{% block conteudo %}
+<div class="cabecalho">
+  <div><h1>Recebidas</h1><p class="sub">Lance o que o convênio pagou (valor bruto recebido, tributos e líquido). O sistema compara com o valor faturado e mostra a diferença como <b>glosa</b>.</p></div>
+  <div class="acoes"><a class="btn sec com-icone" href="{{ url_for('fat.emissao') }}">{{ ic('file-text', 16) }} Emissão da nota fiscal</a></div>
+</div>
+
+<form class="cartao filtros" method="get">
+  <div><label>Convênio / particular</label><select name="convenio"><option value="">Todos</option>{% for c in convenios %}<option {% if c == f.convenio %}selected{% endif %}>{{ c }}</option>{% endfor %}</select></div>
+  <div><label>Referência de</label><input type="date" name="de" value="{{ f.de }}"></div>
+  <div><label>até</label><input type="date" name="ate" value="{{ f.ate }}"></div>
+  <div class="largo"><label>Protocolo, nota fiscal ou convênio</label><input type="search" name="q" value="{{ f.q }}"></div>
+  <div><button class="btn" type="submit">Filtrar</button></div>
+</form>
+
+{% if sem_nota %}<div class="msg aviso">{{ sem_nota }} fatura(s) ainda estão sem nota fiscal e por isso não aparecem aqui. <a href="{{ url_for('fat.emissao') }}">Emitir as notas</a> para poder lançar o recebimento.</div>{% endif %}
+
+<section class="cartao fat-faixa recebida">
+  <div class="fat-arte" aria-hidden="true">
+    <svg viewBox="0 0 80 80" class="fat-svg">
+      <rect class="fat-balanca-base" x="34" y="62" width="12" height="6" rx="3"/><path class="fat-fio" d="M40 62V20M18 24h44"/>
+      <g class="fat-prato esq"><path class="fat-fio" d="M18 24 10 42M18 24l8 18"/><path class="fat-folha" d="M8 42h20a10 8 0 0 1-20 0z"/></g>
+      <g class="fat-prato dir"><path class="fat-fio" d="M62 24 54 42M62 24l8 18"/><path class="fat-folha" d="M52 42h20a10 8 0 0 1-20 0z"/></g>
+    </svg>
+  </div>
+  <div class="fat-contagens">
+    <h2 style="margin:0 0 6px">Faturado × recebido</h2>
+    <span class="fat-contagem"><b>R$ {{ tot.faturado|moeda }}</b> faturado (recebidas)</span>
+    <span class="fat-contagem"><b>R$ {{ tot.recebido_bruto|moeda }}</b> bruto recebido</span>
+    <span class="fat-contagem glosa"><b>R$ {{ tot.glosa|moeda }}</b> glosa</span>
+    <span class="fat-contagem"><b>R$ {{ tot.a_receber|moeda }}</b> a receber (notas emitidas)</span>
+  </div>
+</section>
+
+<h2 class="fat-secao">{{ ic('badge-check', 20) }} A receber (nota fiscal emitida) <small>{{ a_receber|length }}</small></h2>
+<div class="tabela-wrap"><table class="tabela fat-tabela">
+  <thead><tr><th>Convênio</th><th>Protocolo</th><th>Nota fiscal</th><th>Referência</th><th class="num">Guias</th><th class="num">Faturado</th><th>Previsão</th><th>Protocolo (PDF)</th><th></th></tr></thead>
+  <tbody>
+  {% for r in a_receber %}
+    <tr>
+      <td><strong>{{ r.convenio }}</strong></td><td>{{ r.protocolo or '—' }}</td><td>{{ r.nota_fiscal }}</td><td>{{ r.referencia|data_br }}</td>
+      <td class="num">{{ r.qtd_guias if r.qtd_guias is not none else '—' }}</td><td class="num"><strong>{{ r.valor_bruto|moeda }}</strong></td>
+      <td>{% if r.previsao %}{{ r.previsao|data_br }}{% if r.atrasada %} <span class="fat-pilula atrasada">{{ ic('triangle-alert', 14) }} atrasada</span>{% endif %}{% else %}—{% endif %}</td>
+      <td>{{ protocolo_acoes(r, request.full_path) }}</td>
+      <td class="num"><button class="btn peq com-icone" type="button" data-dialogo="dlg-quitar" data-fid="{{ r.id }}"
+          data-desc="{{ r.convenio }} · protocolo {{ r.protocolo or '—' }} · NF {{ r.nota_fiscal }}" data-faturado="{{ r.valor_bruto|moeda }}" data-bruto="{{ r.valor_bruto|moeda }}">{{ ic('badge-dollar-sign', 15) }} Lançar recebimento</button></td>
+    </tr>
+  {% else %}<tr><td colspan="9" class="vazio">Nenhuma fatura com nota emitida esperando recebimento.</td></tr>{% endfor %}
+  </tbody>
+  {% if a_receber %}<tfoot><tr><td colspan="4">Total a receber</td><td class="num">{{ tot_receber.guias }}</td><td class="num">{{ tot_receber.faturado|moeda }}</td><td colspan="3"></td></tr></tfoot>{% endif %}
+</table></div>
+
+<h2 class="fat-secao">{{ ic('circle-check', 20) }} Recebidas: comparação com o faturado <small>{{ recebidas|length }}</small></h2>
+<div class="tabela-wrap"><table class="tabela fat-tabela">
+  <thead><tr><th>Convênio</th><th>Protocolo</th><th>Nota</th><th>Recebido em</th><th class="num">Faturado (bruto)</th><th class="num">Recebido (bruto)</th><th class="num">Tributos</th><th class="num">Líquido recebido</th><th>Glosa</th><th>PDF</th><th></th></tr></thead>
+  <tbody>
+  {% for r in recebidas %}
+    <tr>
+      <td><strong>{{ r.convenio }}</strong></td><td>{{ r.protocolo or '—' }}</td><td>{{ r.nota_fiscal or '—' }}</td>
+      <td>{{ r.data_recebimento|data_br }}<br><small>{{ r.banco_recebimento or '' }}</small></td>
+      <td class="num">{{ r.valor_bruto|moeda }}</td><td class="num">{{ r.glosa.bruto_recebido|moeda }}</td><td class="num">{{ r.tributos|moeda }}</td>
+      <td class="num"><strong>{{ r.valor_recebido|moeda }}</strong></td>
+      <td>{{ selo_glosa(r.glosa) }}</td>
+      <td>{{ protocolo_acoes(r, request.full_path, True) }}</td>
+      <td class="num" style="white-space:nowrap">
+        <a class="btn sec peq" href="{{ url_for('fat.resumo_pdf', fid=r.id) }}" target="_blank" rel="noopener" title="Resumo da fatura em PDF">PDF</a>
+        <form method="post" action="{{ url_for('fat.reabrir', fid=r.id) }}" style="display:inline" data-confirmar="Desfazer este recebimento? A fatura volta para “A receber”.">{{ csrf_input }}<input type="hidden" name="voltar" value="{{ request.full_path }}"><button class="btn sec peq" type="submit">Reabrir</button></form></td>
+    </tr>
+  {% else %}<tr><td colspan="11" class="vazio">Nenhuma fatura recebida no filtro.</td></tr>{% endfor %}
+  </tbody>
+  {% if recebidas %}<tfoot><tr><td colspan="4">Total</td><td class="num">{{ tot.faturado|moeda }}</td><td class="num">{{ tot.recebido_bruto|moeda }}</td><td class="num">{{ tot.tributos|moeda }}</td><td class="num">{{ tot.liquido|moeda }}</td><td><strong>R$ {{ tot.glosa|moeda }}</strong></td><td colspan="2"></td></tr></tfoot>{% endif %}
+</table></div>
+
+<dialog id="dlg-quitar" class="fat-dialogo">
+  <form method="post" id="form-quitar">
+    {{ csrf_input }}<input type="hidden" name="voltar" value="{{ request.full_path }}"><input type="hidden" data-campo="fid" id="quitar-id">
+    <h2 style="margin-top:0">{{ ic('badge-dollar-sign', 22) }} Lançar recebimento</h2>
+    <p><strong data-campo="desc"></strong></p>
+    <div class="grade">
+      <div class="c6"><label class="obrig">Data do recebimento</label><input type="date" name="data_recebimento" value="{{ hoje }}" required></div>
+      <div class="c6"><label class="obrig">Banco / conta de entrada</label><select name="banco" required><option value=""></option>{% for b in bancos %}<option>{{ b }}</option>{% endfor %}</select></div>
+      <div class="c4"><label>Bruto faturado (R$)</label><input type="text" data-campo="faturado" id="q-faturado" readonly tabindex="-1"></div>
+      <div class="c4"><label class="obrig">Bruto recebido (R$)</label><input type="text" name="bruto_recebido" id="q-bruto" data-campo="bruto" required inputmode="decimal"></div>
+      <div class="c4"><label>Líquido recebido (R$)</label><input type="text" name="liquido" id="q-liquido" inputmode="decimal"></div>
+      <div class="c12"><label class="inline"><input type="checkbox" name="informar_tributos" value="1" id="q-usar-trib"> Informar tributos retidos neste recebimento</label></div>
+      <div class="c4" id="q-trib-campo" hidden><label>Tributos (R$)</label><input type="text" name="tributos" id="q-trib" inputmode="decimal" placeholder="0,00"></div>
+      <div class="c12"><label>Observação (ex.: motivo da glosa)</label><input type="text" name="obs" maxlength="300"></div>
+    </div>
+    <div class="fat-previa" id="q-previa" role="status"></div>
+    <p class="ajuda">Glosa = bruto faturado − bruto recebido. Sem tributos, o líquido é igual ao bruto recebido; com tributos, líquido = bruto recebido − tributos.</p>
+    <div class="acoes"><button class="btn com-icone" type="submit">{{ ic('check', 16) }} Confirmar recebimento</button><button class="btn sec" type="button" data-fechar>Cancelar</button></div>
+  </form>
+</dialog>
+{{ visualizador() }}
+{% endblock %}

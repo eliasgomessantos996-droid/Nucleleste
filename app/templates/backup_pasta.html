@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% block titulo %}Buscar backup em outra pasta{% endblock %}
+{% block conteudo %}
+<div class="cabecalho">
+  <div><h1>Buscar backup em outra pasta</h1><p class="sub">Pendrive, outro disco ou pasta de rede. A busca é só de leitura e só lista backups válidos; nada é restaurado sem o código de verificação.</p></div>
+  <div class="acoes"><a class="btn sec" href="{{ url_for('admin.backup') }}">Voltar ao Backup</a></div>
+</div>
+<form method="post" class="cartao" style="display:flex;gap:12px;align-items:end;flex-wrap:wrap">
+  {{ csrf_input }}
+  <div style="flex:1;min-width:300px"><label for="pasta">Pasta (caminho completo, no computador onde o sistema está instalado)</label>
+    <input type="text" id="pasta" name="pasta" value="{{ sugestao }}" placeholder="Exemplo: E:\Backups  ou  \\servidor\backups" style="width:100%;box-sizing:border-box" autocomplete="off"></div>
+  <button class="btn" type="submit">Buscar backups</button>
+</form>
+{% if lista is not none and lista %}
+<div class="cartao" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:14px">
+  <div style="flex:1;min-width:260px"><strong>{{ lista|length }} backup(s) válido(s) em <code>{{ pasta }}</code></strong><br><small>O mais recente é {{ lista[0].nome }} ({{ lista[0].data }}).</small></div>
+  <form method="post" action="{{ url_for('admin.backup_pasta_escolher') }}">{{ csrf_input }}<input type="hidden" name="mais_recente" value="1"><button class="btn perigo" type="submit">Restaurar o mais recente desta pasta</button></form>
+</div>
+<div class="tabela-wrap" style="margin-top:14px"><table class="tabela">
+  <thead><tr><th>Arquivo</th><th>Data</th><th class="num">Tamanho</th><th></th></tr></thead>
+  <tbody>{% for b in lista %}<tr><td>{{ b.nome }}{% if b.com_anexos %} <span class="etiqueta">sistema + anexos</span>{% else %} <span class="etiqueta">só sistema (antigo)</span>{% endif %}</td><td>{{ b.data }}</td><td class="num">{{ '%.1f'|format(b.tamanho / 1048576) }} MB</td>
+    <td class="num"><form method="post" action="{{ url_for('admin.backup_pasta_escolher') }}" style="display:inline">{{ csrf_input }}<input type="hidden" name="nome" value="{{ b.nome }}"><button class="btn perigo peq" type="submit">Restaurar este</button></form></td></tr>{% endfor %}</tbody>
+</table></div>
+{% endif %}
+{% endblock %}

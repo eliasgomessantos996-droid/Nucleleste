@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+{% from '_ic.html' import ic %}
+{% block titulo %}Contas a pagar{% endblock %}
+{% block conteudo %}
+<div class="cabecalho">
+  <div><h1>Contas a pagar</h1><p class="sub">{{ rows|length }} conta(s) · Total: R$ {{ total|moeda }}</p></div>
+  <div class="acoes">
+    <a class="btn sec com-icone" href="{{ url_for('fin.conta_lotes') }}">{{ ic('list-checks', 16) }} Lotes de pagamento</a>
+    <a class="btn sec" href="{{ url_for('fin.conta_recorrentes') }}">Contas recorrentes</a>
+    <a class="btn sec" href="{{ url_for('fin.conta_fornecedores') }}">Fornecedores</a>
+    <a class="btn sec" href="{{ url_for('fin.conta_fornecedores_relatorio') }}">Contas por fornecedor</a>
+    <a class="btn" href="{{ url_for('fin.conta_editar') }}">+ Nova conta</a>
+  </div>
+</div>
+<form class="cartao filtros" method="get">
+  <div><label>Status</label><select name="status">
+    <option value="ABERTO" {% if status == 'ABERTO' %}selected{% endif %}>Em aberto</option>
+    <option value="LOTE" {% if status == 'LOTE' %}selected{% endif %}>Em pagamento (em lote)</option>
+    <option value="PAGO" {% if status == 'PAGO' %}selected{% endif %}>Pagas</option>
+    <option value="" {% if not status %}selected{% endif %}>Todas</option></select></div>
+  <div><label>Vencimento de</label><input type="date" name="de" value="{{ de }}"></div>
+  <div><label>até</label><input type="date" name="ate" value="{{ ate }}"></div>
+  <div><button class="btn" type="submit">Filtrar</button></div>
+</form>
+
+<form method="post" action="{{ url_for('fin.contas_imprimir') }}" id="form-imprimir">
+  {{ csrf_input }}<input type="hidden" name="voltar" value="{{ request.full_path }}">
+  <div class="cartao filtros">
+    <div><label>Banco do lote de pagamento</label>
+      <select name="banco"><option value=""></option>{% for b in bancos %}<option>{{ b }}</option>{% endfor %}</select></div>
+    <div><button class="btn sec" type="submit">Gerar lote de pagamento e imprimir</button></div>
+  </div>
+  <div class="tabela-wrap"><table class="tabela">
+    <thead><tr><th><input type="checkbox" id="marcar-todas" title="Marcar todas"></th><th>Descrição</th><th>Categoria</th><th>Vencimento</th><th class="num">Valor (R$)</th><th>Status</th><th>Pago em</th><th></th></tr></thead>
+    <tbody>
+    {% for c in rows %}
+      <tr><td><input type="checkbox" name="ids" value="{{ c.id }}" {% if c.lote_id %}disabled title="Já está no lote nº {{ c.lote_id }}"{% endif %}></td>
+        <td><a href="{{ url_for('fin.conta_editar', cid=c.id) }}">{{ c.descricao }}</a>{% if c.recorrente_id %} <span class="etiqueta aberto" title="Gerada por uma conta recorrente">recorrente</span>{% endif %}{% if c.parcela_total %} <span class="etiqueta aberto" title="Parcela {{ c.parcela_n }} de {{ c.parcela_total }}">{{ c.parcela_n }}/{{ c.parcela_total }}</span>{% endif %}{% if c.fornecedor %}<br><small>{{ c.fornecedor }}</small>{% endif %}</td>
+        <td>{{ c.categoria or '' }}</td>
+        <td>{{ c.vencimento|data_br }}{% if c.status == 'ABERTO' and c.vencimento and c.vencimento < hoje %} <span class="etiqueta cancelado">vencida</span>{% endif %}</td>
+        <td class="num">{{ c.valor|moeda }}</td>
+        <td><span class="etiqueta {{ (c.status or '')|lower }}">{{ c.status }}</span>{% if c.lote_id %} <a class="etiqueta aberto" href="{{ url_for('fin.conta_lote', lote_id=c.lote_id) }}">Lote nº {{ c.lote_id }}</a>{% endif %}</td>
+        <td>{% if c.data_pagamento %}{{ c.data_pagamento|data_br }} · {{ c.banco_pagamento or '' }}{% endif %}</td>
+        <td class="num" style="white-space:nowrap">
+          {% if c.status == 'ABERTO' %}
+            <button class="btn peq" type="button" data-dialogo="dlg-quitar" data-cid="{{ c.id }}" data-desc="{{ c.descricao }} — R$ {{ c.valor|moeda }}">Quitar</button>
+          {% else %}
+            <button class="btn sec peq" type="submit" form="reabrir-{{ c.id }}">Reabrir</button>
+          {% endif %}
+        </td></tr>
+    {% else %}<tr><td colspan="8" class="vazio">Nenhuma conta encontrada.</td></tr>{% endfor %}
+    </tbody>
+    {% if rows %}<tfoot><tr><td colspan="4">Total</td><td class="num">{{ total|moeda }}</td><td colspan="3"></td></tr></tfoot>{% endif %}
+  </table></div>
+</form>
+{% for c in rows %}{% if c.status != 'ABERTO' %}
+<form id="reabrir-{{ c.id }}" method="post" action="{{ url_for('fin.conta_reabrir', cid=c.id) }}" data-confirmar="Reabrir esta conta?">{{ csrf_input }}<input type="hidden" name="voltar" value="{{ request.full_path }}"></form>
+{% endif %}{% endfor %}
+
+<dialog id="dlg-quitar">
+  <form method="post" id="form-quitar">
+    {{ csrf_input }}<input type="hidden" name="voltar" value="{{ request.full_path }}"><input type="hidden" data-campo="cid" id="quitar-id">
+    <h2 style="margin-top:0">Quitar conta</h2>
+    <p><strong data-campo="desc"></strong></p>
+    <div class="grade">
+      <div class="c6"><label class="obrig">Banco</label><select name="banco" required><option value=""></option>{% for b in bancos %}<option>{{ b }}</option>{% endfor %}</select></div>
+      <div class="c6"><label>Data do pagamento</label><input type="date" name="data_pagamento" value="{{ hoje }}"></div>
+      <div class="c12"><label>Forma de pagamento</label><input type="text" name="forma_pagamento" placeholder="Boleto, PIX, transferência..."></div>
+    </div>
+    <div class="acoes"><button class="btn" type="submit">Confirmar quitação</button><button class="btn sec" type="button" data-fechar>Cancelar</button></div>
+  </form>
+</dialog>
+{% endblock %}
+{% block scripts %}
+<script>
+document.getElementById('form-quitar').addEventListener('submit', function () { this.action = '/contas/' + document.getElementById('quitar-id').value + '/quitar'; });
+document.getElementById('marcar-todas').addEventListener('change', function () {
+  document.querySelectorAll('input[name=ids]').forEach(c => c.checked = this.checked);
+});
+</script>
+{% endblock %}

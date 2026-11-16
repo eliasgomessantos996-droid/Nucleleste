@@ -1,0 +1,85 @@
+/* Guias de convênio: folhas de impressão (SP/SADT Unimed em paisagem; Pedido IPSEMG em retrato) e o formulário.
+   Preto e branco, exceto o "Unimed" verde. A folha em si (.folha, .folha.paisagem) está em fichas.css. */
+
+.guia { font-family: Arial, Helvetica, sans-serif; color: #000; font-size: 8pt; }
+.guia .g-cel { position: relative; box-sizing: border-box; flex: none; border: 0.5pt solid #000; margin: -0.5pt 0 0 -0.5pt;
+  min-height: 6.5mm; padding: 0.9mm 1mm 0.3mm; overflow: hidden; }
+.guia .g-linha { display: flex; align-items: stretch; }
+.guia .g-rot { display: block; font-size: 5.5pt; line-height: 1.15; }
+.guia .g-val { display: block; font-size: 8.5pt; line-height: 1.2; white-space: pre-wrap; word-break: break-word; }
+.guia .g-dir { text-align: right; }
+.guia .g-faixa { box-sizing: border-box; background: #d9d9d9; font-weight: bold; font-size: 7pt; line-height: 3.5mm; height: 3.5mm;
+  padding: 0 1mm; border: 0.5pt solid #000; margin-top: -0.5pt; white-space: nowrap; overflow: hidden; }
+.guia .g-sig { display: block; position: absolute; left: 1mm; right: 1mm; bottom: 1.2mm; border-bottom: 0.5pt solid #000; }
+
+/* série de datas (56/57): "N- dd/mm/aaaa" numa linha só, com a assinatura embaixo */
+.guia .g-serie .g-cel { min-height: 6.5mm; padding-top: 1.2mm; }
+.guia .g-serie .g-rot, .guia .g-serie .g-val { display: inline; font-size: 8pt; margin-right: 1.5mm; }
+.guia .g-serie .g-sig { bottom: 0.6mm; }
+
+/* tabelas de linhas numeradas */
+.guia .g-tab { margin-top: 0; }
+.guia .g-th .g-cel { min-height: 6mm; background: #f2f2f2; }
+.guia .g-tr .g-cel { min-height: 3.6mm; padding: 0 1mm; }
+.guia .g-tr .g-val { font-size: 7pt; line-height: 3.6mm; }
+
+/* caixas de seleção: X quando marcada */
+.guia .g-opcoes { display: block; font-size: 7.5pt; }
+.guia .g-op { display: inline-block; margin-right: 4mm; white-space: nowrap; }
+.guia .g-x { display: inline-block; width: 2.6mm; height: 2.6mm; border: 0.5pt solid #000; text-align: center;
+  line-height: 2.6mm; font-size: 7pt; font-weight: bold; margin-right: 1mm; vertical-align: middle; }
+
+/* ---------- SP/SADT Unimed (paisagem) ---------- */
+.guia-unimed { --ml: 6.35mm; --mr: 6.35mm; --mt: 5mm; --mb: 5mm; }
+.guia-unimed .g-topo { display: flex; border: 0.5pt solid #000; height: 13mm; box-sizing: border-box; }
+.guia-unimed .g-logo-unimed { width: 24%; display: flex; align-items: center; justify-content: center;
+  font-weight: bold; font-size: 20pt; color: #00995D; border-right: 0.5pt solid #000; }
+.guia-unimed .g-titulo { flex: 1; display: flex; align-items: center; justify-content: center; text-align: center;
+  font-weight: bold; font-size: 9pt; line-height: 1.25; }
+.guia-unimed .g-n2 { width: 24%; border-top: 0; border-right: 0; border-bottom: 0; margin: 0; }
+.guia-unimed .g-area { background: #f4f4f4; }
+
+/* ---------- Pedido IPSEMG (retrato) ---------- */
+.guia-ipsemg { --ml: 0.6in; --mr: 0.6in; --mt: 0.5in; --mb: 0.75in; }
+.guia-ipsemg .g-topo-ip { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4mm; }
+.guia-ipsemg .g-logo-ip { font-weight: bold; font-style: italic; font-size: 22pt; letter-spacing: -0.5pt; }
+.guia-ipsemg .g-caixa-titulo { border: 0.8pt solid #000; border-radius: 3mm; padding: 2mm 3mm; font-weight: bold; font-size: 10pt; }
+.guia-ipsemg .g-cel { border-color: #000; }
+/* linhas pautadas: o texto longo é escrito sobre elas (cada faixa de 6,4 mm = uma linha) */
+.guia-ipsemg .g-pauta { background-image: linear-gradient(to bottom, transparent 6.2mm, #8a8a8a 6.2mm, #8a8a8a 6.4mm);
+  background-size: 100% 6.4mm; background-repeat: repeat-y; background-position: 0 2.2mm; }
+.guia-ipsemg .g-pauta .g-rot { background: #fff; display: inline-block; }
+.guia-ipsemg .g-pauta .g-val { font-size: 9pt; line-height: 6.4mm; }
+.guia-ipsemg .g-tr .g-cel { min-height: 6mm; }
+.guia-ipsemg .g-tr .g-val { font-size: 9pt; line-height: 6mm; }
+.guia-ipsemg .g-th .g-cel { min-height: 7mm; }
+.guia-ipsemg .g-margem { position: absolute; left: 2.5mm; top: 12mm; bottom: 12mm; display: flex; gap: 2mm; }
+.guia-ipsemg .g-margem span { writing-mode: vertical-rl; transform: rotate(180deg); white-space: nowrap; font-size: 5.5pt; }
+.guia-ipsemg .g-rodape { position: absolute; left: var(--ml); right: var(--mr); bottom: 6mm; text-align: center;
+  font-size: 6.5pt; font-weight: bold; }
+
+/* ---------- formulário (tela) ---------- */
+.guia-form .gf-topo { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 10px; }
+.guia-form .gf-logo-unimed { font-weight: 700; font-size: 26px; color: #00995D; }
+.guia-form .gf-logo-ipsemg { font-weight: 700; font-style: italic; font-size: 26px; }
+.guia-form .gf-titulo-guia { font-weight: 700; font-size: 13px; flex: 1; }
+.guia-form .gf-n2 { display: flex; flex-direction: column; font-size: 12px; min-width: 220px; }
+.guia-form .gf-n2 input { margin-top: 2px; }
+.guia-form .gf-faixa { background: #e6ebe8; font-weight: 700; font-size: 12px; padding: 4px 8px; margin: 12px 0 6px; border-radius: 4px; }
+.guia-form .gf-linha { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; }
+.guia-form .gc { display: flex; flex-direction: column; box-sizing: border-box; min-width: 0; }
+.guia-form .gc label { font-size: 12px; color: #444; margin-bottom: 2px; }
+.guia-form .gc input, .guia-form .gc textarea { width: 100%; box-sizing: border-box; }
+.guia-form .gc textarea { resize: vertical; }
+.guia-form .gc-op { display: flex; gap: 12px; flex-wrap: wrap; font-size: 13px; padding-top: 4px; }
+.guia-form .gc-op label.inline { margin: 0; }
+.guia-form .gc-caixa { height: 34px; border: 1px dashed var(--borda, #bbb); border-radius: 4px; }
+.guia-form .gf-busca-tab { display: flex; flex-direction: column; gap: 4px; margin: 8px 0 4px; position: relative; }
+.guia-form .gf-res { display: flex; flex-wrap: wrap; gap: 4px; }
+.guia-form .gf-res button { text-align: left; }
+.guia-form .gf-tab { width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 6px; }
+.guia-form .gf-tab th { font-size: 11px; text-align: left; font-weight: 600; padding: 3px; background: #f4f6f5; }
+.guia-form .gf-tab td { padding: 2px; }
+.guia-form .gf-tab input { width: 100%; box-sizing: border-box; padding: 3px 4px; }
+.guia-form .gf-tab input[readonly] { background: #f4f6f5; }
+.guia-form .gf-serie .gc { padding-right: 4px; }

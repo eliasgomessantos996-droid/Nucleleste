@@ -1,0 +1,32 @@
+<style>
+  .nai-abas { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 16px; }
+  .nai-hero { display: flex; align-items: center; gap: 14px; }
+  .nai-hero img { width: 54px; height: 54px; border-radius: 50%; box-shadow: 0 2px 8px rgba(0,0,0,.2); }
+  .nai-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; margin-bottom: 18px; }
+  .nai-card { background: #fff; border: 1px solid var(--borda); border-radius: 12px; padding: 14px 16px; }
+  .nai-card b { display: block; font-size: 28px; line-height: 1.1; color: var(--verde); }
+  .nai-card small { color: var(--suave, #667); }
+  .nai-card.alerta b { color: #b42318; }
+  .nai-grade { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 16px; align-items: start; }
+  .nai-barra { height: 9px; border-radius: 99px; background: #e3ece6; overflow: hidden; min-width: 70px; }
+  .nai-barra i { display: block; height: 100%; background: var(--verde-2, #2f7a49); }
+  .nai-barra.ruim i { background: #d92d20; }
+  .nai-dias { display: flex; align-items: flex-end; gap: 3px; height: 110px; padding: 6px 0; overflow-x: auto; }
+  .nai-dias span { flex: 1 0 8px; max-width: 26px; background: var(--verde-2, #2f7a49); border-radius: 4px 4px 0 0; min-height: 2px; opacity: .85; }
+  .nai-dias span:hover { opacity: 1; }
+  .nai-tag { display: inline-block; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 99px; background: #e3ece6; color: #255f39; }
+  .nai-tag.editada { background: #fff3cd; color: #8a6100; }
+  .nai-tag.nova { background: #dbeafe; color: #1d4ed8; }
+</style>
+<div class="cabecalho">
+  <div class="nai-hero">
+    <img src="{{ url_for('static', filename='img/nucleai.svg') }}" alt="">
+    <div><h1>NucleAI</h1><p class="sub">A assistente de ajuda do sistema: estatísticas, chamados à gerência, conteúdo da ajuda e configurações.</p></div>
+  </div>
+</div>
+<div class="nai-abas">
+  <a class="btn {{ '' if aba == 'painel' else 'sec' }}" href="{{ url_for('nucleai.painel') }}">📊 Painel</a>
+  <a class="btn {{ '' if aba == 'chamados' else 'sec' }}" href="{{ url_for('nucleai.chamados') }}">🚨 Chamados</a>
+  <a class="btn {{ '' if aba == 'conteudo' else 'sec' }}" href="{{ url_for('nucleai.conteudo') }}">✏️ Conteúdo</a>
+  <a class="btn {{ '' if aba == 'config' else 'sec' }}" href="{{ url_for('nucleai.config') }}">⚙️ Configurações</a>
+</div>

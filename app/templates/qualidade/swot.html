@@ -1,0 +1,39 @@
+{% extends 'qualidade/_base.html' %}
+{% from 'qualidade/_modelos.html' import galeria_swot, pdf_botoes with context %}
+{% block titulo %}Matriz SWOT{% endblock %}
+{% block titulo_q %}Matriz SWOT{% endblock %}
+{% block sub_q %}Forças e fraquezas (internas), oportunidades e ameaças (externas). O peso (1 a 5) ordena os itens e alimenta os cruzamentos estratégicos.{% endblock %}
+{% block acoes_q %}{% if s %}{{ pdf_botoes(url_for('qual.swot_pdf', aid=aid)) }}{% endif %}{% endblock %}
+{% block corpo_q %}
+{{ galeria_swot(modelos, not analises) }}
+<form class="cartao filtros q-nao-imprime" method="get">
+  {% if analises %}<div style="flex:1"><label for="a">Análise</label><select id="a" name="a" onchange="this.form.submit()">
+    {% for x in analises %}<option value="{{ x.id }}" {{ 'selected' if x.id == aid }}>{{ x.titulo }} ({{ x.data|data_br if x.data else '' }})</option>{% endfor %}</select></div>{% endif %}
+</form>
+{% if s %}
+<div class="q-swot q-folha-paisagem">
+  {% for k, nome in quadrantes %}
+  <section class="q-swot-q {{ k }}">
+    <h3>{{ nome }} <small>{{ 'interno' if k in ('F', 'FR') else 'externo' }}</small></h3>
+    <ul>{% for i in s.quadrantes[k] %}<li><span class="q-peso" title="peso">{{ i.peso }}</span>{{ i.texto }}
+      <form class="q-nao-imprime" method="post" action="{{ url_for('qual.swot_item_excluir', iid=i.id) }}" style="display:inline">{{ csrf_input }}<button class="link perigo" type="submit" aria-label="Excluir">×</button></form></li>
+    {% else %}<li class="sub">—</li>{% endfor %}</ul>
+    <form class="q-form-inline q-nao-imprime" method="post" action="{{ url_for('qual.swot_item', aid=aid) }}">{{ csrf_input }}
+      <input type="hidden" name="quadrante" value="{{ k }}"><input type="text" name="texto" maxlength="300" placeholder="Novo item" required>
+      <input type="number" name="peso" min="1" max="5" value="3" aria-label="Peso" style="width:4.5em"><button class="btn sec peq" type="submit">+</button></form>
+  </section>
+  {% endfor %}
+</div>
+<div class="cartao"><h2 style="margin-top:0">Cruzamentos (estratégias sugeridas)</h2>
+  <p class="sub">Saldo interno (forças − fraquezas): <b>{{ s.saldo_interno }}</b> · Saldo externo (oportunidades − ameaças): <b>{{ s.saldo_externo }}</b></p>
+  {% for c in s.cruzamentos %}<p><span class="q-chip">{{ c.sigla }}</span> {{ c.texto }}</p>{% else %}<p class="sub">Inclua itens nos quatro quadrantes para ver os cruzamentos.</p>{% endfor %}
+</div>
+<form class="q-nao-imprime" method="post" action="{{ url_for('qual.swot_excluir', aid=aid) }}" onsubmit="return confirm('Excluir a análise inteira?')">{{ csrf_input }}<button class="btn perigo" type="submit">Excluir esta análise</button></form>
+{% endif %}
+<form class="cartao q-form q-nao-imprime" method="post" action="{{ url_for('qual.swot_nova') }}">
+  {{ csrf_input }}<h2>Nova análise SWOT</h2>
+  <div class="q-linha3"><label>Título<input type="text" name="titulo" required maxlength="200" placeholder="Ex.: Planejamento 2027"></label><label>Data<input type="date" name="data"></label><div></div></div>
+  <label>Observações<textarea name="obs" rows="2"></textarea></label>
+  <button class="btn" type="submit">Criar</button>
+</form>
+{% endblock %}

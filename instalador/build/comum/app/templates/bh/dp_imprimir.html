@@ -1,0 +1,8 @@
+{% extends 'bh/layout.html' %}
+{% block titulo %}Imprimir documento{% endblock %}
+{% block conteudo %}
+<div class="cabecalho nao-imprimir"><div><h1>{{ document.title }}</h1><p class="sub">{{ employee.name }} · {{ document.filename }}</p></div>
+  <div class="acoes"><button class="btn" type="button" data-print>Imprimir</button><a class="btn sec" href="{{ url_for('bh.dp_funcionario', employee_id=employee.id) }}">Voltar à pasta</a></div></div>
+<div class="bh-documento"><img src="{{ url_for('bh.dp_arquivo', document_id=document.id) }}" alt="{{ document.title }} de {{ employee.name }}"></div>
+<span data-autoprint hidden></span>
+{% endblock %}

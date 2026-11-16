@@ -1,0 +1,107 @@
+{% extends 'base.html' %}
+{% block titulo %}Relatórios da agenda{% endblock %}
+{% macro tabela(rotulo, linhas, dia=False) %}
+<div class="tabela-wrap" style="margin-bottom:18px"><table class="tabela">
+  <thead><tr><th>{{ rotulo }}</th><th class="num">Marcados</th><th class="num">Chegaram</th><th class="num">Vieram</th><th class="num">Faltaram</th><th class="num">Retornos</th><th class="num">Ainda agendados</th><th class="num">Taxa de falta</th></tr></thead>
+  <tbody>
+  {% for b in linhas %}
+    <tr><td>{{ (b.nome|data_br) if dia else b.nome }}</td><td class="num">{{ b.marcados }}</td><td class="num">{{ b.chegou }}</td><td class="num">{{ b.VEIO }}</td><td class="num">{{ b.FALTOU }}</td>
+      <td class="num">{{ b.RETORNO }}</td><td class="num">{{ b.AGENDADO }}</td><td class="num">{{ ('%.1f'|format(b.taxa_falta)|replace('.', ',') ~ '%') if b.taxa_falta is not none else '—' }}</td></tr>
+  {% else %}<tr><td colspan="8" class="vazio">Nenhum paciente agendado neste período.</td></tr>{% endfor %}
+  </tbody>
+</table></div>
+{% endmacro %}
+{% macro barras(itens, campo, cor) -%}
+{% set mx = (itens|map(attribute=campo)|list + [1])|max %}
+<div class="rd-barras">{% for i in itens %}<div class="rd-linha"><span class="rd-rot" title="{{ i.nome }}">{{ i.nome }}</span><span class="rd-trilho"><i style="width: {{ (100 * i[campo] / mx)|round(1) }}%; background: {{ cor }}"></i></span><b>{{ i[campo] }}</b></div>
+{% else %}<p class="sub">Sem dados no período.</p>{% endfor %}</div>
+{%- endmacro %}
+{% macro colunas(itens, campo, cor, dia=False) -%}
+{% set mx = (itens|map(attribute=campo)|list + [1])|max %}
+<div class="rd-colunas">{% for i in itens %}<div class="rd-col"><b>{{ i[campo] }}</b><i style="height: {{ (100 * i[campo] / mx)|round(1) }}%; background: {{ cor }}"></i><span>{{ i.nome[8:10] ~ '/' ~ i.nome[5:7] if dia else i.nome }}</span></div>
+{% else %}<p class="sub">Sem dados no período.</p>{% endfor %}</div>
+{%- endmacro %}
+{% block head %}<style>
+.rd-cartoes { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; margin: 8px 0 14px; }
+.rd-cartao { border: 1px solid var(--borda); border-left: 4px solid #2f7a49; border-radius: 10px; padding: 10px 12px; background: var(--cartao, #fff); display: flex; flex-direction: column; gap: 2px; }
+.rd-grande { font-size: 30px; font-weight: 800; color: #2f7a49; line-height: 1.1; }
+.rd-cartao small { color: var(--suave); }
+.rd-duplo { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; margin-bottom: 14px; }
+.rd-barras { display: flex; flex-direction: column; gap: 5px; }
+.rd-linha { display: grid; grid-template-columns: minmax(80px, 38%) 1fr auto; gap: 8px; align-items: center; font-size: 13px; }
+.rd-rot { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rd-trilho { background: rgba(127, 127, 127, .15); border-radius: 6px; height: 14px; overflow: hidden; }
+.rd-trilho i { display: block; height: 100%; border-radius: 6px; animation: rd-cresce .7s ease both; transform-origin: left; }
+.rd-colunas { display: flex; align-items: flex-end; gap: 4px; height: 160px; overflow-x: auto; padding-top: 6px; }
+.rd-col { flex: 1 0 22px; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; font-size: 11px; gap: 2px; }
+.rd-col i { display: block; width: 70%; border-radius: 4px 4px 0 0; min-height: 2px; animation: rd-sobe .7s ease both; transform-origin: bottom; }
+.rd-col span { color: var(--suave); white-space: nowrap; }
+@keyframes rd-cresce { from { transform: scaleX(0); } }
+@keyframes rd-sobe { from { transform: scaleY(0); } }
+@media (prefers-reduced-motion: reduce) { .rd-trilho i, .rd-col i { animation: none; } }
+</style>{% endblock %}
+{% block conteudo %}
+{% set g = rel.geral %}
+<div class="cabecalho">
+  <div><h1>Relatórios da agenda</h1><p class="sub">Tudo vem da agenda, por exame cadastrado. A taxa de falta considera quem veio e quem faltou. Retorno conta como veio, uma vez só: se o paciente veio na nova data, a presença fica nela.</p></div>
+  <div class="acoes">
+    <a class="btn sec" href="{{ url_for('agenda.pagina') }}">Voltar para a agenda</a>
+  </div>
+</div>
+
+<form class="cartao filtros" method="get">
+  <div><label for="de">De</label><input type="date" id="de" name="de" value="{{ de }}"></div>
+  <div><label for="ate">Até</label><input type="date" id="ate" name="ate" value="{{ ate }}"></div>
+  <div class="largo"><label for="exame">Exame</label><select id="exame" name="exame">
+    <option value="">Todos os exames</option>
+    {% for e in exames %}<option value="{{ e }}" {{ 'selected' if e|lower == exame|lower }}>{{ e }}</option>{% endfor %}
+  </select></div>
+  <div><button class="btn" type="submit">Gerar</button></div>
+  <div>
+    <a class="btn sec" href="{{ url_for('agenda.relatorio_pdf', de=de, ate=ate, exame=exame) }}">⬇ PDF</a>
+    <a class="btn sec" href="{{ url_for('agenda.relatorio_xlsx', de=de, ate=ate, exame=exame) }}">⬇ Excel</a>
+  </div>
+</form>
+
+{% set dash = rel.dashboard %}
+<h2>Painel de todos os exames no período</h2>
+<p class="sub">Tudo vem da agenda, por exame cadastrado (o vinculado à agenda): agendados, quem veio até o momento, faltaram e remarcaram. No MIBI, Repouso e Estresse do mesmo paciente contam um exame só, e o Protocolo é um MIBI completo. Este painel não muda com o filtro de exame.</p>
+<div class="rd-cartoes">
+  {% for e in dash.por_exame %}<div class="rd-cartao"><strong>{{ e.nome }}</strong><span class="rd-grande">{{ e.VEIO }}</span><small>vieram · {{ e.marcados }} agendados · {{ e.chegou }} chegaram · {{ e.FALTOU }} faltaram · {{ e.RETORNO }} retornos</small>
+    <small>taxa de falta {{ ('%.1f'|format(e.taxa_falta)|replace('.', ',') ~ '%') if e.taxa_falta is not none else '—' }}</small></div>
+  {% else %}<p class="sub">Nenhum exame no período.</p>{% endfor %}
+</div>
+<div class="rd-duplo">
+  <section class="cartao"><h3>Vieram por exame</h3>{{ barras(dash.por_exame, 'VEIO', '#2f7a49') }}</section>
+  <section class="cartao"><h3>Principais convênios (vieram)</h3>{{ barras(dash.por_convenio|sort(attribute='VEIO', reverse=True), 'VEIO', '#1565c0') }}</section>
+</div>
+<div class="rd-duplo">
+  <section class="cartao"><h3>Vieram por dia</h3>{{ colunas(dash.por_dia, 'VEIO', '#2f7a49', True) }}</section>
+  <section class="cartao"><h3>Horários de maior movimento (pacientes marcados)</h3>{{ colunas(dash.por_hora, 'n', '#ef6c00') }}</section>
+</div>
+<h2>Relatório {{ ('do exame ' ~ rel.exame) if rel.exame else 'de todos os exames' }}</h2>
+<div class="indicadores">
+  <div class="indicador"><div class="n">{{ g.marcados }}</div><div class="t">pacientes agendados</div></div>
+  <div class="indicador" style="border-left-color:#2e7d32"><div class="n">{{ g.chegou }}</div><div class="t">chegaram (caixa Chegou marcada)</div></div>
+  <div class="indicador" style="border-left-color:#2c8a4f"><div class="n">{{ g.VEIO }}</div><div class="t">vieram</div></div>
+  <div class="indicador" style="border-left-color:#b5473a"><div class="n" style="color:#b5473a">{{ g.FALTOU }}</div><div class="t">faltaram</div></div>
+  <div class="indicador" style="border-left-color:#c77d0a"><div class="n" style="color:#c77d0a">{{ g.RETORNO }}</div><div class="t">retornos marcados (já contados em vieram)</div></div>
+  <div class="indicador"><div class="n">{{ g.AGENDADO }}</div><div class="t">ainda agendados</div></div>
+  <div class="indicador"><div class="n">{{ ('%.1f'|format(g.taxa_falta)|replace('.', ',') ~ '%') if g.taxa_falta is not none else '—' }}</div><div class="t">taxa de falta</div></div>
+  <div class="indicador"><div class="n">{{ g.livres }}</div><div class="t">horários livres (de {{ g.vagas }})</div></div>
+</div>
+
+{% if rel.mibi.concluidos or rel.mibi.pendentes %}
+<h2>Exames de duas etapas (Repouso e Estresse)</h2>
+<p class="sub">{{ rel.mibi.concluidos }} paciente(s) com as duas etapas marcadas (concluído) e {{ rel.mibi.pendentes|length }} pendente(s): só uma etapa marcada.</p>
+{% if rel.mibi.pendentes %}<div class="tabela-wrap"><table class="tabela"><thead><tr><th>Paciente</th><th>Etapa marcada</th><th>Falta marcar</th><th>Data</th><th>Contato</th><th>Convênio</th><th></th></tr></thead><tbody>
+{% for p in rel.mibi.pendentes %}<tr><td>{{ p.paciente }}</td><td>{{ p.etapa }} ({{ 'veio' if p.status in ('VEIO', 'RETORNO') else 'agendado' }})</td><td><strong>{{ p.falta }}</strong></td><td>{{ p.data|data_br }} {{ p.hora }}</td><td>{{ p.contato or '—' }}</td><td>{{ p.convenio }}</td>
+<td><a class="btn sec peq" href="{{ url_for('agenda.dia', data=p.data) }}">Abrir agenda</a></td></tr>{% endfor %}</tbody></table></div>{% endif %}
+{% endif %}
+<h2>Por exame</h2>
+{{ tabela('Exame', rel.por_exame) }}
+<h2>Por convênio</h2>
+{{ tabela('Convênio', rel.por_convenio) }}
+<h2>Por dia</h2>
+{{ tabela('Dia', rel.por_dia, True) }}
+{% endblock %}

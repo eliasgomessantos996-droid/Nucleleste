@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% block titulo %}Exames e fichas{% endblock %}
+{% block conteudo %}
+<div class="cabecalho">
+  <div><h1>Exames e fichas</h1>
+    <p class="sub">Define quais fichas são impressas para cada exame. Exames digitados que não estão nesta lista imprimem Ficha Geral, SAE e Etiqueta.</p></div>
+  <div class="acoes"><a class="btn" href="{{ url_for('cad.exame_editar') }}">+ Novo exame</a><a class="btn sec" href="{{ url_for('cad.exame_fichas') }}">Fichas personalizadas</a></div>
+</div>
+<div class="tabela-wrap"><table class="tabela">
+  <thead><tr><th>Exame</th><th>Título na ficha</th><th>Fichas impressas</th><th>Extras</th><th></th></tr></thead>
+  <tbody>
+  {% for item in lista %}{% set e = item.row %}
+    <tr {% if not e.ativo %}style="opacity:.55"{% endif %}>
+      <td><strong>{{ e.nome }}</strong>{% if not e.ativo %} <span class="etiqueta">inativo</span>{% endif %}</td>
+      <td>{{ e.titulo_ficha }}</td><td>{{ item.docs }}</td>
+      <td>{% if e.questionario %}<span class="etiqueta">questionário</span>{% endif %}
+          {% if e.pede_medicamentos %}<span class="etiqueta">medicamentos em uso</span>{% endif %}</td>
+      <td class="num"><a class="btn sec peq" href="{{ url_for('cad.exame_editar', eid=e.id) }}">Editar</a></td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+{% endblock %}

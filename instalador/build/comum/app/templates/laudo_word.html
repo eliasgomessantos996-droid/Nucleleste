@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% block titulo %}Laudo em Word{% endblock %}
+{% block conteudo %}
+<div class="cabecalho">
+  <div><h1>📄 Laudo em Word</h1><p class="sub">{{ cliente.nome }}</p></div>
+  <div class="acoes"><a class="btn sec" href="javascript:window.close()">Fechar</a></div>
+</div>
+{% if sem_pasta %}
+<div class="msg aviso">A pasta dos laudos em Word ainda não foi definida{% if pasta %} (a pasta <code>{{ pasta }}</code> não foi encontrada neste computador){% endif %}.
+  A gestão define em <strong>Configuração → Dados da clínica → Pasta dos laudos em Word</strong>.</div>
+{% elif not candidatos %}
+<div class="msg erro">Nenhum laudo em Word com o nome deste paciente foi encontrado em <code>{{ pasta }}</code>.</div>
+{% else %}
+<p class="sub">Foram encontrados {{ candidatos|length }} arquivos com o nome deste paciente. Escolha qual abrir (o mais provável está no topo):</p>
+<div class="tabela-wrap"><table class="tabela">
+  <thead><tr><th>Arquivo</th><th>Data no nome</th><th>Alterado em</th><th></th></tr></thead>
+  <tbody>{% for c in candidatos %}
+    <tr><td>{{ c.nome }}{% if c.exato %} <span class="etiqueta">nome igual</span>{% endif %}</td>
+      <td>{{ c.data.strftime('%d/%m/%Y') if c.data and c.data.year > 1990 else '—' }}</td><td>{{ c.modificado.strftime('%d/%m/%Y') }}</td>
+      <td class="num"><a class="btn peq" href="{{ url_for('atend.laudo_word', cid=cliente.id, abrir=c.rel) }}">Abrir</a></td></tr>
+  {% endfor %}</tbody>
+</table></div>
+{% endif %}
+{% endblock %}

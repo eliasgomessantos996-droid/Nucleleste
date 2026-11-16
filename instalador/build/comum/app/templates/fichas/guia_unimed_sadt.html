@@ -1,0 +1,16 @@
+{% import 'guias_macros.html' as gm %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/guias.css') }}">
+<section class="folha paisagem guia guia-unimed" data-ficha="guia_unimed_sadt">
+  <div class="g-topo">
+    <div class="g-logo-unimed">Unimed</div>
+    <div class="g-titulo">GUIA DE SERVIÇO PROFISSIONAL / SERVIÇO AUXILIAR DE DIAGNÓSTICO E TERAPIA<br>- SP/SADT</div>
+    <div class="g-cel g-n2"><span class="g-rot">2 - Nº Guia no Prestador</span><span class="g-val">{{ f['2'] }}</span></div>
+  </div>
+  {% for b in f.blocos %}
+    {% if b.t == 'faixa' %}<div class="g-faixa">{{ b.titulo }}</div>
+    {% elif b.t == 'linha' %}<div class="g-linha">{% for c in b.cels %}{{ gm.cel(c, f, false) }}{% endfor %}</div>
+    {% elif b.t == 'tabela' %}{{ gm.tabela(b, f) }}
+    {% elif b.t == 'serie' %}{{ gm.serie(b, f) }}
+    {% endif %}
+  {% endfor %}
+</section>

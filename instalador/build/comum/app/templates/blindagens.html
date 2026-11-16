@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% block titulo %}Cadastro de blindagem{% endblock %}
+{% block conteudo %}
+<div class="cabecalho">
+  <div><h1>Cadastro de blindagem</h1><p class="sub">{{ rows|length }} blindagem(ns) listada(s). O status muda para VENCIDO sozinho quando a validade passa.</p></div>
+</div>
+
+<div class="indicadores">
+  <div class="indicador"><div class="n">{{ contagem['VÁLIDO'] }}</div><div class="t">válidas</div></div>
+  <div class="indicador" style="border-left-color:#b5473a"><div class="n" style="color:#b5473a">{{ contagem['VENCIDO'] }}</div><div class="t">vencidas</div></div>
+  <div class="indicador" style="border-left-color:#c77d0a"><div class="n" style="color:#c77d0a">{{ contagem['DEVOLUÇÃO SOLICITADA'] }}</div><div class="t">com devolução solicitada</div></div>
+  <div class="indicador"><div class="n">{{ contagem['DEVOLVIDA'] }}</div><div class="t">devolvidas</div></div>
+</div>
+
+<form class="cartao filtros" method="get">
+  <div class="largo"><label>Buscar por lote ou nota fiscal</label><input type="search" name="q" value="{{ busca }}" placeholder="Ex.: 633IP1637"></div>
+  <div><label>Status</label><select name="status">
+    <option value="">Todos</option>
+    {% for s in ['VÁLIDO', 'VENCIDO', 'DEVOLUÇÃO SOLICITADA', 'DEVOLVIDA'] %}<option value="{{ s }}" {{ 'selected' if status == s }}>{{ s|capitalize }}</option>{% endfor %}
+  </select></div>
+  <div><button class="btn" type="submit">Filtrar</button></div>
+</form>
+
+<div class="tabela-wrap"><table class="tabela">
+  <thead><tr><th>Lote</th><th>Nota fiscal</th><th>Série</th><th>Data da nota</th><th>CFOP</th><th>Validade</th><th>Status</th><th></th></tr></thead>
+  <tbody>
+  {% for b in rows %}
+    <tr>
+      <td><strong>{{ b.lote }}</strong></td><td>{{ b.nota_fiscal }}</td><td>{{ b.serie }}</td><td>{{ b.data_nota|data_br }}</td><td>{{ b.cfop }}</td>
+      <td>{{ b.validade|data_br }}</td>
+      <td><span class="etiqueta {{ classe_status_blindagem(b.status) }}">{{ b.status }}</span></td>
+      <td class="num" style="white-space:nowrap">
+        {% if b.status in ['VÁLIDO', 'VENCIDO'] %}
+          <a class="btn sec peq" href="{{ url_for('blind.editar', bid=b.id) }}">Editar</a>
+          <form method="post" action="{{ url_for('blind.excluir', bid=b.id) }}" style="display:inline" data-confirmar="Excluir a blindagem {{ b.lote }}?">{{ csrf_input }}<button class="btn perigo peq" type="submit">Excluir</button></form>
+        {% else %}
+          {% if b.status == 'DEVOLUÇÃO SOLICITADA' %}<a class="btn peq" href="{{ url_for('blind.devolvidas') }}">Confirmar devolução</a>{% endif %}
+          {% if b.devolucao_id %}<a class="btn sec peq" href="{{ url_for('blind.devolucao_resultado', did=b.devolucao_id) }}">Ver devolução</a>{% endif %}
+        {% endif %}
+      </td>
+    </tr>
+  {% else %}<tr><td colspan="8" class="vazio">Nenhuma blindagem encontrada. Use “Novo cadastro” para começar.</td></tr>{% endfor %}
+  </tbody>
+</table></div>
+{% endblock %}

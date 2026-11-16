@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/qualidade.css') }}">{% block head_q %}{% endblock %}{% endblock %}
+{% block conteudo %}
+<div class="cabecalho q-cab">
+  <div><h1>{% block titulo_q %}{% endblock %}</h1><p class="sub">{% block sub_q %}{% endblock %}</p></div>
+  <div class="acoes">{% block acoes_q %}{% endblock %}<button type="button" class="btn sec" onclick="window.print()" title="Imprimir esta tela (ou salvar como PDF pelo navegador)">🖨 Imprimir</button></div>
+</div>
+{% block corpo_q %}{% endblock %}
+<p class="q-rodape-impressao">{{ config_nome if config_nome is defined else 'Nucleleste' }} · Gestão da Qualidade · impresso por {{ usuario.usuario }}</p>
+{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='js/qualidade.js') }}"></script>{% block scripts_q %}{% endblock %}{% endblock %}

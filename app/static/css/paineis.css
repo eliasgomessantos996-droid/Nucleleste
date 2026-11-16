@@ -1,0 +1,18 @@
+/* Painéis do Início: cartão com borda à esquerda, SVG próprio animado (cores pelas variáveis do tema). */
+.pn-cartao { position: relative; display: grid; grid-template-columns: 96px 1fr; gap: 18px; align-items: center; margin-bottom: 14px; overflow: hidden;
+  border-left: 5px solid var(--verde-2); }
+.pn-arte { display: grid; place-items: center; }
+.pn-svg { width: 100%; height: auto; overflow: visible; color: var(--verde-2); }
+.pn-svg rect { fill: color-mix(in srgb, var(--verde-2) 14%, transparent); stroke: var(--verde-2); stroke-width: 3; rx: 6; }
+.pn-svg .pn-painel-piscante { animation: pn-pisca 3.2s ease-in-out infinite; }
+.pn-cartao > div > p { margin: 0 0 10px; color: var(--suave); }
+
+/* caixas de seleção em grade de 2 colunas */
+.pn-cartao .lista-checks { border: 0; padding: 0; margin: 12px 0 0; display: grid; grid-template-columns: 1fr 1fr; gap: 10px 18px; }
+.pn-cartao .lista-checks legend { font-weight: 700; margin-bottom: 8px; color: var(--texto); }
+.pn-cartao .check-linha { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+.pn-cartao .acoes { margin-top: 16px; }
+
+@keyframes pn-pisca { 0%, 100% { opacity: 1; } 50% { opacity: .18; } }
+@media (max-width: 700px) { .pn-cartao { grid-template-columns: 1fr; } .pn-arte { max-width: 110px; } .pn-cartao .lista-checks { grid-template-columns: 1fr; } }
+@media (prefers-reduced-motion: reduce) { .pn-svg .pn-painel-piscante { animation: none; } }

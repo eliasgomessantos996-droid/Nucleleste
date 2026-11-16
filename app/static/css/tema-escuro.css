@@ -1,0 +1,429 @@
+/* GERADO por ferramentas/gerar_tema_escuro.py: não edite à mão (rode o script de novo). */
+html[data-brilho="escuro"] {
+  color-scheme: dark;
+  --sup: color-mix(in srgb, var(--verde-escuro) 50%, #0c0f11);
+  --sup-2: color-mix(in srgb, var(--verde-escuro) 68%, #161b1e);
+  --texto: #e7ece9; --suave: #a9b5af; --branco: var(--sup); --fundo: var(--sup);
+  --borda: color-mix(in srgb, var(--verde-2) 30%, #1a1f22);
+  --verde-claro: color-mix(in srgb, var(--verde-2) 24%, var(--sup));
+  --ok-fundo: #12301e; --erro-fundo: #3a1714; --aviso-fundo: #3a2c0c; --erro: #ff9d94; --aviso: #ffd27a;
+  --pagina-1: color-mix(in srgb, var(--verde-escuro) 40%, #06080a);
+  --pagina-2: color-mix(in srgb, var(--verde-escuro) 66%, #0b0e10);
+}
+html[data-brilho="escuro"] .dash { --d-card: var(--sup); --d-texto: #e7ece9; --d-suave: #a9b5af; --d-linha: color-mix(in srgb, var(--verde-2) 30%, #1a1f22); }
+html[data-brilho="escuro"] .chat { --c-dele: color-mix(in srgb, var(--verde-2) 26%, var(--sup-2)); --c-minha: color-mix(in srgb, var(--brilho-2) 55%, var(--sup)); --c-fundo: var(--sup); }
+html[data-brilho="escuro"] .chat-balao, html[data-brilho="escuro"] .chat-balao * { color: #f1f5f3; }
+html[data-brilho="escuro"] .chat-balao .chat-rodape, html[data-brilho="escuro"] .chat-balao small, html[data-brilho="escuro"] .chat-rodape time { color: #c4d0ca; }
+html[data-brilho="escuro"] .chat-citacao span { color: #d3dcd7; }
+html[data-brilho="escuro"] .chat-dia { background: color-mix(in srgb, var(--verde-2) 30%, var(--sup-2)); color: #e7ece9; }
+html[data-brilho="escuro"] .chat-lista, html[data-brilho="escuro"] .chat-topo, html[data-brilho="escuro"] .chat-form, html[data-brilho="escuro"] .chat-busca-conv, html[data-brilho="escuro"] .chat-resposta { background: var(--sup); }
+html[data-brilho="escuro"] .chat-item:hover { background: var(--sup-2); }
+html[data-brilho="escuro"] .chat-busca input { background: var(--sup-2); }
+html[data-brilho="escuro"] .chat-tag { background: #4a3a10; color: #ffd98a; }
+html[data-brilho="escuro"] .chat-busca-texto mark { background: #7a5f12; color: #fff; }
+html[data-brilho="escuro"] a { color: var(--brilho); }
+html[data-brilho="escuro"] .conteudo h1, html[data-brilho="escuro"] .cabecalho h1 { color: color-mix(in srgb, var(--brilho) 65%, #fff); }
+html[data-brilho="escuro"] .hero h1, html[data-brilho="escuro"] .ph-hero h1 { color: #fff; }
+html[data-brilho="escuro"] .btn, html[data-brilho="escuro"] .btn:hover { color: #fff; }
+html[data-brilho="escuro"] .btn.sec { color: color-mix(in srgb, var(--brilho) 60%, #fff); border-color: color-mix(in srgb, var(--brilho-2) 55%, transparent);
+  background-color: var(--sup); background-image: radial-gradient(120px circle at var(--mx, -300px) var(--my, -300px), rgba(var(--brilho-rgb), .25), transparent 65%), linear-gradient(180deg, var(--sup-2), var(--sup)); }
+html[data-brilho="escuro"] .btn.sec:hover { background-image: radial-gradient(120px circle at var(--mx, -300px) var(--my, -300px), rgba(var(--brilho-rgb), .32), transparent 65%), linear-gradient(180deg, var(--verde-claro), var(--verde-claro)); }
+html[data-brilho="escuro"] .btn.perigo { color: #ff9d94; border-color: rgba(255, 157, 148, .45); background-color: var(--sup);
+  background-image: radial-gradient(120px circle at var(--mx, -300px) var(--my, -300px), rgba(255, 120, 110, .2), transparent 65%), linear-gradient(180deg, var(--sup-2), #2a1513); }
+html[data-brilho="escuro"] .btn.perigo:hover { background-image: linear-gradient(180deg, #3a1714, #3a1714); }
+html[data-brilho="escuro"] .tabela th { background: linear-gradient(180deg, var(--verde-claro), var(--sup-2)); color: color-mix(in srgb, var(--brilho) 70%, #fff); }
+html[data-brilho="escuro"] .tabela tbody tr:hover td { background: rgba(var(--brilho-rgb), .1); }
+html[data-brilho="escuro"] .cartao, html[data-brilho="escuro"] .indicador, html[data-brilho="escuro"] .tabela-wrap, html[data-brilho="escuro"] .atalhos a {
+  border-top-color: color-mix(in srgb, var(--verde-2) 70%, transparent); border-color: var(--borda); }
+html[data-brilho="escuro"] dialog { background: var(--sup); color: var(--texto); }
+html[data-brilho="escuro"] .menu-alternar { background: var(--sup); color: color-mix(in srgb, var(--brilho) 70%, #fff); }
+html[data-brilho="escuro"] .indicador .n, html[data-brilho="escuro"] .etiqueta { color: color-mix(in srgb, var(--brilho) 70%, #fff); }
+html[data-brilho="escuro"] input, html[data-brilho="escuro"] select, html[data-brilho="escuro"] textarea { background-color: var(--sup-2); color: var(--texto); border-color: var(--borda); }
+html[data-brilho="escuro"] input[readonly] { background-color: var(--sup); }
+html[data-brilho="escuro"] ::placeholder { color: var(--suave); }
+html[data-brilho="escuro"] .menu .rodape select option, html[data-brilho="escuro"] select option { color: var(--texto); background: var(--sup-2); }
+html[data-brilho="escuro"] img.logo, html[data-brilho="escuro"] .login-caixa img { filter: none; }
+
+/* agenda.css */
+html[data-brilho="escuro"] .ag-nav { background-color: var(--sup); color: var(--brilho); }
+html[data-brilho="escuro"] .ag-dia-btn.sel.tem::after { background-color: var(--sup); }
+html[data-brilho="escuro"] .ag-dia-btn.bloq { background-color: var(--sup-2); }
+html[data-brilho="escuro"] .st-agendado { background-color: var(--sup-2); }
+html[data-brilho="escuro"] .st-veio { background-color: color-mix(in srgb, #bcd9f7 30%, var(--sup)); }
+html[data-brilho="escuro"] .st-retorno { background-color: color-mix(in srgb, #bcd9f7 30%, var(--sup)); }
+html[data-brilho="escuro"] .st-faltou { background-color: color-mix(in srgb, #ffab91 30%, var(--sup)); }
+html[data-brilho="escuro"] .st-resgatado { background-color: var(--sup-2); }
+html[data-brilho="escuro"] .st-desistiu { background-color: var(--sup-2); }
+html[data-brilho="escuro"] .ag-linha.st-desistiu td { background-color: var(--sup-2); }
+html[data-brilho="escuro"] .ag-sel.st-desistiu { background-color: var(--sup-2); color: var(--texto); }
+html[data-brilho="escuro"] .ag-status.st-desistiu { background-color: color-mix(in srgb, #cfd5da 30%, var(--sup)); border-color: var(--borda); color: var(--texto); }
+html[data-brilho="escuro"] .livre { background-color: var(--sup); }
+html[data-brilho="escuro"] .ag-cor.livre { background-color: var(--sup); }
+html[data-brilho="escuro"] .ag-lembrete { color: #fff; background-color: #c62828; border-color: #8e0000; }
+html[data-brilho="escuro"] .ag-aviso.ok { border-color: var(--borda); color: color-mix(in srgb, #1e5631 32%, #ffffff); }
+html[data-brilho="escuro"] .ag-bloqueado { background-color: var(--sup-2); border-color: var(--borda); color: var(--suave); }
+html[data-brilho="escuro"] .ag-vazio-dia { background-color: var(--sup); }
+html[data-brilho="escuro"] .ag-chip { background-color: var(--sup); }
+html[data-brilho="escuro"] .ag-sel { background-color: var(--sup-2); color: var(--suave); }
+html[data-brilho="escuro"] .ag-sel.st-veio { background-color: color-mix(in srgb, #bcd9f7 30%, var(--sup)); color: color-mix(in srgb, #0f3d6e 32%, #ffffff); }
+html[data-brilho="escuro"] .ag-sel.st-retorno { background-color: color-mix(in srgb, #bcd9f7 30%, var(--sup)); color: color-mix(in srgb, #0f3d6e 32%, #ffffff); }
+html[data-brilho="escuro"] .ag-sel.st-faltou { background-color: color-mix(in srgb, #ffab91 30%, var(--sup)); color: color-mix(in srgb, #4e1500 32%, #ffffff); }
+html[data-brilho="escuro"] .ag-sel.st-resgatado { background-color: var(--sup-2); color: color-mix(in srgb, #0f5a45 32%, #ffffff); }
+html[data-brilho="escuro"] .ag-sel.livre { background-color: var(--sup); }
+html[data-brilho="escuro"] .ag-bloco-tit h3 { color: var(--brilho); }
+html[data-brilho="escuro"] .ag-grade th { background-color: var(--sup-2); color: var(--texto); border-color: var(--borda); }
+html[data-brilho="escuro"] .ag-grade td { border-color: var(--borda); }
+html[data-brilho="escuro"] .ag-grade input[type=text]:focus { background-color: var(--sup); }
+html[data-brilho="escuro"] .ag-linha.st-agendado td { background-color: var(--sup-2); }
+html[data-brilho="escuro"] .ag-linha.st-veio td { background-color: color-mix(in srgb, #bcd9f7 30%, var(--sup)); }
+html[data-brilho="escuro"] .ag-linha.st-retorno td { background-color: color-mix(in srgb, #bcd9f7 30%, var(--sup)); }
+html[data-brilho="escuro"] .ag-linha.st-faltou td { background-color: color-mix(in srgb, #ffab91 30%, var(--sup)); }
+html[data-brilho="escuro"] .ag-linha.st-resgatado td { background-color: var(--sup-2); }
+html[data-brilho="escuro"] .ag-linha.livre td { background-color: var(--sup); }
+html[data-brilho="escuro"] .ag-cor.unacon { background-color: color-mix(in srgb, #f4cccc 30%, var(--sup)); }
+html[data-brilho="escuro"] .ag-linha.unacon.livre td, html[data-brilho="escuro"] .ag-linha.unacon.st-agendado td { background-color: color-mix(in srgb, #f4cccc 30%, var(--sup)); }
+html[data-brilho="escuro"] .ag-linha.unacon td:first-child { background-color: color-mix(in srgb, #f4cccc 30%, var(--sup)); }
+html[data-brilho="escuro"] .ag-linha.unacon.livre .ag-hora, html[data-brilho="escuro"] .ag-linha.unacon.st-agendado .ag-hora { color: color-mix(in srgb, #5c2b2b 32%, #ffffff); }
+html[data-brilho="escuro"] .ag-sel.reservado { background-color: color-mix(in srgb, #f4cccc 30%, var(--sup)); color: color-mix(in srgb, #5c2b2b 32%, #ffffff); }
+html[data-brilho="escuro"] .ag-ico.ag-reserva-on { background-color: color-mix(in srgb, #f4cccc 30%, var(--sup)); color: color-mix(in srgb, #7a2e2e 32%, #ffffff); }
+html[data-brilho="escuro"] .ag-trocar { color: var(--brilho); }
+html[data-brilho="escuro"] .ag-status { border-color: var(--borda); background-color: var(--sup); }
+html[data-brilho="escuro"] .ag-status.st-veio { color: color-mix(in srgb, #0f3d6e 32%, #ffffff); }
+html[data-brilho="escuro"] .ag-status.st-retorno { color: color-mix(in srgb, #0f3d6e 32%, #ffffff); }
+html[data-brilho="escuro"] .ag-senha:focus { background-color: var(--sup); }
+html[data-brilho="escuro"] .ag-senha.protocolo { color: color-mix(in srgb, #14501c 32%, #ffffff); }
+html[data-brilho="escuro"] .ag-convsel:focus { background-color: var(--sup); }
+html[data-brilho="escuro"] .ag-status.st-faltou { background-color: color-mix(in srgb, #ff8a65 30%, var(--sup)); color: color-mix(in srgb, #4e1500 32%, #ffffff); }
+html[data-brilho="escuro"] .ag-status.st-resgatado { background-color: color-mix(in srgb, #a9e6d2 30%, var(--sup)); color: color-mix(in srgb, #0f5a45 32%, #ffffff); }
+html[data-brilho="escuro"] .ag-remarcado { color: color-mix(in srgb, #7a5200 32%, #ffffff); }
+html[data-brilho="escuro"] .ag-ico { border-color: var(--borda); background-color: var(--sup); color: var(--brilho); }
+html[data-brilho="escuro"] .ag-formato button { border-color: var(--borda); background-color: var(--sup); }
+html[data-brilho="escuro"] .ag-aba { background-color: var(--sup); color: var(--brilho); }
+html[data-brilho="escuro"] .ag-aba.aberta { background-color: color-mix(in srgb, #f4cccc 30%, var(--sup)); color: color-mix(in srgb, #5c2b2b 32%, #ffffff); }
+html[data-brilho="escuro"] .ag-reserva-corpo { background-color: var(--sup-2); }
+html[data-brilho="escuro"] .ag-cal-cor { border-top-color: var(--borda); }
+html[data-brilho="escuro"] .ag-cal-cor input[type=color] { border-color: var(--borda); }
+
+/* animacoes.css */
+html[data-brilho="escuro"] .tabela th { background-color: var(--sup-2); }
+html[data-brilho="escuro"] .ph-hero .btn { background-color: var(--sup); color: var(--brilho); border-color: var(--borda); }
+html[data-brilho="escuro"] .ph-hero .btn:hover { background-color: var(--sup); }
+html[data-brilho="escuro"] .pergunta:hover { background-color: var(--sup); }
+@media print { html[data-brilho="escuro"] .ph-hero { background-color: var(--sup); color: var(--texto); } }
+@media print { html[data-brilho="escuro"] .ph-hero h1, html[data-brilho="escuro"] .ph-hero .sub { color: var(--texto); } }
+
+/* app.css */
+html[data-brilho="escuro"] a { color: var(--brilho); }
+html[data-brilho="escuro"] .selo-menu { color: var(--texto); }
+html[data-brilho="escuro"] .menu .rodape .tema-escolha select option { color: var(--texto); }
+html[data-brilho="escuro"] .menu-alternar { background-color: var(--sup); color: var(--brilho); }
+html[data-brilho="escuro"] .msg.ok { color: color-mix(in srgb, #1e5631 32%, #ffffff); }
+html[data-brilho="escuro"] input[type=text], html[data-brilho="escuro"] input[type=date], html[data-brilho="escuro"] input[type=number], html[data-brilho="escuro"] input[type=password], html[data-brilho="escuro"] input[type=search], html[data-brilho="escuro"] select, html[data-brilho="escuro"] textarea { background-color: var(--sup); }
+html[data-brilho="escuro"] input[readonly] { background-color: var(--sup-2); }
+html[data-brilho="escuro"] .btn.sec { background-color: var(--sup); color: var(--brilho); }
+html[data-brilho="escuro"] .btn.perigo { background-color: var(--sup); }
+html[data-brilho="escuro"] .tabela-wrap { background-color: var(--sup); }
+html[data-brilho="escuro"] .tabela th, html[data-brilho="escuro"] .tabela td { border-bottom-color: var(--borda); }
+html[data-brilho="escuro"] .tabela th { background-color: var(--sup); }
+html[data-brilho="escuro"] .tabela tr:hover td { background-color: var(--sup); }
+html[data-brilho="escuro"] .tabela tfoot td { background-color: var(--sup); }
+html[data-brilho="escuro"] .etiqueta { background-color: var(--sup-2); }
+html[data-brilho="escuro"] .etiqueta.pago, html[data-brilho="escuro"] .etiqueta.concluido { color: color-mix(in srgb, #1e5631 32%, #ffffff); }
+html[data-brilho="escuro"] .indicador { background-color: var(--sup); }
+html[data-brilho="escuro"] .indicador .n { color: var(--brilho); }
+html[data-brilho="escuro"] .atalhos a { background-color: var(--sup); }
+html[data-brilho="escuro"] .seletor .resultados { background-color: var(--sup); }
+html[data-brilho="escuro"] .seletor .item { border-bottom-color: var(--borda); }
+html[data-brilho="escuro"] .ficha-cliente { background-color: var(--sup); }
+html[data-brilho="escuro"] .lista-escolha { background-color: var(--sup); }
+html[data-brilho="escuro"] .lista-escolha label { border-bottom-color: var(--borda); }
+html[data-brilho="escuro"] .pergunta { border-bottom-color: var(--borda); }
+html[data-brilho="escuro"] .login-caixa { background-color: var(--sup); }
+html[data-brilho="escuro"] .login-apostila { color: color-mix(in srgb, var(--verde-2) 45%, #fff); }
+@media print { html[data-brilho="escuro"]  { background-color: var(--sup); } }
+html[data-brilho="escuro"] .sessao-caixa { background-color: var(--sup); }
+html[data-brilho="escuro"] .tabela tr.mov-marcada td { background-color: var(--sup-2); }
+
+/* bh.css */
+html[data-brilho="escuro"] .bh-pos { color: color-mix(in srgb, #1e6b3a 32%, #ffffff); }
+html[data-brilho="escuro"] .bh-avatar { color: var(--brilho); }
+html[data-brilho="escuro"] .bh-id { background-color: var(--sup-2); }
+html[data-brilho="escuro"] .bh-batidas span { background-color: var(--sup-2); }
+html[data-brilho="escuro"] tr.bh-pendente td { background-color: var(--sup); }
+html[data-brilho="escuro"] tr.bh-pendente:hover td { background-color: var(--sup-2); }
+html[data-brilho="escuro"] .bh-cartao { background-color: var(--sup); }
+html[data-brilho="escuro"] .bh-ajuda { border-color: var(--borda); }
+html[data-brilho="escuro"] .bh-pendentes a { background-color: var(--sup); }
+html[data-brilho="escuro"] .bh-original { background-color: var(--sup); }
+html[data-brilho="escuro"] .bh-escala th, html[data-brilho="escuro"] .bh-escala td { border-color: var(--borda); }
+html[data-brilho="escuro"] .bh-escala th:first-child, html[data-brilho="escuro"] .bh-escala td:first-child { background-color: var(--sup); }
+html[data-brilho="escuro"] .bh-escala td.bh-fds { background-color: var(--sup-2); }
+html[data-brilho="escuro"] .bh-cel { background-color: var(--sup-2); }
+html[data-brilho="escuro"] .bh-cel.k-trabalho { background-color: var(--sup-2); color: color-mix(in srgb, #1e5631 32%, #ffffff); }
+html[data-brilho="escuro"] .bh-cel.k-ferias { background-color: var(--sup-2); color: color-mix(in srgb, #1e40af 32%, #ffffff); }
+html[data-brilho="escuro"] .bh-cel.k-folga { background-color: var(--sup-2); color: var(--suave); }
+html[data-brilho="escuro"] .bh-cel.k-feriado { background-color: var(--sup-2); color: color-mix(in srgb, #5b21b6 32%, #ffffff); }
+html[data-brilho="escuro"] .bh-cel.k-afastamento { background-color: var(--sup-2); color: color-mix(in srgb, #9a3412 32%, #ffffff); }
+html[data-brilho="escuro"] .bh-cel.k-falta { background-color: var(--sup-2); }
+html[data-brilho="escuro"] .bh-cel.k-outro { background-color: var(--sup-2); }
+html[data-brilho="escuro"] .bh-cel.k-pendente { background-color: var(--sup-2); }
+html[data-brilho="escuro"] .bh-folha { background-color: var(--sup); }
+html[data-brilho="escuro"] .bh-identidade div, html[data-brilho="escuro"] .bh-saldos div { background-color: var(--sup); }
+html[data-brilho="escuro"] .bh-chat-busca { border-bottom-color: var(--borda); }
+html[data-brilho="escuro"] .chat-conv { border-bottom-color: var(--borda); }
+html[data-brilho="escuro"] .bh-chat-topo { border-bottom-color: var(--borda); }
+html[data-brilho="escuro"] .chat-live { color: color-mix(in srgb, #1e6b3a 32%, #ffffff); }
+html[data-brilho="escuro"] .chat-messages { background-color: var(--sup); }
+html[data-brilho="escuro"] .msg-bh { background-color: var(--sup); }
+html[data-brilho="escuro"] .msg-bh.msg-mine { background-color: var(--sup-2); border-color: var(--borda); }
+html[data-brilho="escuro"] .chat-form { border-top-color: var(--borda); }
+html[data-brilho="escuro"] .bh-resultados li a { border-bottom-color: var(--borda); }
+html[data-brilho="escuro"] details.bh-inline summary { color: var(--brilho); }
+
+/* chat.css */
+html[data-brilho="escuro"] .chat { background-color: var(--sup); }
+html[data-brilho="escuro"] .chat-lista { background-color: var(--sup); }
+html[data-brilho="escuro"] .chat-busca { border-bottom-color: var(--borda); }
+html[data-brilho="escuro"] .chat-busca input { background-color: var(--sup-2); }
+html[data-brilho="escuro"] .chat-item { border-bottom-color: var(--borda); }
+html[data-brilho="escuro"] .chat-item:hover { background-color: var(--sup); }
+html[data-brilho="escuro"] .chat-tag { background-color: var(--sup-2); color: color-mix(in srgb, #7a5200 32%, #ffffff); }
+html[data-brilho="escuro"] .chat-topo { background-color: var(--sup); }
+html[data-brilho="escuro"] .chat-estado.online { color: color-mix(in srgb, #1e7a4a 32%, #ffffff); }
+html[data-brilho="escuro"] .chat-bolinha { border-color: var(--borda); }
+html[data-brilho="escuro"] .situacao-usuario { color: var(--suave); }
+html[data-brilho="escuro"] .chat-voltar { color: var(--brilho); }
+html[data-brilho="escuro"] .chat-busca-conv { background-color: var(--sup); }
+html[data-brilho="escuro"] .chat-busca-item { background-color: var(--sup); }
+html[data-brilho="escuro"] .chat-busca-texto mark { background-color: color-mix(in srgb, #ffe58a 30%, var(--sup)); }
+html[data-brilho="escuro"] .chat-resposta { background-color: var(--sup-2); }
+html[data-brilho="escuro"] .chat-citacao span { color: var(--texto); }
+html[data-brilho="escuro"] .chat-acao-resp { color: var(--brilho); }
+html[data-brilho="escuro"] .nucleai-flutuante button { border-color: var(--borda); background-color: var(--sup); }
+html[data-brilho="escuro"] .chat-form { background-color: var(--sup); }
+html[data-brilho="escuro"] .chat-boas-vindas svg { color: var(--brilho); }
+html[data-brilho="escuro"] .chat-toast { background-color: var(--sup); }
+html[data-brilho="escuro"] .chat-anexar { background-color: var(--sup); color: var(--brilho); }
+html[data-brilho="escuro"] .chat-img-previa { background-color: var(--sup); }
+
+/* corporativo.css */
+html[data-brilho="escuro"] .cartao, html[data-brilho="escuro"] .tabela-wrap, html[data-brilho="escuro"] .indicador { border-color: var(--borda); }
+html[data-brilho="escuro"] .tabela tbody tr:hover td { background-color: var(--sup-2); }
+
+/* dashboard.css */
+html[data-brilho="escuro"] .vivo i { background-color: color-mix(in srgb, #7dffb2 30%, var(--sup)); }
+html[data-brilho="escuro"] .seg-ind { background-color: var(--sup); }
+html[data-brilho="escuro"] .popover { background-color: var(--sup); }
+html[data-brilho="escuro"] .trilho i { background-color: var(--sup); }
+html[data-brilho="escuro"] .auto input:checked + .trilho { background-color: color-mix(in srgb, #7dffb2 30%, var(--sup)); }
+html[data-brilho="escuro"] .chip.sobe { background-color: var(--sup-2); color: color-mix(in srgb, #167a3f 32%, #ffffff); }
+html[data-brilho="escuro"] .chip.desce { background-color: var(--sup-2); color: color-mix(in srgb, #b42318 32%, #ffffff); }
+html[data-brilho="escuro"] .selo { background-color: var(--sup-2); }
+html[data-brilho="escuro"] .leg:hover, html[data-brilho="escuro"] .leg.foco { background-color: var(--sup-2); }
+html[data-brilho="escuro"] .hr-trilho { background-color: var(--sup-2); }
+html[data-brilho="escuro"] .lista-avatar li:hover { background-color: var(--sup); }
+html[data-brilho="escuro"] .tag { background-color: var(--sup-2); }
+html[data-brilho="escuro"] .li-acao:hover { background-color: var(--sup-2); }
+@media print { html[data-brilho="escuro"] .dash { background-color: var(--sup); } }
+@media print { html[data-brilho="escuro"] .hero { background-color: var(--sup); color: var(--texto); } }
+@media print { html[data-brilho="escuro"] .card, html[data-brilho="escuro"] .kpi, html[data-brilho="escuro"] .alerta { border-color: var(--borda); } }
+html[data-brilho="escuro"] .trilho-emp { background-color: var(--sup-2); }
+
+/* exames.css */
+html[data-brilho="escuro"] .ex-tabela .ex-linha .btn { color: var(--brilho); }
+html[data-brilho="escuro"] .ex-cores input[type=color] { background-color: var(--sup); }
+
+/* favoritos.css */
+html[data-brilho="escuro"] .fav-card { border-color: var(--borda); }
+html[data-brilho="escuro"] .fav-ico { background-color: var(--sup); }
+html[data-brilho="escuro"] .fav-ctl button { border-color: var(--borda); background-color: var(--sup); color: var(--brilho); }
+html[data-brilho="escuro"] .fav-simbolos { background-color: var(--sup); }
+html[data-brilho="escuro"] .fav-vazio { background-color: var(--sup); }
+
+/* fichas.css */
+html[data-brilho="escuro"] .pagina-impressao { background-color: var(--sup-2); }
+html[data-brilho="escuro"] .barra-impressao { background-color: var(--sup); }
+html[data-brilho="escuro"] .docs-escolha label.inline { background-color: var(--sup-2); }
+html[data-brilho="escuro"] .folha { background-color: var(--sup); color: var(--texto); }
+@media print { html, html[data-brilho="escuro"]  { background-color: var(--sup); } }
+html[data-brilho="escuro"] .ficha-extra { color: var(--texto); }
+
+/* qualidade.css */
+html[data-brilho="escuro"] .q-abas a { border-color: var(--borda); background-color: var(--sup); }
+html[data-brilho="escuro"] .q-chip { background-color: var(--sup-2); color: var(--suave); }
+html[data-brilho="escuro"] .q-chip.ok { background-color: var(--sup-2); color: color-mix(in srgb, #1e5631 32%, #ffffff); }
+html[data-brilho="escuro"] .q-chip.atencao { background-color: var(--sup-2); color: color-mix(in srgb, #7a5200 32%, #ffffff); }
+html[data-brilho="escuro"] .q-chip.critico { background-color: color-mix(in srgb, #fbdcd8 30%, var(--sup)); color: color-mix(in srgb, #8e2a1f 32%, #ffffff); }
+html[data-brilho="escuro"] .q-num { border-color: var(--borda); background-color: var(--sup); border-left-color: var(--borda); }
+html[data-brilho="escuro"] .q-ferramenta { border-color: var(--borda); background-color: var(--sup); }
+html[data-brilho="escuro"] .q-ferramenta .ic { color: var(--brilho); }
+html[data-brilho="escuro"] .q-kpi { border-color: var(--borda); background-color: var(--sup); border-top-color: var(--borda); }
+html[data-brilho="escuro"] .q-falta { background-color: var(--sup); }
+html[data-brilho="escuro"] .q-gut { color: var(--brilho); }
+html[data-brilho="escuro"] .q-pdca-blocos fieldset { border-color: var(--borda); }
+html[data-brilho="escuro"] .q-causas li { border-bottom-color: var(--borda); }
+html[data-brilho="escuro"] button.link { color: var(--brilho); }
+html[data-brilho="escuro"] button.link.perigo { color: color-mix(in srgb, #c62828 32%, #ffffff); }
+html[data-brilho="escuro"] .q-atrasada td { background-color: var(--sup-2); }
+html[data-brilho="escuro"] .q-editar summary { color: var(--brilho); }
+html[data-brilho="escuro"] .q-editar[open] > form { background-color: var(--sup); }
+html[data-brilho="escuro"] .q-pq-degrau b { color: var(--brilho); }
+html[data-brilho="escuro"] .q-pq-raiz { background-color: var(--sup-2); }
+html[data-brilho="escuro"] .q-swot-q.F { background-color: var(--sup-2); }
+html[data-brilho="escuro"] .q-swot-q.FR { background-color: var(--sup-2); }
+html[data-brilho="escuro"] .q-swot-q.O { background-color: var(--sup-2); }
+html[data-brilho="escuro"] .q-swot-q.A { background-color: var(--sup-2); }
+html[data-brilho="escuro"] .q-previa { background-color: var(--sup-2); }
+html[data-brilho="escuro"] .q-previa.ok { background-color: var(--sup-2); color: color-mix(in srgb, #1e5631 32%, #ffffff); }
+html[data-brilho="escuro"] .q-previa.atencao { background-color: var(--sup-2); color: color-mix(in srgb, #7a5200 32%, #ffffff); }
+html[data-brilho="escuro"] .q-previa.critico { background-color: color-mix(in srgb, #fbdcd8 30%, var(--sup)); color: color-mix(in srgb, #8e2a1f 32%, #ffffff); }
+html[data-brilho="escuro"] .fx-barra { border-color: var(--borda); background-color: var(--sup); }
+html[data-brilho="escuro"] .fx-barra button { border-color: var(--borda); background-color: var(--sup); }
+html[data-brilho="escuro"] .fx-salvo { color: color-mix(in srgb, #2e7d32 32%, #ffffff); }
+html[data-brilho="escuro"] .fx-salvo.erro { color: color-mix(in srgb, #c62828 32%, #ffffff); }
+html[data-brilho="escuro"] .fx-tela { border-color: var(--borda); background-color: var(--sup); }
+html[data-brilho="escuro"] .fx-props { border-color: var(--borda); background-color: var(--sup); }
+html[data-brilho="escuro"] .fx-dica { background-color: var(--sup); }
+html[data-brilho="escuro"] .q-swot-q, html[data-brilho="escuro"] .q-pq-raiz, html[data-brilho="escuro"] .q-pq-degrau { color: var(--texto); }
+html[data-brilho="escuro"] .fx-tela, html[data-brilho="escuro"] .q-org, html[data-brilho="escuro"] .q-ishikawa, html[data-brilho="escuro"] .q-pareto { background-color: var(--sup); }
+@media print { html[data-brilho="escuro"] .q-rodape-impressao { color: var(--suave); } }
+@media print { html[data-brilho="escuro"] , html[data-brilho="escuro"] .conteudo { background-color: var(--sup); } }
+
+/* saude.css */
+html[data-brilho="escuro"] .sd-alerta { background-color: var(--sup); }
+html[data-brilho="escuro"] .sd-barra { background-color: var(--sup-2); }
+
+/* tema.css */
+html[data-brilho="escuro"] .conteudo h1, html[data-brilho="escuro"] .cabecalho h1 { color: var(--brilho); }
+html[data-brilho="escuro"] .atomo { color: var(--brilho); }
+html[data-brilho="escuro"] .btn.sec { background-color: var(--sup); color: var(--brilho); border-color: var(--borda); }
+html[data-brilho="escuro"] .cartao, html[data-brilho="escuro"] .indicador, html[data-brilho="escuro"] .tabela-wrap, html[data-brilho="escuro"] .atalhos a { background-color: var(--sup); border-top-color: var(--borda); }
+html[data-brilho="escuro"] .tabela th { color: var(--brilho); border-bottom-color: var(--borda); }
+html[data-brilho="escuro"] .ag-grade th { color: var(--brilho); }
+html[data-brilho="escuro"] .etiqueta { color: var(--brilho); }
+@media print { html[data-brilho="escuro"] , html[data-brilho="escuro"] ::before { background-color: var(--sup); } }
+html[data-brilho="escuro"] .fav-simbolos button { color: var(--brilho); }
+
+/* tutorial.css */
+html[data-brilho="escuro"] .tut-balao { background-color: var(--sup); color: var(--texto); }
+html[data-brilho="escuro"] .tut-balao::before { background-color: var(--sup); }
+html[data-brilho="escuro"] .tut-titulo { color: color-mix(in srgb, #1d4f30 32%, #ffffff); }
+html[data-brilho="escuro"] .tut-barra { background-color: var(--sup-2); }
+html[data-brilho="escuro"] .tut-ant { background-color: var(--sup-2); color: color-mix(in srgb, #1d4f30 32%, #ffffff); }
+html[data-brilho="escuro"] .tut-pular { color: var(--suave); }
+
+/* app/templates/_lista_impressao.html */
+html[data-brilho="escuro"]  { background-color: var(--sup); }
+html[data-brilho="escuro"] .lista th { background-color: var(--sup-2); }
+
+/* app/templates/_nucleai_abas.html */
+html[data-brilho="escuro"] .nai-card { background-color: var(--sup); }
+html[data-brilho="escuro"] .nai-card b { color: var(--brilho); }
+html[data-brilho="escuro"] .nai-card.alerta b { color: color-mix(in srgb, #b42318 32%, #ffffff); }
+html[data-brilho="escuro"] .nai-barra { background-color: var(--sup-2); }
+html[data-brilho="escuro"] .nai-tag { background-color: var(--sup-2); color: color-mix(in srgb, #255f39 32%, #ffffff); }
+html[data-brilho="escuro"] .nai-tag.editada { background-color: var(--sup-2); color: color-mix(in srgb, #8a6100 32%, #ffffff); }
+html[data-brilho="escuro"] .nai-tag.nova { background-color: var(--sup-2); color: color-mix(in srgb, #1d4ed8 32%, #ffffff); }
+
+/* app/templates/atualizando.html */
+html[data-brilho="escuro"] .caixa { color: var(--texto); }
+html[data-brilho="escuro"] h1 { color: color-mix(in srgb, #255f39 32%, #ffffff); }
+html[data-brilho="escuro"] p.sub { color: var(--suave); }
+
+/* app/templates/caixa_diario.html */
+html[data-brilho="escuro"] .cxd-conta { color: var(--texto); }
+html[data-brilho="escuro"] .cxd-conta small { color: var(--suave); }
+html[data-brilho="escuro"] .cxd-legenda span { color: var(--texto); }
+
+/* app/templates/conta_form.html */
+html[data-brilho="escuro"] .parcela-item { background-color: var(--sup); }
+
+/* app/templates/ficha_extra_form.html */
+html[data-brilho="escuro"] .fx-chips button { background-color: var(--sup-2); }
+html[data-brilho="escuro"] .fx-previa { background-color: var(--sup); }
+
+/* app/templates/impressao.html */
+html[data-brilho="escuro"] .previsao-laudo { color: var(--texto); background-color: var(--sup); }
+
+/* app/templates/minha_senha.html */
+html[data-brilho="escuro"] .brilho-op.claro { background-color: var(--sup); color: var(--texto); }
+
+/* app/templates/movimento_quitacao.html */
+html[data-brilho="escuro"]  { color: var(--texto); }
+html[data-brilho="escuro"] .folha { border-color: var(--borda); }
+html[data-brilho="escuro"] .sub { color: var(--suave); }
+html[data-brilho="escuro"] td { border-bottom-color: var(--borda); }
+
+/* app/templates/nucleai_imprimir.html */
+html[data-brilho="escuro"] .barra button, html[data-brilho="escuro"] .barra a { background-color: var(--sup); color: color-mix(in srgb, #1f7a4d 32%, #ffffff); }
+
+/* app/templates/pesquisa_publica.html */
+html[data-brilho="escuro"] .cartao { background-color: var(--sup); }
+html[data-brilho="escuro"] .op span { background-color: var(--sup); }
+html[data-brilho="escuro"] input[type=text], html[data-brilho="escuro"] input[type=tel], html[data-brilho="escuro"] textarea { background-color: var(--sup); color: var(--texto); }
+html[data-brilho="escuro"] .erro { background-color: var(--sup-2); color: color-mix(in srgb, #8a1f14 32%, #ffffff); }
+
+/* app/templates/qualidade/satisfacao_cartaz.html */
+html[data-brilho="escuro"] .clinica { color: var(--texto); }
+html[data-brilho="escuro"] .wifi { background-color: var(--sup-2); }
+html[data-brilho="escuro"] .link { color: var(--suave); }
+
+/* app/templates/realizacoes_imprimir.html */
+html[data-brilho="escuro"] .ex-tabela th { background-color: var(--sup-2); }
+
+/* app/templates/usuario_form.html */
+html[data-brilho="escuro"] .mod-item:has(input:checked) { background-color: var(--sup-2); }
+
+/* ---------------------------------------------------------------- agenda no tema escuro: a grade fica com fundo BRANCO,
+   para as cores de status aparecerem como no claro (o calendário e o restante da tela continuam escuros) */
+html[data-brilho="escuro"] .ag-principal { --sup: #ffffff; --sup-2: #f4f7f5; --texto: #1d2522; --suave: #55635c; --borda: #cdd6d1;
+  background: #ffffff; color: #1d2522; border-radius: 12px; }
+html[data-brilho="escuro"] .ag-principal .ag-grade th { background-color: #e2e9e5; color: #3a4a41; border-color: #94a59c; }
+html[data-brilho="escuro"] .ag-principal .ag-grade td { border-color: #9aaaa1; }
+html[data-brilho="escuro"] .ag-principal .ag-linha td { background-color: #ffffff; }
+html[data-brilho="escuro"] .ag-principal .ag-linha.st-agendado td { background-color: #f1f4f2; }
+html[data-brilho="escuro"] .ag-principal .ag-linha.st-veio td { background-color: #bcd9f7; }
+html[data-brilho="escuro"] .ag-principal .ag-linha.st-retorno td { background-color: #bcd9f7; }
+html[data-brilho="escuro"] .ag-principal .ag-linha.st-faltou td { background-color: #ffab91; }
+html[data-brilho="escuro"] .ag-principal .ag-linha.st-resgatado td { background-color: #d4f1ea; }
+html[data-brilho="escuro"] .ag-principal .ag-linha.st-desistiu td { background-color: #e3e6ea; }
+html[data-brilho="escuro"] .ag-principal .ag-linha.protocolo td { background-color: #7ddf7d; }
+html[data-brilho="escuro"] .ag-principal .ag-linha.unacon td { background-color: #f4cccc; }
+html[data-brilho="escuro"] .ag-principal .ag-linha.unacon.livre td, html[data-brilho="escuro"] .ag-principal .ag-linha.unacon.st-agendado td { background-color: #f4cccc; }
+html[data-brilho="escuro"] .ag-principal .ag-status { background-color: #ffffff; border-color: #b9c4be; color: #1d2522; }
+html[data-brilho="escuro"] .ag-principal .ag-status.st-agendado { background-color: #f1f4f2; }
+html[data-brilho="escuro"] .ag-principal .ag-status.st-veio { background-color: #9cc8f0; border-color: #4f93d6; color: #0f3d6e; }
+html[data-brilho="escuro"] .ag-principal .ag-status.st-retorno { background-color: #9cc8f0; border-color: #4f93d6; color: #0f3d6e; }
+html[data-brilho="escuro"] .ag-principal .ag-status.st-faltou { background-color: #ff8a65; border-color: #e64a19; color: #4e1500; }
+html[data-brilho="escuro"] .ag-principal .ag-status.st-resgatado { background-color: #a9e6d2; border-color: #5cc2a2; color: #0f5a45; }
+html[data-brilho="escuro"] .ag-principal .ag-status.st-desistiu { background-color: #cfd5da; border-color: #97a3ab; color: #3d4a44; }
+html[data-brilho="escuro"] .ag-principal .ag-sel { background-color: #eef1ef; color: #44514a; }
+html[data-brilho="escuro"] .ag-principal .ag-sel.st-veio { background-color: #bcd9f7; color: #0f3d6e; }
+html[data-brilho="escuro"] .ag-principal .ag-sel.st-retorno { background-color: #bcd9f7; color: #0f3d6e; }
+html[data-brilho="escuro"] .ag-principal .ag-sel.st-faltou { background-color: #ffab91; color: #4e1500; }
+html[data-brilho="escuro"] .ag-principal .ag-sel.st-resgatado { background-color: #d4f1ea; color: #0f5a45; }
+html[data-brilho="escuro"] .ag-principal .ag-sel.st-desistiu { background-color: #e3e6ea; color: #3d4a44; }
+html[data-brilho="escuro"] .ag-principal .ag-sel.reservado { background-color: #f4cccc; color: #5c2b2b; }
+html[data-brilho="escuro"] .ag-principal .ag-sel.livre { background-color: #ffffff; }
+html[data-brilho="escuro"] .ag-principal .ag-cor.livre { background-color: #ffffff; }
+html[data-brilho="escuro"] .ag-principal .ag-cor.unacon { background-color: #f4cccc; }
+html[data-brilho="escuro"] .ag-principal .ag-cor.protocolo { background-color: #7ddf7d; }
+html[data-brilho="escuro"] .ag-principal .ag-ico { background-color: #ffffff; color: #255f39; border-color: #b9c4be; }
+html[data-brilho="escuro"] .ag-principal input[type=text] { background-color: #ffffff; color: #1d2522; }
+/* dentro da grade os campos são transparentes (como no claro): assim a linha inteira mostra a cor do status */
+html[data-brilho="escuro"] .ag-principal .ag-grade input[type=text], html[data-brilho="escuro"] .ag-principal .ag-grade select.ag-senha,
+html[data-brilho="escuro"] .ag-principal .ag-grade .ag-convsel { background-color: transparent; color: #1d2522; }
+html[data-brilho="escuro"] .ag-principal .ag-grade input[type=text]:focus, html[data-brilho="escuro"] .ag-principal .ag-grade select.ag-senha:focus,
+html[data-brilho="escuro"] .ag-principal .ag-grade .ag-convsel:focus { background-color: #ffffff; }
+html[data-brilho="escuro"] .ag-principal .ag-linha td, html[data-brilho="escuro"] .ag-principal .ag-hora, html[data-brilho="escuro"] .ag-principal .ag-texto { color: #1d2522; }
+
+/* Contraste dentro da grade branca. As regras GERADAS acima usam cores CLARAS (feitas para fundo escuro); dentro da grade, que é branca,
+   o horário, o lembrete, o título e o "→ novo dia" ficavam quase invisíveis (horário apagado nas linhas reservadas, por exemplo). */
+html[data-brilho="escuro"] .ag-principal .ag-linha .ag-hora { color: #1d2522; }
+html[data-brilho="escuro"] .ag-principal .ag-linha.livre .ag-hora { color: #6f7d75; }
+html[data-brilho="escuro"] .ag-principal .ag-linha.unacon.livre .ag-hora, html[data-brilho="escuro"] .ag-principal .ag-linha.unacon.st-agendado .ag-hora { color: #5c2b2b; }
+html[data-brilho="escuro"] .ag-principal .ag-senha.protocolo { color: #14501c; }
+html[data-brilho="escuro"] .ag-principal .ag-remarcado { color: #7a5200; }
+html[data-brilho="escuro"] .ag-principal .ag-lembrete { color: #fff; background-color: #c62828; border-color: #8e0000; }
+html[data-brilho="escuro"] .ag-principal .ag-bloco-tit h3 { color: #255f39; }
+html[data-brilho="escuro"] .ag-principal .ag-ico.ag-reserva-on { background-color: #f4cccc; border-color: #d99a9a; color: #7a2e2e; }

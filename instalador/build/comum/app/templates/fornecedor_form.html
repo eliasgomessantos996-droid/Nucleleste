@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+{% block titulo %}Fornecedor{% endblock %}
+{% block conteudo %}
+<h1>{{ 'Editar fornecedor' if fornecedor else 'Novo fornecedor' }}</h1>
+<form class="cartao" method="post" autocomplete="off">
+  {{ csrf_input }}
+  {% if para_conta %}<input type="hidden" name="para_conta" value="1">{% endif %}
+  <div class="grade">
+    <div class="c6"><label for="fo-cnpj">CNPJ</label>
+      <div style="display:flex;gap:8px"><input type="text" id="fo-cnpj" name="cnpj" value="{{ f.cnpj or '' }}" inputmode="numeric" placeholder="00.000.000/0000-00" autofocus>
+        <button class="btn sec" type="button" id="fo-buscar">Buscar na internet</button></div>
+      <div class="ajuda" id="fo-msg" role="status">Digite o CNPJ e busque para preencher os dados sozinho, ou preencha manualmente (o CNPJ é opcional).</div></div>
+    <div class="c6"><label class="obrig" for="fo-nome">Nome / razão social</label><input type="text" id="fo-nome" name="nome" value="{{ f.nome or '' }}" required data-maiusculas></div>
+    <div class="c6"><label for="fo-fantasia">Nome fantasia</label><input type="text" id="fo-fantasia" name="fantasia" value="{{ f.fantasia or '' }}" data-maiusculas></div>
+    <div class="c3"><label for="fo-tel">Telefone</label><input type="text" id="fo-tel" name="telefone" value="{{ f.telefone or '' }}"></div>
+    <div class="c3"><label for="fo-email">E-mail</label><input type="text" id="fo-email" name="email" value="{{ f.email or '' }}"></div>
+    <div class="c6"><label for="fo-end">Endereço</label><input type="text" id="fo-end" name="endereco" value="{{ f.endereco or '' }}"></div>
+    <div class="c4"><label for="fo-cidade">Cidade</label><input type="text" id="fo-cidade" name="cidade" value="{{ f.cidade or '' }}"></div>
+    <div class="c2"><label for="fo-uf">UF</label><input type="text" id="fo-uf" name="uf" value="{{ f.uf or '' }}" maxlength="2"></div>
+    <div class="c6"><label for="fo-contato">Pessoa de contato</label><input type="text" id="fo-contato" name="contato" value="{{ f.contato or '' }}"></div>
+    <div class="c12"><label for="fo-obs">Observação</label><input type="text" id="fo-obs" name="obs" value="{{ f.obs or '' }}"></div>
+    {% if fornecedor %}<div class="c12"><label class="inline"><input type="checkbox" name="ativo" value="1" {% if f.ativo %}checked{% endif %}> Fornecedor ativo (aparece na lista ao lançar contas)</label></div>{% endif %}
+  </div>
+  <div class="acoes">
+    <button class="btn" type="submit">Salvar</button>
+    <a class="btn sec" href="{{ url_for('fin.conta_fornecedores') }}">Voltar</a>
+  </div>
+</form>
+{% if fornecedor %}
+<form method="post" action="{{ url_for('fin.conta_fornecedor_excluir', fid=fornecedor.id) }}" data-confirmar="Excluir este fornecedor? As contas já lançadas continuam, só perdem o vínculo.">{{ csrf_input }}<button class="btn perigo peq" type="submit">Excluir fornecedor</button></form>
+{% endif %}
+{% endblock %}
+{% block scripts %}
+<script>
+(() => {
+  const campo = (id) => document.getElementById(id);
+  const msg = campo('fo-msg');
+  const dizer = (t, erro) => { msg.textContent = t; msg.style.color = erro ? 'var(--erro)' : ''; };
+  campo('fo-buscar').addEventListener('click', async () => {
+    const cnpj = campo('fo-cnpj').value.trim();
+    if (!cnpj) { dizer('Digite o CNPJ para buscar.', true); return; }
+    dizer('Buscando na internet…');
+    try {
+      const r = await (await fetch('/contas/fornecedores/consulta?cnpj=' + encodeURIComponent(cnpj))).json();
+      if (!r.ok) { dizer(r.erro || 'Não foi possível consultar.', true); return; }
+      const d = r.dados;
+      campo('fo-cnpj').value = d.cnpj;
+      campo('fo-nome').value = d.nome;
+      campo('fo-fantasia').value = d.fantasia;
+      campo('fo-tel').value = d.telefone;
+      campo('fo-email').value = d.email;
+      campo('fo-end').value = d.endereco;
+      campo('fo-cidade').value = d.cidade;
+      campo('fo-uf').value = d.uf;
+      dizer('Dados preenchidos (' + d.fonte + (d.situacao ? ', situação: ' + d.situacao : '') + '). Confira e salve.');
+    } catch (e) {
+      dizer('Sem conexão para consultar. Preencha manualmente.', true);
+    }
+  });
+})();
+</script>
+{% endblock %}

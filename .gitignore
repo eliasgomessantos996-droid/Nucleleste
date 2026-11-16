@@ -1,0 +1,33 @@
+# Dados reais e bancos: NUNCA versionar (pacientes, LGPD)
+dados/
+backup/
+*.db
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite3
+chave_secreta.txt
+*.zip
+*.rar
+
+# Segredos
+.env
+.env.*
+*.pem
+*.key
+
+# Temporários e gerados
+__pycache__/
+*.pyc
+.pytest_cache/
+.tmp*/
+tmp/
+SERSELIAS*
+*.log
+
+# Instalador: Python embutido e Setup gerado (centenas de MB)
+instalador/build/py-x64/
+instalador/build/py-x86/
+instalador/saida/
+instalador/Output/
+*.exe

@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% block titulo %}Registros de atividades{% endblock %}
+{% block conteudo %}
+<h1>Registros de atividades</h1>
+<p class="sub">Quem fez o quê e quando. Todo lançamento, alteração, exclusão, quitação e geração de documento fica gravado com o usuário. {{ total }} registro(s) no filtro{% if total > 1500 %} (mostrando os 1500 mais recentes){% endif %}.</p>
+<form class="cartao filtros" method="get">
+  <div><label>De</label><input type="date" name="de" value="{{ de }}"></div>
+  <div><label>Até</label><input type="date" name="ate" value="{{ ate }}"></div>
+  <div><label>Usuário</label><select name="usuario"><option value="">Todos</option>{% for u in usuarios %}<option {% if u == usuario %}selected{% endif %}>{{ u }}</option>{% endfor %}</select></div>
+  <div><label>Módulo</label><select name="modulo"><option value="">Todos</option>{% for m in modulos_lista %}<option {% if m == modulo %}selected{% endif %}>{{ m }}</option>{% endfor %}</select></div>
+  <div class="largo"><label>Buscar no detalhe</label><input type="search" name="q" value="{{ q }}" placeholder="nome, nota fiscal, convênio..."></div>
+  <div><button class="btn" type="submit">Filtrar</button></div>
+</form>
+{% if por_usuario %}
+<div class="grade" style="margin-bottom:16px">
+  <div class="c6 cartao"><h3>Por usuário</h3>{% for r in por_usuario %}<div class="pergunta"><span>{{ r.rotulo }}</span><b>{{ r.qtd }}</b></div>{% endfor %}</div>
+  <div class="c6 cartao"><h3>Por módulo</h3>{% for r in por_modulo %}<div class="pergunta"><span>{{ r.rotulo }}</span><b>{{ r.qtd }}</b></div>{% endfor %}</div>
+</div>
+{% endif %}
+<div class="tabela-wrap"><table class="tabela">
+  <thead><tr><th>Data/hora</th><th>Usuário</th><th>Módulo</th><th>Ação</th><th>Detalhe</th><th></th></tr></thead>
+  <tbody>
+  {% for r in rows %}
+    <tr><td style="white-space:nowrap">{{ r.data_hora[:10]|data_br }} {{ r.data_hora[11:19] }}</td><td><strong>{{ r.usuario or '—' }}</strong></td>
+      <td><span class="etiqueta">{{ r.modulo or '—' }}</span></td><td>{{ r.acao }}{% if r.com_nucleai %} <span class="etiqueta" title="Feito com auxílio da NucleAI">{{ ic('bot') }} NucleAI</span>{% endif %}</td>
+      <td style="max-width:520px;color:var(--suave);font-size:12.5px;word-break:break-word">{{ r.detalhe or '' }}</td>
+      <td style="white-space:nowrap">
+        {% if r.desfeito_em %}<small style="color:var(--suave)">Desfeito por {{ r.desfeito_por }}<br>{{ r.desfeito_em[:10]|data_br }} {{ r.desfeito_em[11:16] }}</small>
+        {% elif r.tem_desfazer and pode_desfazer %}
+        <form method="post" action="{{ url_for('reg.desfazer', rid=r.id) }}" onsubmit="return confirm('Desfazer esta ação? {{ r.acao|e }}')">
+          {{ csrf_input }}<input type="hidden" name="voltar" value="{{ request.full_path.rstrip('?') }}">
+          <button class="btn sec peq" type="submit" title="Volta atrás nesta ação, se os dados ainda estiverem como ela os deixou">↶ Desfazer</button>
+        </form>{% endif %}
+      </td></tr>
+  {% else %}<tr><td colspan="6" class="vazio">Nenhuma atividade registrada no período.</td></tr>{% endfor %}
+  </tbody>
+</table></div>
+{% endblock %}

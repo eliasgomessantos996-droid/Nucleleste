@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% from '_ic.html' import ic %}
+{% from '_fat_macros.html' import pilula, selo_glosa %}
+{% block titulo %}Protocolo da fatura{% endblock %}
+{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/fat.css') }}">{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='js/fat.js') }}"></script>{% endblock %}
+{% block conteudo %}
+<div class="cabecalho">
+  <div><h1>Protocolo do faturamento</h1>
+    <p class="sub">{{ fat.convenio }} · protocolo <b>{{ fat.protocolo or '—' }}</b> · referência {{ fat.referencia|data_br }} · {{ fat.qtd_guias or '—' }} guia(s) · R$ {{ fat.valor_bruto|moeda }}</p></div>
+  <div class="acoes">
+    <a class="btn sec com-icone" href="{{ url_for('fat.editar', fid=fat.id) }}">Editar fatura</a>
+    <a class="btn sec com-icone" href="{{ url_for('fat.resumo_pdf', fid=fat.id) }}" target="_blank" rel="noopener">{{ ic('file-text', 16) }} Resumo da fatura (PDF)</a>
+    <a class="btn sec" href="{{ url_for('fat.lista') }}">Voltar</a>
+  </div>
+</div>
+<p>{{ pilula({'status': fat.status, 'atrasada': False, 'previsao': fat.previsao}) }} {% if glosa %}{{ selo_glosa(glosa) }}{% endif %}
+  {% if fat.nota_fiscal %}<span class="fat-info">Nota fiscal <b>{{ fat.nota_fiscal }}</b></span>{% endif %}</p>
+
+{% if fat.anexo_id %}
+<div class="cartao fat-pdf-pagina">
+  <div class="fat-pdf-topo">
+    <span>{{ ic('file-text', 18) }} <b>{{ fat.protocolo_nome }}</b> · {{ '%.0f'|format((fat.protocolo_tamanho or 0) / 1024) }} KB · importado por {{ fat.protocolo_por or '—' }} em {{ (fat.protocolo_em or '')[:10]|data_br }}</span>
+    <span class="fat-esp"></span>
+    <a class="btn com-icone" href="{{ url_for('fat.protocolo_pdf', fid=fat.id, baixar=1) }}">{{ ic('file-down', 16) }} Baixar</a>
+    <a class="btn sec com-icone" href="{{ url_for('fat.protocolo_pdf', fid=fat.id) }}" target="_blank" rel="noopener">{{ ic('layout-grid', 16) }} Abrir em outra aba</a>
+  </div>
+  <iframe class="fat-quadro" src="{{ url_for('fat.protocolo_pdf', fid=fat.id) }}" title="PDF do protocolo"></iframe>
+</div>
+{% else %}
+<div class="cartao"><p class="vazio" style="margin:0">Esta fatura ainda não tem o PDF do protocolo. Importe abaixo para consultar depois, aqui dentro do sistema.</p></div>
+{% endif %}
+
+<form class="cartao fat-form" method="post" action="{{ url_for('fat.protocolo_enviar', fid=fat.id) }}" enctype="multipart/form-data" style="margin-top:14px">
+  {{ csrf_input }}
+  <label>{{ ic('upload', 16) }} {{ 'Trocar o PDF do protocolo' if fat.anexo_id else 'Importar o PDF do protocolo' }} <small>(somente PDF, até {{ max_mb }} MB)</small></label>
+  <div class="acoes" style="margin-top:6px"><input type="file" name="protocolo_pdf" accept="application/pdf,.pdf" required>
+    <button class="btn com-icone" type="submit">{{ ic('upload', 16) }} Importar</button></div>
+</form>
+{% if fat.anexo_id %}
+<form method="post" action="{{ url_for('fat.protocolo_remover', fid=fat.id) }}" data-confirmar="Remover o PDF deste protocolo? A fatura continua; só o arquivo sai.">{{ csrf_input }}<button class="btn perigo peq" type="submit">Remover o PDF</button></form>
+{% endif %}
+{% endblock %}

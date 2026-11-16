@@ -1,0 +1,157 @@
+{% extends 'base.html' %}
+{% from '_ic.html' import ic %}
+{% block titulo %}Prontuário do paciente{% endblock %}
+{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/prontuario.css') }}">{% endblock %}
+{% block conteudo %}
+{% set p = h.prontuario %}
+<div class="cartao pr-cabecalho">
+  <div class="pr-arte" aria-hidden="true">
+    <svg viewBox="0 0 120 96" class="pr-svg">
+      <rect x="22" y="14" width="76" height="72" rx="8" class="pr-prancheta"/>
+      <rect x="46" y="6" width="28" height="14" rx="4" class="pr-prendedor"/>
+      <path class="pr-batimento" pathLength="100" d="M30 52H46L52 36L60 66L68 44L72 52H90"/>
+    </svg>
+  </div>
+  <div>
+    <h1>{{ cliente.nome }}</h1>
+    <p class="sub"><strong>Prontuário nº {{ p.numero }}</strong> · Código {{ cliente.id }}{% if cliente.data_nasc %} · Idade {{ cliente.data_nasc|idade }} (nasc. {{ cliente.data_nasc|data_br }}){% endif %}
+      · Nome da mãe {{ cliente.nome_mae or 'não informado' }} · CPF {{ cliente.cpf or 'não informado' }} · Convênio {{ cliente.convenio or 'não informado' }}{% if cliente.contato %} · Contato {{ cliente.contato }}{% endif %}</p>
+  </div>
+  <div class="acoes">
+    <a class="btn sec" href="{{ url_for('pront.paciente_imprimir', cid=cliente.id) }}">{{ ic('file-down', 16) }} Imprimir histórico</a>
+    {% if pode('documentos') %}<a class="btn sec" href="/documentos/pedido-exame?cliente={{ cliente.id }}">Pedido de exame</a>{% endif %}
+    <a class="btn sec" href="{{ url_for('cad.cliente_historico', cid=cliente.id) }}">{{ ic('history', 16) }} Histórico</a>
+    <a class="btn sec" href="{{ url_for('cad.cliente_editar', cid=cliente.id) }}">Cadastro</a>
+  </div>
+</div>
+
+<div class="cartao">
+  <h2>Novo documento</h2>
+  <form method="post" action="{{ url_for('pront.doc_novo', cid=cliente.id) }}" class="filtros">
+    {{ csrf_input }}
+    <div class="largo"><label>Tipo de documento</label>
+      <select name="tipo" required>{% for t, titulo in modelos %}<option value="{{ t }}">{{ titulo }}</option>{% endfor %}</select></div>
+    <div class="largo"><label>Atendimento (opcional)</label>
+      <select name="atendimento_id"><option value="">Sem vincular a atendimento</option>
+        {% for a in h.atendimentos %}<option value="{{ a.id }}">{{ a.data|data_br }} · {{ a.exame }}</option>{% endfor %}</select></div>
+    <div><button class="btn" type="submit">Novo documento</button></div>
+  </form>
+</div>
+
+<div class="cartao">
+  <h2>Pendências</h2>
+  {% if h.pendentes %}
+  <div class="tabela-wrap"><table class="tabela">
+    <thead><tr><th>Documento</th><th>Atendimento</th><th>Situação</th><th></th></tr></thead>
+    <tbody>
+    {% for d in h.pendentes %}
+      <tr><td>{{ d.titulo or d.tipo }}</td><td>{% for a in h.atendimentos if a.id == d.atendimento_id %}{{ a.data|data_br }} · {{ a.exame }}{% endfor %}</td>
+        <td><span class="etiqueta">{{ situacoes[d.situacao] }}</span></td>
+        <td><a class="btn peq" href="{{ url_for('pront.doc', did=d.id) }}">Abrir</a></td></tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+  {% else %}
+  <p class="ajuda">Nenhuma pendência para este paciente.</p>
+  {% endif %}
+</div>
+
+<h2>Linha do tempo dos atendimentos</h2>
+{% for a in h.atendimentos %}
+<div class="pr-linha-tempo">
+  <div class="pr-ponto" aria-hidden="true"></div>
+  <div class="cartao pr-atend">
+    <div class="pr-atend-cab">
+      <strong>{{ a.data|data_br }}</strong> · {{ a.exame or '' }}
+      {% if a.interno %}<span class="etiqueta">Interno{% if a.interno_local %} — {{ a.interno_local }}{% endif %}</span>{% endif %}
+    </div>
+    <div class="ajuda">Convênio {{ a.convenio or '—' }} · Médico {{ a.medico or '—' }} · Lançado por {{ a.usuario or '—' }}</div>
+    {% if a.docs %}
+    <ul class="pr-docs">
+      {% for d in a.docs %}
+      <li><span>{{ d.titulo or d.tipo }}</span> <span class="etiqueta">{{ situacoes[d.situacao] }}</span>
+        <a class="btn sec peq" href="{{ url_for('pront.doc', did=d.id) }}">Abrir</a>
+        <a class="btn sec peq" href="{{ url_for('pront.doc_imprimir', did=d.id) }}">Imprimir</a></li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+    {% if a.sugeridos %}
+    <div class="pr-sugeridos"><span class="ajuda">Sugeridos para este exame:</span>
+      {% for s in a.sugeridos %}
+      <form method="post" action="{{ url_for('pront.doc_novo', cid=cliente.id) }}" style="display:inline">
+        {{ csrf_input }}
+        <input type="hidden" name="atendimento_id" value="{{ a.id }}">
+        <input type="hidden" name="tipo" value="{{ s.tipo }}">
+        <button class="btn sec peq" type="submit" title="{{ s.titulo }}">+ {{ s.sigla }}</button>
+      </form>
+      {% endfor %}
+    </div>
+    {% endif %}
+    <details class="pr-mais">
+      <summary>+ Documento</summary>
+      <form method="post" action="{{ url_for('pront.doc_novo', cid=cliente.id) }}" class="filtros">
+        {{ csrf_input }}
+        <input type="hidden" name="atendimento_id" value="{{ a.id }}">
+        <div class="largo"><select name="tipo" required>{% for t, titulo in modelos %}<option value="{{ t }}">{{ titulo }}</option>{% endfor %}</select></div>
+        <div><button class="btn sec peq" type="submit">Criar</button></div>
+      </form>
+    </details>
+  </div>
+</div>
+{% else %}
+<p class="ajuda">Nenhum atendimento registrado para este paciente.</p>
+{% endfor %}
+
+{% if h.docs_avulsos %}
+<div class="cartao">
+  <h2>Documentos sem atendimento</h2>
+  <ul class="pr-docs">
+    {% for d in h.docs_avulsos %}
+    <li><span>{{ d.titulo or d.tipo }}</span> <span class="etiqueta">{{ situacoes[d.situacao] }}</span>
+      <a class="btn sec peq" href="{{ url_for('pront.doc', did=d.id) }}">Abrir</a>
+      <a class="btn sec peq" href="{{ url_for('pront.doc_imprimir', did=d.id) }}">Imprimir</a></li>
+    {% endfor %}
+  </ul>
+</div>
+{% endif %}
+
+{% if h.realizacoes %}
+<div class="cartao">
+  <h2>Exames realizados</h2>
+  <div class="tabela-wrap"><table class="tabela">
+    <thead><tr><th>Data</th><th>Exame</th><th>Fármaco</th><th>Radiofármaco</th><th>Atividade</th><th>Lote</th><th>Laudo</th></tr></thead>
+    <tbody>{% for r in h.realizacoes %}<tr><td>{{ r.data|data_br }}</td><td>{{ r.exame or '' }}</td><td>{{ r.farmaco or '' }}</td><td>{{ r.radio or '' }}</td><td>{{ r.ativ_administrada or '' }}</td><td>{{ r.lote or '' }}</td><td>{{ r.laudo_situacao or '' }}</td></tr>{% endfor %}</tbody>
+  </table></div>
+</div>
+{% endif %}
+
+{% if h.doses %}
+<div class="cartao">
+  <h2>Doses / medicamentos</h2>
+  <div class="tabela-wrap"><table class="tabela">
+    <thead><tr><th>Data</th><th>Medicamento</th><th>MCI</th><th>Situação</th></tr></thead>
+    <tbody>{% for r in h.doses %}<tr><td>{{ r.data_dose|data_br }}</td><td>{{ r.medicamento or '' }}</td><td>{{ r.mci or '' }}</td><td>{{ r.status or '' }}</td></tr>{% endfor %}</tbody>
+  </table></div>
+</div>
+{% endif %}
+
+{% if h.pedidos %}
+<div class="cartao">
+  <h2>Pedidos de exame</h2>
+  <div class="tabela-wrap"><table class="tabela">
+    <thead><tr><th>Data</th><th>Exames</th><th>Médico</th></tr></thead>
+    <tbody>{% for r in h.pedidos %}<tr><td>{{ r.data|data_br }}</td><td>{{ r.exames or '' }}</td><td>{{ r.medico or '' }}</td></tr>{% endfor %}</tbody>
+  </table></div>
+</div>
+{% endif %}
+
+{% if h.guias %}
+<div class="cartao">
+  <h2>Guias</h2>
+  <div class="tabela-wrap"><table class="tabela">
+    <thead><tr><th>Modelo</th><th>Criada em</th></tr></thead>
+    <tbody>{% for r in h.guias %}<tr><td>{{ r.modelo or '' }}</td><td>{{ r.criado_em or '' }}</td></tr>{% endfor %}</tbody>
+  </table></div>
+</div>
+{% endif %}
+{% endblock %}

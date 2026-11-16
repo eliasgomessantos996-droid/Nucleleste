@@ -1,0 +1,22 @@
+<div class="tabela-wrap"><table class="tabela q-tabela-5w2h">
+  <thead><tr>{% if mostrar_problema is defined and mostrar_problema %}<th>Problema</th>{% endif %}<th>O quê</th><th>Por quê</th><th>Onde</th><th>Quando</th><th>Quem</th><th>Como</th><th class="num">Custo</th><th>Situação</th><th class="q-nao-imprime"></th></tr></thead>
+  <tbody>
+  {% for a in (acoes if acoes is defined else p.acoes) %}
+    <tr class="{{ 'q-atrasada' if a.atrasada }}">
+      {% if mostrar_problema is defined and mostrar_problema %}<td>{% if a.problema_id %}<a href="{{ url_for('qual.problema_pagina', pid=a.problema_id) }}">{{ a.problema }}</a>{% else %}—{% endif %}</td>{% endif %}
+      <td><strong>{{ a.o_que }}</strong></td><td>{{ a.por_que }}</td><td>{{ a.onde }}</td>
+      <td>{{ a.quando|data_br if a.quando else '' }}{% if a.atrasada %} <span class="q-chip critico">atrasada</span>{% endif %}</td>
+      <td>{{ a.quem }}</td><td>{{ a.como }}</td><td class="num">{{ a.quanto|moeda if a.quanto is not none else '' }}</td><td>{{ a.status }}</td>
+      <td class="q-nao-imprime" style="white-space:nowrap">
+        <details class="q-editar"><summary>Editar</summary>
+          <form method="post" action="{{ url_for('qual.acao_salvar', aid=a.id) }}">{{ csrf_input }}<input type="hidden" name="voltar" value="{{ request.full_path }}">
+            {% include 'qualidade/_acao_campos.html' %}<button class="btn sec" type="submit">Salvar</button></form>
+          <form method="post" action="{{ url_for('qual.acao_excluir', aid=a.id) }}" onsubmit="return confirm('Excluir a ação?')">{{ csrf_input }}<input type="hidden" name="voltar" value="{{ request.full_path }}"><button class="btn perigo peq" type="submit">Excluir</button></form>
+        </details>
+      </td>
+    </tr>
+  {% else %}
+    <tr><td colspan="10" class="sub">Nenhuma ação no plano.</td></tr>
+  {% endfor %}
+  </tbody>
+</table></div>

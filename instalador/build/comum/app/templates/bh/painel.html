@@ -1,0 +1,46 @@
+{% extends 'bh/layout.html' %}
+{% block titulo %}Banco de Horas{% endblock %}
+{% block conteudo %}
+<div class="cabecalho">
+  <div><h1>Banco de Horas</h1><p class="sub">Acompanhe o saldo de cada funcionário e as pendências do período.</p></div>
+  <div class="acoes">
+    <form method="get" action="{{ url_for('bh.pesquisa') }}" class="bh-linha"><input type="search" name="q" placeholder="Pesquisar no Banco de Horas" class="bh-busca" aria-label="Pesquisar"><button class="btn sec" type="submit">Pesquisar</button></form>
+    {% if pode('bh_gestao') %}<a class="btn" href="{{ url_for('bh.importacoes') }}">↥ Importar planilha do ponto</a>{% endif %}
+  </div>
+</div>
+<div class="bh-periodo"><form method="get"><div><label for="month">Período de referência</label><input type="month" id="month" name="month" value="{{ month }}" required></div><button class="btn sec" type="submit">Consultar</button></form><span class="bh-muted">Saldos acumulados até o fim do mês</span></div>
+<div class="bh-cartoes">
+  <div class="bh-cartao"><div class="r">Funcionários no período</div><div class="v">{{ summary.employee_count }}</div><div class="d">Cadastros com acompanhamento</div></div>
+  <div class="bh-cartao"><div class="r">Saldo credor</div><div class="v bh-pos">{{ summary.positive_minutes|bh_min }}</div><div class="d">Horas a favor dos funcionários</div></div>
+  <div class="bh-cartao"><div class="r">Saldo devedor</div><div class="v bh-neg">{{ summary.negative_minutes|bh_min }}</div><div class="d">Horas a compensar</div></div>
+  <div class="bh-cartao"><div class="r">Dias pendentes</div><div class="v" {% if summary.pending_count %}style="color:var(--aviso)"{% endif %}>{{ summary.pending_count }}</div><div class="d">Precisam de conferência</div></div>
+</div>
+{% include 'bh/_ocorrencias.html' %}
+<div class="cartao">
+  <div class="cabecalho" style="margin-bottom:8px"><div><h2 style="margin:0">Saldos por funcionário</h2><p class="sub" style="margin:0">Abra o extrato para conferir batidas e realizar correções.</p></div>
+    <input type="search" class="bh-busca" placeholder="Buscar nome ou Número I" aria-label="Buscar funcionário" data-table-search="saldos"></div>
+  {% if reports %}
+  <div class="tabela-wrap"><table class="tabela" id="saldos">
+    <thead><tr><th>Funcionário</th><th class="num">Saldo anterior</th><th class="num">Movimento do mês</th><th class="num">Saldo acumulado</th><th>Situação</th><th></th></tr></thead>
+    <tbody>
+    {% for item in reports %}{% set p = item.employee %}
+      <tr>
+        <td><div class="bh-pessoa"><span class="bh-avatar">{{ p.name[:1]|upper }}</span><div><strong>{{ p.name }}</strong><small>Número I: {{ p.clock_id }}</small></div></div></td>
+        <td class="num">{{ item.previous_balance|bh_smin }}</td>
+        <td class="num {{ 'bh-neg' if item.movement < 0 else 'bh-pos' }}">{{ item.movement|bh_smin }}</td>
+        <td class="num bh-forte {{ 'bh-neg' if item.final_balance < 0 else 'bh-pos' }}">{{ item.final_balance|bh_smin }}</td>
+        <td>{% if item.pending_count %}<span class="etiqueta aberto">{{ item.pending_count }} pendência{{ 's' if item.pending_count != 1 else '' }}</span>{% else %}<span class="etiqueta pago">Conferido</span>{% endif %}</td>
+        <td class="num"><a class="btn sec peq" href="{{ url_for('bh.extrato', employee_id=p.id, month=month) }}">Ver extrato →</a></td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+  {% else %}
+  <div class="bh-info" style="padding:26px;justify-content:center;flex-direction:column;align-items:center;text-align:center">
+    <h3>Seu banco de horas começa aqui</h3><p>Cadastre os funcionários e suas jornadas. Depois, importe a planilha do relógio de ponto.</p>
+    {% if pode('bh_gestao') %}<div class="acoes"><a class="btn" href="{{ url_for('bh.funcionario_novo') }}">Cadastrar funcionário</a><a class="btn sec" href="{{ url_for('bh.importacoes') }}">Importar planilha</a></div>{% endif %}
+  </div>
+  {% endif %}
+</div>
+<p class="bh-info">ⓘ Dias com jornada ou batidas pendentes não entram no saldo confirmado. Resolva as pendências antes de emitir o relatório para assinatura.</p>
+{% endblock %}

@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% block titulo %}Fornecedores{% endblock %}
+{% block conteudo %}
+<div class="cabecalho">
+  <div><h1>Fornecedores</h1><p class="sub">{{ rows|length }} fornecedor(es). Cadastre pelo CNPJ (os dados vêm da internet) ou manualmente e vincule às contas a pagar.</p></div>
+  <div class="acoes">
+    <a class="btn sec" href="{{ url_for('fin.contas') }}">Contas a pagar</a>
+    <a class="btn sec" href="{{ url_for('fin.conta_fornecedores_relatorio') }}">Contas por fornecedor</a>
+    <a class="btn" href="{{ url_for('fin.conta_fornecedor_editar') }}">+ Novo fornecedor</a>
+  </div>
+</div>
+<form class="cartao filtros" method="get">
+  <div><label for="q">Buscar por nome ou CNPJ</label><input type="search" id="q" name="q" value="{{ q }}"></div>
+  <div><button class="btn" type="submit">Buscar</button></div>
+</form>
+<div class="tabela-wrap"><table class="tabela">
+  <thead><tr><th>Fornecedor</th><th>CNPJ</th><th>Contato</th><th>Cidade</th><th class="num">Contas</th><th class="num">Em aberto (R$)</th><th></th></tr></thead>
+  <tbody>
+  {% for r in rows %}
+    <tr><td><a href="{{ url_for('fin.conta_fornecedor_editar', fid=r.id) }}">{{ r.nome }}</a>{% if r.fantasia and r.fantasia != r.nome %}<br><small>{{ r.fantasia }}</small>{% endif %}
+        {% if not r.ativo %} <span class="etiqueta cancelado">inativo</span>{% endif %}</td>
+      <td>{{ r.cnpj or '' }}</td><td>{{ r.telefone or '' }}{% if r.email %}<br><small>{{ r.email }}</small>{% endif %}</td>
+      <td>{{ r.cidade or '' }}{% if r.uf %}/{{ r.uf }}{% endif %}</td><td class="num">{{ r.contas }}</td><td class="num">{{ r.em_aberto|moeda }}</td>
+      <td class="num"><a class="btn sec peq" href="{{ url_for('fin.conta_fornecedores_relatorio', fornecedor=r.id) }}">Relatório</a></td></tr>
+  {% else %}<tr><td colspan="7" class="vazio">Nenhum fornecedor cadastrado.</td></tr>{% endfor %}
+  </tbody>
+</table></div>
+{% endblock %}

@@ -1,0 +1,32 @@
+{% extends 'qualidade/_base.html' %}
+{% block titulo %}Avaliar fornecedor{% endblock %}
+{% block titulo_q %}Avaliar: {{ f.nome }}{% endblock %}
+{% block sub_q %}{{ f.cnpj or 'sem CNPJ' }}{{ ' · ' ~ f.fantasia if f.fantasia }}. Dê uma nota de 1 (muito ruim) a 5 (excelente) em cada critério; o peso define a importância.{% endblock %}
+{% block corpo_q %}
+<form class="cartao q-form" method="post" data-forn-form>
+  {{ csrf_input }}
+  <div class="q-linha3"><label>Data da avaliação<input type="date" name="data" value="{{ form.get('data') or hoje }}"></label>
+    <label>Período avaliado<input type="text" name="periodo" value="{{ form.get('periodo', '') }}" placeholder="Ex.: 1º semestre de 2026"></label>
+    <label class="q-check"><input type="checkbox" name="critico" value="1" {{ 'checked' if form.get('critico') }}> fornecedor crítico (afeta o paciente ou o exame)</label></div>
+  <table class="tabela q-criterios">
+    <thead><tr><th>Critério</th><th class="num">Peso</th><th>Nota</th><th>Comentário</th></tr></thead>
+    <tbody>{% for c in criterios %}
+      <tr><td><strong>{{ c.nome }}</strong><br><small>{{ c.descricao }}</small></td><td class="num">{{ c.peso }}</td>
+        <td><div class="q-notas" role="radiogroup" aria-label="Nota de {{ c.nome }}">{% for n in range(1, 6) %}
+          <label><input type="radio" name="nota_{{ c.id }}" value="{{ n }}" data-peso="{{ c.peso }}" required {{ 'checked' if form.get('nota_%d'|format(c.id)) == n|string }}><span>{{ n }}</span></label>{% endfor %}</div></td>
+        <td><input type="text" name="coment_{{ c.id }}" value="{{ form.get('coment_%d'|format(c.id), '') }}" maxlength="300"></td></tr>
+    {% endfor %}</tbody>
+  </table>
+  <p class="q-previa" data-previa>Preencha as notas para ver o resultado.</p>
+  <label>Ação (obrigatória se não for aprovado)<textarea name="acao" rows="2">{{ form.get('acao', '') }}</textarea></label>
+  <label>Observações<textarea name="obs" rows="2">{{ form.get('obs', '') }}</textarea></label>
+  <label style="max-width:16em">Próxima avaliação<input type="date" name="proxima" value="{{ form.get('proxima', '') }}"><small>Em branco: 12 meses se aprovado, 6 meses nos demais.</small></label>
+  <button class="btn" type="submit">Gravar avaliação</button> <a class="btn sec" href="{{ url_for('qual.forn') }}">Voltar</a>
+</form>
+{% if historico %}
+<h2>Histórico</h2>
+<div class="tabela-wrap"><table class="tabela"><thead><tr><th>Data</th><th>Avaliador</th><th class="num">Nota</th><th>Classificação</th><th>Próxima</th><th></th></tr></thead>
+  <tbody>{% for a in historico %}<tr><td>{{ a.data|data_br }}</td><td>{{ a.avaliador }}</td><td class="num">{{ '%.1f'|format(a.percentual) }}%</td><td>{{ a.classificacao }}</td>
+    <td>{{ a.proxima|data_br if a.proxima else '' }}</td><td><a href="{{ url_for('qual.forn_avaliacao_pdf', aid=a.id) }}">PDF</a></td></tr>{% endfor %}</tbody></table></div>
+{% endif %}
+{% endblock %}

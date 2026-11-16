@@ -1,0 +1,44 @@
+{% extends 'qualidade/_base.html' %}
+{% from 'qualidade/_modelos.html' import pdf_botoes with context %}
+{% block titulo %}Gráfico de Pareto{% endblock %}
+{% block titulo_q %}Gráfico de Pareto{% endblock %}
+{% block sub_q %}Barras em ordem decrescente e a linha do percentual acumulado. Os itens até 80% (classe A) são os "poucos vitais": atacá-los resolve a maior parte do problema.{% endblock %}
+{% block acoes_q %}
+{{ pdf_botoes(url_for('qual.pareto_arquivo', tipo='pdf') ~ '?fonte=' ~ fonte ~ '&de=' ~ de ~ '&ate=' ~ ate) }}
+<a class="btn sec" href="{{ url_for('qual.pareto_arquivo', tipo='xlsx') }}?fonte={{ fonte }}&de={{ de }}&ate={{ ate }}">⬇ Excel</a>
+{% endblock %}
+{% block corpo_q %}
+<form class="cartao filtros q-nao-imprime" method="get">
+  <div><label for="fonte">Dados</label><select id="fonte" name="fonte">{% for k, nome in fontes %}<option value="{{ k }}" {{ 'selected' if k == fonte }}>{{ nome }}</option>{% endfor %}</select></div>
+  <div><label for="de">De</label><input type="date" id="de" name="de" value="{{ de }}"></div>
+  <div><label for="ate">Até</label><input type="date" id="ate" name="ate" value="{{ ate }}"></div>
+  <div><button class="btn" type="submit">Gerar</button></div>
+</form>
+<div class="cartao q-folha-paisagem">
+  <h2 style="margin-top:0">{{ p.nome }} · {{ de|data_br }} a {{ ate|data_br }}</h2>
+  {% if p.itens %}
+  <div class="q-pareto" data-pareto='{{ p.itens|tojson }}'></div>
+  {% if p.vitais %}<p><b>Poucos vitais (classe A):</b> {% for i in p.vitais %}<span class="q-chip critico">{{ i.rotulo }} · {{ '%.0f'|format(i.pct) }}%</span>{% endfor %}</p>{% endif %}
+  {% else %}<p class="sub">Sem dados para esta fonte no período.</p>{% endif %}
+</div>
+{% if p.itens %}
+<div class="tabela-wrap"><table class="tabela">
+  <thead><tr><th>Item</th><th class="num">Quantidade</th><th class="num">%</th><th class="num">% acumulado</th><th>Classe</th></tr></thead>
+  <tbody>{% for i in p.itens %}<tr><td>{{ i.rotulo }}</td><td class="num">{{ '%g'|format(i.valor) }}</td><td class="num">{{ '%.1f'|format(i.pct) }}%</td><td class="num">{{ '%.1f'|format(i.acum) }}%</td><td><span class="q-chip {{ 'critico' if i.classe == 'A' else 'atencao' if i.classe == 'B' }}">{{ i.classe }}</span></td></tr>{% endfor %}</tbody>
+  <tfoot><tr><td>Total</td><td class="num">{{ '%g'|format(p.total) }}</td><td colspan="3"></td></tr></tfoot>
+</table></div>
+{% endif %}
+{% if fonte == 'faltas_motivo' %}
+<div class="cartao q-nao-imprime">
+  <h2 style="margin-top:0">Faltas sem motivo ({{ pendentes|length }}{{ '+' if pendentes|length >= 200 }})</h2>
+  <p class="sub">O motivo da falta não existe na agenda: classifique aqui para o Pareto e o robô entenderem a causa. Não aparece o nome do paciente.</p>
+  {% if pendentes %}
+  <div class="tabela-wrap"><table class="tabela"><thead><tr><th>Data</th><th>Hora</th><th>Exame</th><th>Convênio</th><th>Motivo</th></tr></thead><tbody>
+  {% for f in pendentes %}<tr><td>{{ f.data|data_br }}</td><td>{{ f.hora }}</td><td>{{ f.exame }}</td><td>{{ f.convenio }}</td>
+    <td><form class="q-form-inline" method="post" action="{{ url_for('qual.falta_motivo', hid=f.id) }}">{{ csrf_input }}<input type="hidden" name="voltar" value="{{ request.full_path }}">
+      <select name="motivo" required><option value="">Escolha…</option>{% for m in motivos %}<option>{{ m }}</option>{% endfor %}</select><button class="btn sec peq" type="submit">ok</button></form></td></tr>{% endfor %}
+  </tbody></table></div>
+  {% else %}<p>Todas as faltas do período já têm motivo. 👍</p>{% endif %}
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,152 @@
+/* Saúde do sistema: visual próprio. Cores por nível: azul = ótimo, verde = bom, amarelo = atenção, vermelho = crítico. */
+.nv-otimo { --nv: #1d7fe0; --nv-bg: #e4f0fd; --nv-fundo: #f1f8ff; --hero-a: #0a2f5c; --hero-b: #1d7fe0; }
+.nv-bom   { --nv: #2c9a52; --nv-bg: #e3f4ea; --nv-fundo: #f2faf5; --hero-a: #0e3d25; --hero-b: #2c9a52; }
+.nv-medio { --nv: #dc9a0d; --nv-bg: #fff3d0; --nv-fundo: #fffaeb; --hero-a: #5b3f05; --hero-b: #e0a21b; }
+.nv-ruim  { --nv: #d6453d; --nv-bg: #fde7e5; --nv-fundo: #fff4f3; --hero-a: #5a1511; --hero-b: #d6453d; }
+
+/* ---------- herói ---------- */
+.sd-hero { position: relative; overflow: hidden; display: grid; grid-template-columns: 190px 1fr 150px; gap: 26px; align-items: center;
+  padding: 26px 30px; border-radius: 18px; color: #fff; margin-bottom: 16px;
+  background: linear-gradient(125deg, var(--hero-a), var(--hero-b)); background-size: 160% 160%;
+  box-shadow: 0 14px 34px -14px var(--hero-b); animation: sd-fundo 14s ease-in-out infinite, sd-entra .6s both; }
+.sd-hero h2 { margin: 6px 0 6px; font-size: 28px; line-height: 1.15; color: #fff; }
+.sd-hero p { margin: 0; opacity: .92; max-width: 56ch; }
+.sd-chip-nivel { display: inline-block; padding: 3px 12px; border-radius: 99px; background: rgba(255,255,255,.2); font-size: 12px; font-weight: 700;
+  letter-spacing: .08em; text-transform: uppercase; backdrop-filter: blur(4px); }
+.sd-meta { display: flex; flex-wrap: wrap; gap: 8px 18px; margin-top: 14px; font-size: 13px; opacity: .95; align-items: center; }
+.sd-meta b { font-weight: 700; }
+.sd-verificar { color: #fff; background: rgba(255,255,255,.18); padding: 4px 12px; border-radius: 99px; text-decoration: none; font-weight: 600; transition: background .2s, transform .2s; }
+.sd-verificar:hover { background: rgba(255,255,255,.32); transform: translateY(-1px); }
+.sd-alertas { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.sd-alerta { background: #fff; color: var(--nv); padding: 3px 12px; border-radius: 99px; font-size: 12.5px; font-weight: 700; text-decoration: none;
+  animation: sd-pisca-suave 2.2s ease-in-out infinite; }
+.sd-bolhas { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+.sd-bolhas i { position: absolute; bottom: -30px; width: 14px; height: 14px; border-radius: 50%; background: rgba(255,255,255,.16);
+  animation: sd-sobe-bolha 9s linear infinite; }
+.sd-bolhas i:nth-child(1) { left: 6%; animation-delay: 0s; } .sd-bolhas i:nth-child(2) { left: 18%; width: 22px; height: 22px; animation-delay: 2s; animation-duration: 12s; }
+.sd-bolhas i:nth-child(3) { left: 36%; animation-delay: 4s; } .sd-bolhas i:nth-child(4) { left: 55%; width: 10px; height: 10px; animation-delay: 1s; animation-duration: 8s; }
+.sd-bolhas i:nth-child(5) { left: 70%; width: 26px; height: 26px; animation-delay: 5s; animation-duration: 13s; } .sd-bolhas i:nth-child(6) { left: 83%; animation-delay: 3s; }
+.sd-bolhas i:nth-child(7) { left: 94%; width: 12px; height: 12px; animation-delay: 6s; }
+
+/* escudo com batimento */
+.sd-escudo svg { width: 100%; height: auto; overflow: visible; filter: drop-shadow(0 8px 14px rgba(0,0,0,.25)); }
+.sd-escudo-corpo { transform-origin: 100px 100px; animation: sd-bate 1.6s ease-in-out infinite; }
+.sd-ecg-base { fill: none; stroke: var(--hero-a); stroke-opacity: .25; stroke-width: 6; stroke-linecap: round; stroke-linejoin: round; }
+.sd-ecg { fill: none; stroke: var(--hero-a); stroke-width: 6; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 34 66; animation: sd-ecg 1.9s linear infinite; }
+.sd-onda { fill: none; stroke: rgba(255,255,255,.55); stroke-width: 2; transform-origin: 100px 100px; animation: sd-onda 2.8s ease-out infinite; }
+.sd-onda.w2 { animation-delay: 1.4s; }
+.sd-orbita { transform-origin: 100px 100px; animation: sd-gira 12s linear infinite; }
+.sd-sat { fill: #fff; opacity: .85; }
+
+/* medidor circular */
+.sd-medidor { position: relative; width: 150px; height: 150px; justify-self: end; }
+.sd-medidor svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.sd-trilho { fill: none; stroke: rgba(255,255,255,.22); stroke-width: 11; }
+.sd-arco { fill: none; stroke: #fff; stroke-width: 11; stroke-linecap: round; transition: stroke-dashoffset 1.6s cubic-bezier(.2,.8,.2,1) .2s; filter: drop-shadow(0 0 6px rgba(255,255,255,.7)); }
+.sd-nota { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1; }
+.sd-nota b { font-size: 42px; font-weight: 800; }
+.sd-nota small { font-size: 12px; opacity: .85; margin-top: 3px; }
+
+/* ---------- legenda ---------- */
+.sd-legenda { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 16px; }
+.sd-legenda > div { display: grid; grid-template-columns: 14px 1fr; column-gap: 9px; align-items: center; background: var(--branco); border: 1px solid var(--borda);
+  border-left: 4px solid var(--nv); border-radius: 10px; padding: 8px 12px; animation: sd-entra .5s both; }
+.sd-legenda i { width: 12px; height: 12px; border-radius: 50%; background: var(--nv); box-shadow: 0 0 0 0 var(--nv); animation: sd-halo 2.4s ease-out infinite; grid-row: span 2; }
+.sd-legenda b { font-size: 13px; } .sd-legenda span { font-size: 12px; color: var(--suave); }
+
+/* ---------- cartões ---------- */
+.sd-grade { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 18px; }
+.sd-card { position: relative; overflow: hidden; background: linear-gradient(180deg, var(--nv-fundo), var(--branco) 55%); border: 1px solid var(--borda);
+  border-top: 5px solid var(--nv); border-radius: 14px; padding: 16px 18px 18px; box-shadow: 0 6px 18px -12px rgba(0,0,0,.25);
+  animation: sd-entra .55s cubic-bezier(.2,.8,.2,1) both; animation-delay: calc(var(--i) * 90ms + 150ms); transition: transform .25s, box-shadow .25s; }
+.sd-card:hover { transform: translateY(-4px); box-shadow: 0 16px 28px -14px var(--nv); }
+.sd-card header { display: flex; justify-content: space-between; align-items: flex-start; }
+.sd-card h3 { margin: 4px 0 0; font-size: 14px; color: var(--suave); font-weight: 600; text-transform: uppercase; letter-spacing: .05em; }
+.sd-valor { font-size: 30px; font-weight: 800; color: var(--texto); line-height: 1.15; margin: 2px 0 10px; }
+.sd-arte { width: 74px; height: 74px; border-radius: 18px; background: var(--nv-bg); display: grid; place-items: center; animation: sd-flutua 4s ease-in-out infinite; }
+.sd-arte.pequena { width: 54px; height: 54px; border-radius: 14px; flex: none; }
+.sd-arte .sd-svg { width: 84%; height: 84%; overflow: visible; }
+.sd-selo { width: 28px; height: 28px; filter: drop-shadow(0 3px 6px var(--nv)); animation: sd-selo-entra .7s cubic-bezier(.3,1.6,.5,1) both; animation-delay: calc(var(--i) * 90ms + 600ms); }
+.sd-selo-svg { width: 100%; height: 100%; display: block; }
+.sd-barra { height: 10px; border-radius: 99px; background: #e8ecea; overflow: hidden; }
+.sd-barra span { display: block; height: 100%; width: 0; border-radius: 99px; transition: width 1.4s cubic-bezier(.2,.8,.2,1) .35s;
+  background: repeating-linear-gradient(115deg, rgba(255,255,255,.28) 0 8px, transparent 8px 16px), var(--nv); background-size: 32px 100%, 100% 100%;
+  animation: sd-listras 1.1s linear infinite; }
+.sd-detalhe { margin: 9px 0 6px; font-size: 13px; color: var(--suave); }
+.sd-dica { margin: 0; font-size: 13px; padding: 8px 10px; border-radius: 9px; background: var(--nv-bg); color: var(--texto); border-left: 3px solid var(--nv); }
+.sd-dica b { color: var(--nv); filter: brightness(.82); }
+
+/* desenhos (SVG) */
+.sd-svg .i-base { fill: var(--nv-bg); stroke: var(--nv); stroke-width: 3; stroke-linejoin: round; }
+.sd-svg .i-papel { fill: #fff; stroke: var(--nv); stroke-width: 2.6; }
+.sd-svg .i-linha { fill: none; stroke: var(--nv); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+.sd-svg .i-cheio { fill: var(--nv); }
+.sd-svg .i-contorno { stroke: var(--nv); fill: none; stroke-width: 3; }
+.sd-svg .i-texto { fill: var(--nv); font: 800 12px system-ui, sans-serif; }
+.sd-gira, .sd-inseto, .sd-carimbo, .sd-chama { transform-box: fill-box; transform-origin: center; }
+.sd-gira { animation: sd-gira 5s linear infinite; }
+.sd-pisca { animation: sd-pisca 1.4s steps(2) infinite; }
+.sd-sobe { animation: sd-seta 1.8s ease-in-out infinite; }
+.sd-dado { animation: sd-dado 2.4s ease-in-out infinite; } .sd-dado.d2 { animation-delay: .5s; } .sd-dado.d3 { animation-delay: 1s; }
+.sd-gaveta { animation: sd-gaveta 2.8s ease-in-out infinite; }
+.sd-moeda { transform-box: fill-box; transform-origin: center; animation: sd-moeda 2.8s ease-in-out infinite; }
+.sd-carimbo { animation: sd-carimbo 3s ease-in-out infinite; }
+.sd-inseto { animation: sd-inseto 2.6s ease-in-out infinite; }
+.sd-chama { animation: sd-chama .5s ease-in-out infinite alternate; transform-origin: 50% 0; }
+.nv-ruim .sd-arte, .nv-ruim .sd-inseto { animation-duration: 1.2s; }
+.nv-ruim .sd-gira { animation-duration: 1.4s; }
+
+/* cores de alerta: vermelho pulsa, amarelo respira, azul brilha */
+.sd-card.nv-ruim { animation: sd-entra .55s both, sd-alerta 1.8s ease-in-out 1s infinite; animation-delay: calc(var(--i) * 90ms + 150ms), 1s; }
+.sd-card.nv-medio .sd-selo { animation: sd-selo-entra .7s both, sd-respira 2.4s ease-in-out 1.4s infinite; }
+.sd-card.nv-otimo::after { content: ""; position: absolute; inset: 0; background: linear-gradient(105deg, transparent 40%, rgba(255,255,255,.75) 50%, transparent 60%);
+  transform: translateX(-120%); animation: sd-brilho 5s ease-in-out 1.5s infinite; pointer-events: none; }
+
+/* ---------- erros e rodapé ---------- */
+.sd-erros { background: var(--branco); border: 1px solid var(--borda); border-top: 5px solid var(--nv); border-radius: 14px; padding: 16px 18px; margin-bottom: 16px; animation: sd-entra .6s both; animation-delay: .9s; }
+.sd-erros-topo { display: flex; gap: 14px; align-items: center; margin-bottom: 10px; }
+.sd-erros-topo h2 { margin: 0; } .sd-erros-topo .sub { margin: 2px 0 0; }
+.sd-vazio { display: flex; align-items: center; gap: 14px; padding: 12px 14px; background: var(--nv-fundo); border-radius: 12px; }
+.sd-vazio svg { width: 56px; height: 56px; flex: none; }
+.sd-vazio-c { fill: var(--nv-bg); stroke: var(--nv); stroke-width: 3; }
+.sd-vazio-v { fill: none; stroke: var(--nv); stroke-width: 5; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 100; animation: sd-traco 1.2s ease-out .9s both; }
+.sd-vazio p { margin: 0; }
+.sd-rodape { display: flex; gap: 14px; align-items: center; padding: 12px 16px; border-radius: 14px; background: var(--nv-fundo); border: 1px dashed var(--nv); color: var(--suave); font-size: 13px; }
+.sd-rodape p { margin: 0; }
+
+/* ---------- animações ---------- */
+@keyframes sd-entra { from { opacity: 0; transform: translateY(16px) scale(.98); } to { opacity: 1; transform: none; } }
+@keyframes sd-fundo { 0%, 100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
+@keyframes sd-bate { 0%, 100% { transform: scale(1); } 12% { transform: scale(1.045); } 24% { transform: scale(1); } 36% { transform: scale(1.03); } }
+@keyframes sd-ecg { from { stroke-dashoffset: 34; } to { stroke-dashoffset: -66; } }
+@keyframes sd-onda { from { transform: scale(.85); opacity: .7; } to { transform: scale(1.55); opacity: 0; } }
+@keyframes sd-gira { to { transform: rotate(360deg); } }
+@keyframes sd-sobe-bolha { from { transform: translateY(0) scale(1); opacity: 0; } 10% { opacity: 1; } to { transform: translateY(-330px) scale(1.4); opacity: 0; } }
+@keyframes sd-flutua { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+@keyframes sd-selo-entra { from { transform: scale(0) rotate(-180deg); } to { transform: scale(1) rotate(0); } }
+@keyframes sd-listras { to { background-position: 32px 0, 0 0; } }
+@keyframes sd-pisca { 50% { opacity: .15; } }
+@keyframes sd-pisca-suave { 50% { opacity: .72; transform: scale(1.04); } }
+@keyframes sd-seta { 0%, 100% { transform: translateY(2px); opacity: .6; } 50% { transform: translateY(-5px); opacity: 1; } }
+@keyframes sd-dado { 0%, 100% { opacity: .15; transform: scale(.6); } 50% { opacity: 1; transform: scale(1.2); } }
+@keyframes sd-gaveta { 0%, 55%, 100% { transform: translateY(0); } 70%, 85% { transform: translateY(5px); } }
+@keyframes sd-moeda { 0%, 100% { transform: translateY(0) rotateY(0); } 50% { transform: translateY(-5px) rotateY(180deg); } }
+@keyframes sd-carimbo { 0%, 60%, 100% { transform: scale(1); } 70% { transform: scale(1.25) rotate(-8deg); } 80% { transform: scale(.95); } }
+@keyframes sd-inseto { 0%, 100% { transform: rotate(0); } 25% { transform: rotate(-6deg); } 75% { transform: rotate(6deg); } }
+@keyframes sd-chama { from { transform: scaleY(.75); } to { transform: scaleY(1.2); } }
+@keyframes sd-halo { 0% { box-shadow: 0 0 0 0 var(--nv); } 70%, 100% { box-shadow: 0 0 0 9px transparent; } }
+@keyframes sd-alerta { 0%, 100% { box-shadow: 0 0 0 0 rgba(214,69,61,.0), 0 6px 18px -12px rgba(0,0,0,.25); } 50% { box-shadow: 0 0 0 5px rgba(214,69,61,.28), 0 10px 26px -10px rgba(214,69,61,.6); } }
+@keyframes sd-respira { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.18); } }
+@keyframes sd-brilho { 0%, 60% { transform: translateX(-120%); } 100% { transform: translateX(120%); } }
+@keyframes sd-traco { from { stroke-dashoffset: 100; } to { stroke-dashoffset: 0; } }
+
+@media (max-width: 980px) {
+  .sd-hero { grid-template-columns: 1fr; text-align: center; justify-items: center; }
+  .sd-escudo { width: 150px; } .sd-medidor { justify-self: center; } .sd-meta, .sd-alertas { justify-content: center; }
+  .sd-grade { grid-template-columns: repeat(2, 1fr); } .sd-legenda { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 620px) { .sd-grade, .sd-legenda { grid-template-columns: 1fr; } .sd-hero h2 { font-size: 23px; } }
+@media (prefers-reduced-motion: reduce) {
+  .sd-hero, .sd-hero *, .sd-card, .sd-card *, .sd-legenda *, .sd-erros, .sd-erros * { animation: none !important; }
+  .sd-arco, .sd-barra span { transition: none; }
+}

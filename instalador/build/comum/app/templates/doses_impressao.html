@@ -1,0 +1,11 @@
+{% extends '_lista_impressao.html' %}
+{% block titulo %}Lista de medicamentos{% endblock %}
+{% block orientacao %}landscape{% endblock %}
+{% block subtitulo %}{{ status or 'Todos' }}{% if medicamento %} · {{ medicamento }}{% endif %}{% if dia %} · Dose em {{ dia|data_br }}{% endif %} · {{ rows|length }} registro(s){% endblock %}
+{% block conteudo %}
+<table class="lista">
+  <thead><tr><th>Paciente</th><th>Data/dose</th><th>Medicamento</th><th>mCi</th><th>Preparo</th><th>Dieta</th><th>Susp. medicação</th><th>Contato</th><th>Status</th></tr></thead>
+  <tbody>{% for d in rows %}<tr><td>{{ d.paciente }}</td><td>{{ d.data_dose|data_br }}</td><td>{{ d.medicamento }}</td><td>{{ d.mci or '' }}</td>
+    <td>{{ d.preparo or '' }}</td><td>{{ d.dieta|data_br }}</td><td>{{ d.susp_medicacao|data_br }}</td><td>{{ d.contato or '' }}</td><td>{{ d.status }}</td></tr>{% endfor %}</tbody>
+</table>
+{% endblock %}

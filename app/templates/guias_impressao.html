@@ -1,0 +1,10 @@
+{% extends '_lista_impressao.html' %}
+{% block titulo %}Protocolo de guias{% endblock %}
+{% block subtitulo %}Período: {{ de|data_br }} a {{ ate|data_br }}{% if convenio %} · Convênio: {{ convenio }}{% endif %} · Total de guias: {{ rows|length }}{% endblock %}
+{% block conteudo %}
+<table class="lista">
+  <thead><tr><th>Nº</th><th>Paciente</th><th>Convênio</th><th>Data</th><th>Exame</th><th>Horário</th></tr></thead>
+  <tbody>{% for r in rows %}<tr><td>{{ r.id }}</td><td>{{ r.paciente }}</td><td>{{ r.convenio or '' }}</td><td>{{ r.data|data_br }}</td><td>{{ r.exame }}</td><td>{{ r.horario or '' }}</td></tr>{% endfor %}</tbody>
+</table>
+<div class="assinaturas"><div>Entregue por</div><div>Recebido por</div><div>Data</div></div>
+{% endblock %}

@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% block titulo %}Cores dos exames{% endblock %}
+{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/exames.css') }}">{% endblock %}
+{% block conteudo %}
+<div class="cabecalho">
+  <div><h1>Cores dos exames</h1><p class="sub">Na planilha cada linha é pintada pela cor do tipo do exame. Aqui você ajusta essas cores e quais palavras identificam cada tipo (ex.: “LINF. SENT”, “LINFONODO” e “LINFO” são o mesmo tipo).</p></div>
+  <div class="acoes"><a class="btn sec" href="{{ url_for('lanc.lista') }}">Voltar aos exames</a></div>
+</div>
+<form method="post" class="cartao ex-cores">
+  {{ csrf_input }}
+  <div class="tabela-wrap"><table class="tabela">
+    <thead><tr><th>Ativo</th><th>Cor</th><th>Tipo de exame</th><th>Palavras que identificam (separe por vírgula)</th><th class="num">Ordem</th><th class="num">Exames</th></tr></thead>
+    <tbody>
+    {% for c in linhas %}
+      <tr {% if not c.ativo %}style="opacity:.55"{% endif %}>
+        <td><input type="hidden" name="id" value="{{ c.id }}"><input type="checkbox" name="ativo" value="{{ c.id }}" {% if c.ativo %}checked{% endif %}></td>
+        <td><input type="color" name="cor" value="{{ c.cor|lower }}"></td>
+        <td><input type="text" name="rotulo" value="{{ c.rotulo }}" required></td>
+        <td><input type="text" name="padroes" value="{{ c.padroes }}" style="min-width:300px"></td>
+        <td class="num"><input type="text" name="ordem" value="{{ c.ordem }}" style="width:64px"></td>
+        <td class="num">{{ contagem.get(c.chave, 0) }}</td>
+      </tr>
+    {% endfor %}
+    {% for _ in range(2) %}
+      <tr><td><input type="hidden" name="id" value="novo"><input type="checkbox" name="ativo" value="novo" checked></td>
+        <td><input type="color" name="cor" value="#cccccc"></td><td><input type="text" name="rotulo" placeholder="Novo tipo de exame"></td>
+        <td><input type="text" name="padroes" placeholder="palavras separadas por vírgula" style="min-width:300px"></td><td class="num"><input type="text" name="ordem" value="500" style="width:64px"></td><td></td></tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+  <p class="ajuda" style="margin-top:8px">A <strong>ordem</strong> importa: o primeiro tipo cujas palavras aparecem no nome do exame é o escolhido (por isso “Pesquisa de sangramento” vem antes de “MIBI”, e “Paratireoide” antes de “Tireoide”). Palavras de até 4 letras valem só como palavra inteira (ex.: “CTO”, “PCI”); as maiores valem em qualquer parte. Exames sem tipo reconhecido ficam sem cor ({{ contagem.get('outros', 0) }} no momento).</p>
+  <div class="acoes"><button class="btn" type="submit">Salvar cores</button></div>
+</form>
+
+{% if usuario.admin %}
+<form class="cartao" method="post" action="{{ url_for('lanc.importar') }}" enctype="multipart/form-data" data-confirmar="Importar a planilha? Os lançamentos que vieram de uma importação anterior serão substituídos (os lançados à mão ficam). Pode levar cerca de 1 minuto.">
+  {{ csrf_input }}
+  <h2>Importar a planilha EXAMES.xlsx</h2>
+  <p class="sub">Traz os exames de todas as abas (um por linha) com a cor de cada tipo. Hoje há {{ n_total }} lançamento(s) no sistema. Pacientes e médicos com o mesmo nome do cadastro ficam ligados a ele.</p>
+  <div class="grade"><div class="c8"><input type="file" name="arquivo" accept=".xlsx,.xlsm" required></div><div class="c4"><button class="btn" type="submit">Importar planilha</button></div></div>
+</form>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% block titulo %}NucleAI: configurações{% endblock %}
+{% block conteudo %}
+{% include '_nucleai_abas.html' %}
+
+<form class="cartao" method="post" action="{{ url_for('nucleai.config') }}" style="max-width:760px">
+  {{ csrf_input }}
+  <h2 style="margin-top:0">Assistente</h2>
+  <label style="display:flex;gap:8px;align-items:center;font-weight:600">
+    <input type="checkbox" name="ativa" value="1" {{ 'checked' if ativa }}> NucleAI ligada (botão redondo visível para todos os usuários)
+  </label>
+  <p class="ajuda">Desligada, o botão some e as conversas em andamento são encerradas.</p>
+
+  <h2>Tempos</h2>
+  <div style="display:flex;gap:16px;flex-wrap:wrap">
+    <div><label for="abandono_h">Apagar conversa abandonada depois de (horas)</label>
+      <input type="number" id="abandono_h" name="abandono_h" min="1" max="72" value="{{ abandono_h }}" style="width:110px"></div>
+    <div><label for="despedida_s">A despedida some depois de (segundos)</label>
+      <input type="number" id="despedida_s" name="despedida_s" min="10" max="600" value="{{ despedida_s }}" style="width:110px"></div>
+  </div>
+
+  <h2>Quem recebe os pedidos de ajuda</h2>
+  <p class="ajuda">Quando o usuário escolhe “Chamar a gerência”, estas pessoas recebem o aviso da NucleAI, com o botão para falar com ele.
+    Se você não marcar ninguém, o aviso vai para toda a gerência
+    {% if gerencia_padrao %}({{ gerencia_padrao|length }} pessoa(s) hoje){% endif %}.
+    Se nenhuma das escolhidas estiver online, a NucleAI avisa o usuário de que ela responderá assim que possível.</p>
+  <div class="tabela-wrap"><table class="tabela">
+    <thead><tr><th></th><th>Usuário</th><th>Perfil</th><th>Agora</th></tr></thead>
+    <tbody>
+    {% for c in candidatos %}
+      <tr>
+        <td><input type="checkbox" name="destinatarios" value="{{ c.id }}" id="d{{ c.id }}" {{ 'checked' if c.id in escolhidos }}></td>
+        <td><label for="d{{ c.id }}" style="font-weight:600">{{ c.usuario }}</label></td>
+        <td>{% if c.admin %}Administração{% elif c.gerencia %}Gerência{% else %}Funcionário{% endif %}</td>
+        <td>{% if c.online %}<span style="color:#1a7f37">● online</span>{% else %}<span class="ajuda">● offline</span>{% endif %}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+  <div style="margin-top:14px"><button class="btn" type="submit">Salvar configurações</button></div>
+</form>
+{% endblock %}

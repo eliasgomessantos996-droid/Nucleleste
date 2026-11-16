@@ -1,0 +1,20 @@
+{# Peças das fichas impressas da enfermagem: estilo de folha A4 e a assinatura sobre a linha, com nome, cargo e conselho. #}
+{% macro estilo() -%}
+<style>
+  body { font-family: Arial, Helvetica, sans-serif; color: #111; margin: 0; background: #fff; }
+  .folha { max-width: 190mm; margin: 0 auto; padding: 14mm 10mm; }
+  h1 { font-size: 17px; margin: 0 0 2px; } .sub { color: #444; font-size: 12px; margin: 0 0 10px; }
+  .cab { display: flex; justify-content: space-between; border-bottom: 2px solid #255f39; padding-bottom: 6px; margin-bottom: 10px; font-size: 12px; }
+  table { border-collapse: collapse; width: 100%; font-size: 12px; margin: 8px 0; } th, td { border: 1px solid #999; padding: 4px 6px; text-align: left; } th { background: #eef3ef; }
+  .num { text-align: right; } .ruim { background: #fde7e5; font-weight: bold; }
+  .ass { margin-top: 36px; width: 300px; text-align: center; } .ass-img { height: 62px; display: flex; align-items: flex-end; justify-content: center; } .ass-img img { max-height: 60px; max-width: 280px; }
+  .ass-linha { border-top: 1px solid #111; margin-top: 2px; } .ass-nome { font-size: 12px; margin-top: 3px; } .ass-aviso { font-size: 10px; color: #a52a22; }
+  .barra { padding: 10px; text-align: center; background: #f1f6f3; } .barra button { padding: 6px 14px; font-size: 14px; }
+  @media print { .barra { display: none; } .folha { padding: 0; } }
+</style>
+{%- endmacro %}
+{% macro assinatura(ass) -%}
+<div class="ass"><div class="ass-img">{% if ass.assinatura %}<img src="{{ url_for('enf.assinatura_png', uid=ass.uid) }}" alt="Assinatura">{% endif %}</div>
+  <div class="ass-linha"></div><div class="ass-nome">{{ ass.nome }}{% if ass.cargo %} — {{ ass.cargo }}{% endif %}{% if ass.conselho.strip() %} — {{ ass.conselho }}{% endif %}</div>
+  {% if not ass.assinatura %}<div class="ass-aviso">assinatura não cadastrada: assinar à mão</div>{% endif %}</div>
+{%- endmacro %}

@@ -1,0 +1,151 @@
+{% extends 'base.html' %}
+{% from '_ic.html' import ic %}
+{% block titulo %}{{ 'Cliente ' ~ cliente.id if cliente else 'Novo cliente' }}{% endblock %}
+{% block conteudo %}
+<div class="cabecalho">
+  <div>
+    <h1>{{ cliente.nome if cliente else 'Novo cliente' }}</h1>
+    <p class="sub">{% if cliente %}Código {{ cliente.id }}{% if cliente.criado_por %} · cadastrado por {{ cliente.criado_por }}{% endif %}{% if cliente.atualizado_por and cliente.atualizado_por != cliente.criado_por %} · alterado por {{ cliente.atualizado_por }}{% endif %}{% if cliente.data_nasc %} · {{ cliente.data_nasc|idade }}{% endif %}{% else %}Cadastro de cliente{% endif %}</p>
+  </div>
+  {% if cliente %}
+  <div class="acoes">
+    <a class="btn" href="{{ url_for('atend.novo', cliente=cliente.id) }}">Lançar atendimento</a>
+    <a class="btn sec" href="{{ url_for('med.editar', cliente=cliente.id) }}">Agendar medicamento</a>
+    <a class="btn sec" href="{{ url_for('cad.cliente_historico', cid=cliente.id) }}">{{ ic('history', 16) }} Histórico</a>
+    {% if pode('prontuario') %}<a class="btn sec" href="{{ url_for('pront.paciente', cid=cliente.id) }}">{{ ic('heart-pulse', 16) }} Prontuário</a>{% endif %}
+  </div>
+  {% endif %}
+</div>
+
+<form class="cartao" method="post" id="form-cliente" autocomplete="off">
+  {{ csrf_input }}
+  <div class="grade">
+    <div class="c8"><label class="obrig">Nome</label><input type="text" name="nome" value="{{ f.nome or '' }}" required data-maiusculas autofocus></div>
+    <div class="c4"><label class="obrig">CPF</label><input type="text" name="cpf" id="cpf" value="{{ f.cpf or '' }}" data-mascara="cpf" required>
+      <div class="ajuda" id="cpf-ajuda"></div></div>
+
+    <div class="c3"><label class="obrig">Data de nascimento</label><input type="date" name="data_nasc" id="data_nasc" value="{{ f.data_nasc or '' }}" required>
+      <div class="ajuda" id="idade"></div>
+      <div class="ajuda" id="idade-aviso" style="color:var(--erro)"></div>
+      {% if idade_agenda|default('') %}<div class="ajuda" id="idade-agenda" data-anos="{{ idade_agenda }}">Idade informada na agenda: {{ idade_agenda }} anos. Confira com a data de nascimento.</div>{% endif %}
+      {% if f.data_nasc and f.data_nasc|data_br == f.data_nasc %}<div class="ajuda" style="color:var(--erro)">Data inválida vinda do sistema antigo: “{{ f.data_nasc }}”. Corrija antes de salvar.</div>{% endif %}</div>
+    <div class="c2"><label class="obrig">Sexo</label><select name="sexo" required>
+      <option value=""></option>
+      <option value="F" {% if f.sexo == 'F' %}selected{% endif %}>Feminino</option>
+      <option value="M" {% if f.sexo == 'M' %}selected{% endif %}>Masculino</option>
+    </select></div>
+    <div class="c4"><label>Nome da mãe</label><input type="text" name="nome_mae" value="{{ f.nome_mae or '' }}" data-maiusculas></div>
+    <div class="c3"><label>Profissão</label><input type="text" name="profissao" value="{{ f.profissao or '' }}" data-maiusculas></div>
+
+    <div class="c3"><label>CEP</label><input type="text" name="cep" id="cep" value="{{ f.cep or '' }}" data-mascara="cep">
+      <div class="ajuda" id="cep-ajuda">Digite o CEP para preencher o endereço.</div></div>
+    <div class="c7"><label>Rua / Avenida</label><input type="text" name="rua" id="rua" value="{{ f.rua or '' }}" data-maiusculas></div>
+    <div class="c2"><label>Número</label><input type="text" name="numero" id="numero" value="{{ f.numero or '' }}"></div>
+
+    <div class="c4"><label>Complemento</label><input type="text" name="complemento" value="{{ f.complemento or '' }}" data-maiusculas></div>
+    <div class="c3"><label>Bairro</label><input type="text" name="bairro" id="bairro" value="{{ f.bairro or '' }}" data-maiusculas></div>
+    <div class="c3"><label>Cidade</label><input type="text" name="cidade" id="cidade" value="{{ f.cidade or '' }}" data-maiusculas></div>
+    <div class="c2"><label>UF</label><input type="text" name="uf" id="uf" value="{{ f.uf or '' }}" maxlength="2" data-maiusculas></div>
+
+    <div class="c4"><label>Contato (telefone)</label><input type="text" name="contato" value="{{ f.contato or '' }}" data-mascara="telefone"></div>
+    <div class="c4"><label class="obrig">Convênio</label>
+      <select name="convenio" required>
+        <option value=""></option>
+        {% set achou = namespace(v=false) %}
+        {% for c in convenios %}<option {% if c.nome == f.convenio %}selected{% set achou.v = true %}{% endif %}>{{ c.nome }}</option>{% endfor %}
+        {% if f.convenio and not achou.v %}<option selected>{{ f.convenio }}</option>{% endif %}
+      </select>
+      <div class="ajuda"><a href="{{ url_for('cad.convenios') }}" target="_blank">Cadastrar convênio</a></div></div>
+    <div class="c4"><label>Nº cartão convênio / SUS</label><input type="text" name="cartao_convenio" value="{{ f.cartao_convenio or '' }}"></div>
+  </div>
+  <div class="acoes">
+    <button class="btn" type="submit">{{ 'Salvar alterações' if cliente else 'Salvar' }}</button>
+    {% if not cliente %}<button class="btn sec" type="submit" name="depois" value="atender">Salvar e lançar atendimento</button>{% endif %}
+    <a class="btn sec" href="{{ url_for('cad.clientes') }}">Voltar</a>
+  </div>
+</form>
+
+{% if cliente %}
+<form method="post" action="{{ url_for('cad.cliente_excluir', cid=cliente.id) }}" data-confirmar="Você está prestes a excluir este cliente! Confirma?" class="acoes" style="margin-top:-6px">
+  {{ csrf_input }}<button class="btn perigo peq" type="submit">Excluir cliente</button>
+</form>
+
+<h2>Histórico de atendimentos</h2>
+<div class="tabela-wrap"><table class="tabela">
+  <thead><tr><th>Data</th><th>Exame</th><th>Convênio</th><th>Médico</th><th>Usuário</th><th></th></tr></thead>
+  <tbody>
+  {% for a in atendimentos %}
+    <tr><td>{{ a.data|data_br }}</td><td>{{ a.exame }}</td><td>{{ a.convenio or '' }}</td><td>{{ a.medico or '' }}</td><td>{{ a.usuario or '' }}</td>
+      <td class="num"><a class="btn sec peq" href="{{ url_for('atend.imprimir', aid=a.id) }}">Reimprimir fichas</a></td></tr>
+  {% else %}<tr><td colspan="6" class="vazio">Nenhum atendimento registrado.</td></tr>{% endfor %}
+  </tbody>
+</table></div>
+
+{% if doses %}
+<h2>Medicamentos (doses)</h2>
+<div class="tabela-wrap"><table class="tabela">
+  <thead><tr><th>Data da dose</th><th>Medicamento</th><th>mCi</th><th>Preparo</th><th>Status</th><th></th></tr></thead>
+  <tbody>
+  {% for d in doses %}
+    <tr><td>{{ d.data_dose|data_br }}</td><td>{{ d.medicamento }}</td><td>{{ d.mci or '' }}</td><td>{{ d.preparo or '' }}</td>
+      <td><span class="etiqueta {{ (d.status or '')|lower }}">{{ d.status }}</span></td>
+      <td class="num"><a class="btn sec peq" href="{{ url_for('med.imprimir', did=d.id) }}">Ficha</a></td></tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+{% endif %}
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+  const idCliente = {{ cliente.id if cliente else 0 }};
+  const cpf = document.getElementById('cpf'), ajuda = document.getElementById('cpf-ajuda');
+  function verificarCPF() {
+    const v = cpf.value.trim();
+    ajuda.textContent = ''; ajuda.style.color = '';
+    if (!v) return;
+    fetch('/api/cpf?cpf=' + encodeURIComponent(v) + '&ignorar=' + idCliente).then(r => r.json()).then(d => {
+      if (!d.valido) { ajuda.textContent = 'CPF inválido! Verifique o número informado.'; ajuda.style.color = 'var(--erro)'; return; }
+      cpf.value = d.formatado;
+      if (d.existente) {
+        ajuda.innerHTML = '';
+        const a = document.createElement('a');
+        a.href = '/clientes/' + d.existente.id; a.textContent = 'Cliente já cadastrado: ' + d.existente.nome + ' (abrir)';
+        ajuda.appendChild(a); ajuda.style.color = 'var(--erro)';
+      } else { ajuda.textContent = 'CPF válido.'; ajuda.style.color = 'var(--verde-2)'; }
+    });
+  }
+  cpf.addEventListener('blur', verificarCPF);
+
+  const nasc = document.getElementById('data_nasc'), idade = document.getElementById('idade');
+  const idadeAviso = document.getElementById('idade-aviso'), idadeAgenda = document.getElementById('idade-agenda');
+  function calcIdade() {
+    if (!nasc.value) { idade.textContent = ''; idadeAviso.textContent = ''; return; }
+    const n = new Date(nasc.value + 'T00:00'), h = new Date();
+    let a = h.getFullYear() - n.getFullYear();
+    if (h.getMonth() < n.getMonth() || (h.getMonth() === n.getMonth() && h.getDate() < n.getDate())) a--;
+    idade.textContent = a >= 0 ? a + ' Anos' : '';
+    // idade da agenda diferente da data de nascimento: avisa, sem impedir o cadastro
+    idadeAviso.textContent = idadeAgenda && a >= 0 && String(a) !== idadeAgenda.dataset.anos ? 'Atenção: diferente da idade da agenda.' : '';
+  }
+  nasc.addEventListener('change', calcIdade); calcIdade();
+
+  // Busca de CEP (ViaCEP), como o botão "Pesquisar CEP" da planilha
+  const cep = document.getElementById('cep'), cepAjuda = document.getElementById('cep-ajuda');
+  cep.addEventListener('input', () => {
+    const d = cep.value.replace(/\D/g, '');
+    if (d.length !== 8) return;
+    cepAjuda.textContent = 'Buscando CEP...';
+    fetch('https://viacep.com.br/ws/' + d + '/json/').then(r => r.json()).then(j => {
+      if (j.erro) { cepAjuda.textContent = 'CEP não encontrado, confira o CEP digitado.'; return; }
+      const set = (id, v) => { if (v) document.getElementById(id).value = v.toUpperCase(); };
+      set('rua', j.logradouro); set('bairro', j.bairro); set('cidade', j.localidade); set('uf', j.uf);
+      cepAjuda.textContent = 'Endereço preenchido.';
+      document.getElementById('numero').focus();
+    }).catch(() => { cepAjuda.textContent = 'Não foi possível consultar o CEP (verifique a internet).'; });
+  });
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,9 @@
+<form method="post" action="{{ url_for('cxd.inicio') }}" class="cxd-form" style="grid-template-columns: 170px repeat(4, 1fr)">
+  {{ csrf_input }}
+  <label>Data-base<br><input type="date" name="data" value="{{ ini.data if ini else dia }}" required></label>
+  <label>Banco do Brasil (R$)<br><input type="text" name="bb" inputmode="decimal" value="{{ '%.2f' % ini.bb if ini else '' }}" required></label>
+  <label>Banco Unicred (R$)<br><input type="text" name="unicred" inputmode="decimal" value="{{ '%.2f' % ini.unicred if ini else '' }}" required></label>
+  <label>Caixa Econômica (R$)<br><input type="text" name="caixa" inputmode="decimal" value="{{ '%.2f' % ini.caixa if ini else '' }}" required></label>
+  <label>Movimento de caixa (R$)<br><input type="text" name="dinheiro" inputmode="decimal" value="{{ '%.2f' % ini.dinheiro if ini else '' }}" required></label>
+  <div style="grid-column: 1 / -1"><button class="btn" type="submit">Gravar saldos iniciais</button></div>
+</form>

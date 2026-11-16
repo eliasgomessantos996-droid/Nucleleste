@@ -1,0 +1,17 @@
+{# Laço da campanha de saúde do mês (SVG próprio, animado por campanhas.css). Uso: {% from '_campanha.html' import laco, selo %} #}
+{# laco(c, tam): fita de dois laços cruzados; a cor vem de c.laco. Traço cinza fixo para o laço branco aparecer nos dois temas #}
+{% macro laco(c, tam=40) -%}
+<svg class="camp-laco" style="--camp-laco:{{ c.laco|e }};--camp-cor:{{ c.cor|e }}" width="{{ tam }}" height="{{ tam }}" viewBox="0 0 64 64" aria-hidden="true" focusable="false">
+  <g class="camp-laco-mov">
+    <path class="camp-laco-forma" d="M32 30 C22 8 4 10 8 26 C11 36 26 34 32 30 Z"/>
+    <path class="camp-laco-forma" d="M32 30 C42 8 60 10 56 26 C53 36 38 34 32 30 Z"/>
+    <path class="camp-laco-cauda" d="M29 34 L23 60 L29 56 L32 62 L35 56 L41 60 L35 34 Z"/>
+    <path class="camp-laco-brilho" d="M14 20 C18 14 24 13 27 16"/>
+  </g>
+</svg>
+{%- endmacro %}
+
+{# selo(c): laço pequeno + nome; a mensagem aparece ao passar o mouse #}
+{% macro selo(c) -%}
+<span class="camp-selo" title="{{ c.mensagem|e }}" style="--camp-cor:{{ c.cor|e }};--camp-laco:{{ c.laco|e }}">{{ laco(c, 18) }}<span>{{ c.nome }}</span></span>
+{%- endmacro %}

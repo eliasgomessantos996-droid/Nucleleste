@@ -1,0 +1,256 @@
+{% extends 'base.html' %}
+{% block titulo %}Lançar atendimento{% endblock %}
+{% block conteudo %}
+<h1>Lançar atendimento</h1>
+<p class="sub">Registra o exame, gera o protocolo de guia (convênios) ou o lançamento de caixa (particular/SMS/Mais Med) e imprime as fichas.</p>
+
+<form method="post" id="form-atend" autocomplete="off">
+  {{ csrf_input }}
+  <div class="cartao">
+    <h2>Cliente</h2>
+    <div class="seletor" id="seletor-cliente">
+      <label class="obrig">Pesquisar cliente (nome, código ou CPF)</label>
+      <input type="search" placeholder="Digite pelo menos 2 letras..." autofocus>
+      <input type="hidden" name="cliente_id" value="{{ f.cliente_id }}">
+      <div class="resultados"></div>
+    </div>
+    <div class="ajuda">Cliente novo? <a href="{{ url_for('cad.cliente_novo') }}">Cadastrar cliente</a></div>
+    <div class="ficha-cliente" id="ficha-cliente">
+      <dl id="dados-cliente"></dl>
+      <div class="acoes" style="margin-top:8px">
+        <a class="btn sec peq" id="link-editar" href="#" target="_blank">Editar cadastro</a>
+        <button class="btn sec peq" type="button" id="btn-copiar-nome">Copiar nome</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="cartao">
+    <h2>Exame</h2>
+    <div class="grade">
+      <div class="c3"><label class="obrig">Exame</label>
+        <input type="text" name="exame" id="exame" list="lista-exames" value="{{ f.exame }}" required data-maiusculas>
+        <datalist id="lista-exames">{% for e in exames %}<option value="{{ e.nome }}">{% endfor %}</datalist>
+        <div class="ajuda">Escolha da lista ou digite outro exame.</div></div>
+      <div class="c3"><label class="obrig">Data</label><input type="date" name="data" id="data" value="{{ f.data }}" required>
+        <div class="ajuda" id="previsao-laudo"></div></div>
+      <div class="c3"><label class="obrig">Convênio deste atendimento</label>
+        <select name="convenio" id="convenio"><option value="">(convênio do cadastro)</option>
+          {% for c in convenios %}<option {% if c.nome == f.convenio %}selected{% endif %}>{{ c.nome }}</option>{% endfor %}</select></div>
+      <div class="c3"><label class="obrig">Médico solicitante</label>
+        <input type="text" name="medico" list="lista-medicos" value="{{ f.medico }}" required data-maiusculas>
+        <datalist id="lista-medicos">{% for m in medicos %}<option value="{{ m }}">{% endfor %}</datalist></div>
+    </div>
+
+    <div id="bloco-medicamentos" style="margin-top:14px">
+      <label id="lbl-medicamentos">Medicamentos em uso</label>
+      <div style="margin-bottom:6px">
+        <label class="inline"><input type="checkbox" id="chk-nao-aplica"> Não se aplica</label>
+        <label class="inline"><input type="checkbox" id="chk-receita"> Receita em anexo ao prontuário</label>
+      </div>
+      <textarea name="medicamentos" id="medicamentos" data-maiusculas>{{ f.medicamentos }}</textarea>
+    </div>
+
+    <div id="bloco-questionario" class="oculto" style="margin-top:14px">
+      <h3 id="tit-questionario">Questionário</h3>
+      <div style="margin-bottom:8px">
+        <button class="btn sec peq" type="button" id="btn-manual">Preencher manual</button>
+        <span class="ajuda" id="nota-manual"></span>
+      </div>
+      <div id="lista-perguntas"></div>
+      <input type="hidden" name="manual" id="campo-manual" value="0">
+    </div>
+  </div>
+
+  <div class="cartao" id="cartao-interno">
+    <h2>Paciente interno do hospital</h2>
+    <label class="inline"><input type="checkbox" name="interno" value="1" id="chk-interno" {% if f.interno == '1' %}checked{% endif %}> Paciente interno do hospital</label>
+    <div class="ajuda">Marque quando o paciente vier internado de um hospital. O SBAR fica pendente no prontuário para a equipe preencher.</div>
+    <div id="wrap-interno-local" style="margin-top:8px" hidden>
+      <label class="obrig" for="interno-local">Hospital / setor / leito</label>
+      <input type="text" name="interno_local" id="interno-local" value="{{ f.interno_local }}" maxlength="200" placeholder="Ex.: Hospital Municipal — enfermaria, leito 12">
+    </div>
+  </div>
+  <script>
+  (function () {
+    const chk = document.getElementById('chk-interno'), wrap = document.getElementById('wrap-interno-local'), local = document.getElementById('interno-local');
+    function ajustar() { wrap.hidden = !chk.checked; local.disabled = !chk.checked; local.required = chk.checked; }
+    chk.addEventListener('change', ajustar); ajustar();
+  })();
+  </script>
+
+  <div class="cartao" id="bloco-anteriores">
+    <h2>Exames anteriores</h2>
+    <p class="ajuda" id="sem-anteriores">Selecione o cliente para ver os exames anteriores.</p>
+    <div class="lista-escolha oculto" id="lista-anteriores"></div>
+    <input type="hidden" id="anterior-salvo" value="{{ f.exame_anterior }}">
+  </div>
+
+  <div class="acoes">
+    <button class="btn" type="submit">Salvar e imprimir fichas</button>
+    <a class="btn sec" href="{{ url_for('inicio.painel') }}">Cancelar</a>
+  </div>
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+  const exames = {{ exames_json|safe }};
+  const SEM_ANTERIOR = {{ sem_anterior|tojson }};
+  const dl = document.getElementById('dados-cliente');
+  const ficha = document.getElementById('ficha-cliente');
+  const lista = document.getElementById('lista-anteriores');
+  const semAnt = document.getElementById('sem-anteriores');
+  const salvo = document.getElementById('anterior-salvo').value;
+  let nomeAtual = '';
+  let convAuto = '';   // último convênio preenchido automaticamente (só ele é trocado ao mudar de cliente)
+
+  function campo(t, v) {
+    const dt = document.createElement('dt'); dt.textContent = t;
+    const dd = document.createElement('dd'); dd.textContent = v || '—';
+    dl.append(dt, dd);
+  }
+  function mostrar(c) {
+    dl.innerHTML = ''; lista.innerHTML = '';
+    if (!c) { ficha.classList.remove('aberto'); lista.classList.add('oculto'); semAnt.textContent = 'Selecione o cliente para ver os exames anteriores.'; semAnt.classList.remove('oculto'); return; }
+    nomeAtual = c.nome;
+    // convênio do atendimento já vem com o convênio cadastrado do cliente (pode ser trocado)
+    const selConv = document.getElementById('convenio');
+    const achado = Array.from(selConv.options).find(o => o.value && c.convenio && o.value.trim().toUpperCase() === c.convenio.trim().toUpperCase());
+    if (!selConv.value || selConv.value === convAuto) { selConv.value = achado ? achado.value : ''; convAuto = selConv.value; }
+    campo('Código', c.id); campo('CPF', c.cpf); campo('Nascimento', c.data_nasc + (c.idade ? ' (' + c.idade + ')' : ''));
+    campo('Convênio', c.convenio); campo('Cartão', c.cartao_convenio); campo('Contato', c.contato);
+    campo('Mãe', c.nome_mae); campo('Endereço', [c.endereco, c.bairro, c.cidade].filter(Boolean).join(' · ')); campo('Profissão', c.profissao);
+    document.getElementById('link-editar').href = '/clientes/' + c.id;
+    ficha.classList.add('aberto');
+    if (!c.anteriores.length) {
+      semAnt.textContent = 'Nenhum exame anterior: este é o primeiro atendimento do cliente.';
+      semAnt.classList.remove('oculto'); lista.classList.add('oculto'); return;
+    }
+    semAnt.textContent = 'O cliente possui exames anteriores. Selecione o último exame (obrigatório):';
+    const opcoes = c.anteriores.map(a => ({v: a.exame + ' - ' + a.data, t: a.data + ' · ' + a.exame + (a.medico ? ' · Dr(a). ' + a.medico : ''), iso: a.data_iso}));
+    opcoes.push({v: SEM_ANTERIOR, t: 'Não informar exame anterior'});
+    opcoes.forEach((o, i) => {
+      const l = document.createElement('label');
+      const r = document.createElement('input'); r.type = 'radio'; r.name = 'exame_anterior'; r.value = o.v;
+      if (salvo && salvo === o.v) r.checked = true;
+      const s = document.createElement('span'); s.textContent = o.t;
+      l.append(r, s);
+      if (o.iso !== undefined) {   // exame anterior de verdade: botão que abre o laudo em Word do paciente
+        const b = document.createElement('a'); b.className = 'btn sec peq'; b.textContent = '📄 Abrir laudo (Word)';
+        b.href = '/atendimentos/laudo/' + c.id + '?data=' + encodeURIComponent(o.iso || ''); b.target = '_blank'; b.rel = 'noopener';
+        b.title = 'Abre o laudo em Word deste paciente (procurado pelo nome na pasta definida pela gestão)';
+        b.style.marginLeft = '10px';
+        b.addEventListener('click', (ev) => ev.stopPropagation());
+        l.append(b);
+      }
+      lista.appendChild(l);
+    });
+    lista.classList.remove('oculto');
+  }
+  SeletorCliente(document.getElementById('seletor-cliente'), mostrar);
+  document.getElementById('btn-copiar-nome').addEventListener('click', (e) => {
+    e.target.setAttribute('data-copiar', nomeAtual);
+  });
+
+  // Exame: questionário da ficha PNT do exame e obrigatoriedade dos medicamentos
+  const exame = document.getElementById('exame');
+  const med = document.getElementById('medicamentos');
+  const bloco = document.getElementById('bloco-questionario');
+  const listaPerg = document.getElementById('lista-perguntas');
+  const btnManual = document.getElementById('btn-manual');
+  const campoManual = document.getElementById('campo-manual');
+  const notaManual = document.getElementById('nota-manual');
+  const RESP_INICIAIS = {{ respostas_iniciais|tojson }};
+  const EXAME_INICIAL = {{ f.exame|tojson }};
+  let montado = null;     // exame cujo questionário está na tela
+  let manual = !!RESP_INICIAIS.manual;
+
+  // Pergunta com justificativa: o campo só aparece quando a resposta é SIM
+  function montarQuestionario(perguntas, respostas) {
+    listaPerg.innerHTML = '';
+    perguntas.forEach(([texto, rotulo], idx) => {
+      const n = idx + 1;
+      const it = (respostas && respostas.itens && respostas.itens[idx]) || {r: '', o: ''};
+      const linha = document.createElement('div'); linha.className = 'pergunta';
+      const enunciado = document.createElement('span'); enunciado.textContent = n + ' - ' + texto;
+      const opcoes = document.createElement('span');
+      const campoObs = document.createElement('div'); campoObs.className = 'justificativa';
+      campoObs.hidden = true;
+      ['SIM', 'NÃO'].forEach((valor) => {
+        const l = document.createElement('label'); l.className = 'inline';
+        const r = document.createElement('input'); r.type = 'radio'; r.name = 'r' + n; r.value = valor;
+        r.checked = it.r === valor;
+        r.addEventListener('change', atualizarJustificativas);
+        l.append(r, ' ' + valor); opcoes.appendChild(l);
+      });
+      linha.append(enunciado, opcoes);
+      if (rotulo) {
+        const lbl = document.createElement('label'); lbl.textContent = rotulo + ' ';
+        const txt = document.createElement('input'); txt.type = 'text'; txt.name = 'o' + n;
+        txt.value = it.o || ''; txt.maxLength = 200; txt.setAttribute('data-maiusculas', '');
+        lbl.appendChild(txt); campoObs.appendChild(lbl);
+        linha.appendChild(campoObs);
+      }
+      listaPerg.appendChild(linha);
+    });
+    atualizarManual();   // aplica o modo manual (esconde/desabilita) ou as justificativas
+  }
+
+  // Mostra o campo de justificativa só onde a resposta é SIM; campo oculto não é enviado
+  function atualizarJustificativas() {
+    listaPerg.querySelectorAll('.pergunta').forEach((linha) => {
+      const campo = linha.querySelector('.justificativa');
+      if (!campo) return;
+      const sim = linha.querySelector('input[type=radio][value="SIM"]').checked;
+      campo.hidden = !sim;
+      campo.querySelector('input').disabled = !sim;
+    });
+  }
+
+  function atualizarManual() {
+    campoManual.value = manual ? '1' : '0';
+    btnManual.textContent = manual ? 'Voltar a responder' : 'Preencher manual';
+    notaManual.textContent = manual ? 'Questionário preenchido à mão (na ficha impressa). As perguntas foram escondidas e nenhuma resposta será gravada.' : '';
+    listaPerg.hidden = manual;
+    // campo desabilitado não é enviado; ao entrar no modo manual as respostas já marcadas são apagadas
+    listaPerg.querySelectorAll('input').forEach((i) => {
+      i.disabled = manual;
+      if (manual) { if (i.type === 'radio') i.checked = false; else i.value = ''; }
+    });
+    if (!manual) atualizarJustificativas();
+  }
+  btnManual.addEventListener('click', () => { manual = !manual; atualizarManual(); });
+
+  function aoMudarExame() {
+    const cfg = exames[exame.value.trim().toUpperCase()] || {};
+    const perguntas = cfg.questionario || [];
+    bloco.classList.toggle('oculto', perguntas.length === 0);
+    const chave = exame.value.trim().toUpperCase();
+    if (chave !== montado) {
+      // na primeira abertura (após erro) volta com as respostas que já estavam na tela
+      montarQuestionario(perguntas, montado === null && chave === EXAME_INICIAL ? RESP_INICIAIS : null);
+      montado = chave;
+    }
+    document.getElementById('tit-questionario').textContent = perguntas.length ? 'Questionário da ficha PNT' : 'Questionário';
+    document.getElementById('lbl-medicamentos').classList.toggle('obrig', !!cfg.medicamentos);
+    med.required = !!cfg.medicamentos;
+  }
+  exame.addEventListener('input', aoMudarExame); exame.addEventListener('change', aoMudarExame);
+  atualizarManual(); aoMudarExame();
+
+  // previsão de entrega do laudo (dias úteis e feriados de Governador Valadares, prazo definido pela gerência)
+  const campoData = document.getElementById('data'), notaPrevisao = document.getElementById('previsao-laudo');
+  function atualizarPrevisao() {
+    if (!campoData.value) { notaPrevisao.textContent = ''; return; }
+    fetch('/atendimentos/previsao?data=' + encodeURIComponent(campoData.value)).then(r => r.json())
+      .then(j => { notaPrevisao.textContent = j.texto || ''; }).catch(() => { notaPrevisao.textContent = ''; });
+  }
+  campoData.addEventListener('change', atualizarPrevisao); atualizarPrevisao();
+
+  const naoAplica = document.getElementById('chk-nao-aplica'), receita = document.getElementById('chk-receita');
+  naoAplica.addEventListener('change', () => { receita.checked = false; med.value = naoAplica.checked ? 'NÃO SE APLICA' : ''; });
+  receita.addEventListener('change', () => { naoAplica.checked = false; med.value = receita.checked ? 'RECEITA EM ANEXO AO PRONTUARIO' : ''; });
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% block titulo %}Agenda de medicamentos{% endblock %}
+{% block conteudo %}
+<div class="cabecalho">
+  <div><h1>Agenda de medicamentos</h1><p class="sub">{{ rows|length }} registro(s). Doses de Iodo, Gálio e PCI.</p></div>
+  <div class="acoes">
+    <a class="btn sec" href="{{ url_for('med.lista', status=status, medicamento=medicamento, dia=dia, q=q, imprimir=1) }}">Imprimir lista</a>
+  </div>
+</div>
+<form class="cartao filtros" method="get">
+  <div><label>Status</label><select name="status">
+    <option value="AGENDADO" {% if status == 'AGENDADO' %}selected{% endif %}>Agendados</option>
+    <option value="CONCLUIDO" {% if status == 'CONCLUIDO' %}selected{% endif %}>Concluídos</option>
+    <option value="CANCELADO" {% if status == 'CANCELADO' %}selected{% endif %}>Cancelados</option>
+    <option value="" {% if not status %}selected{% endif %}>Todos</option></select></div>
+  <div><label>Medicamento</label><select name="medicamento"><option value="">Todos</option>
+    {% for m in medicamentos %}<option {% if m == medicamento %}selected{% endif %}>{{ m }}</option>{% endfor %}</select></div>
+  <div><label>Data da dose</label><input type="date" name="dia" value="{{ dia }}"></div>
+  <div class="largo"><label>Paciente</label><input type="search" name="q" value="{{ q }}"></div>
+  <div><button class="btn" type="submit">Filtrar</button></div>
+</form>
+<div class="tabela-wrap"><table class="tabela">
+  <thead><tr><th>Data/dose</th><th>Paciente</th><th>Medicamento</th><th>mCi</th><th>Preparo</th><th>Dieta</th><th>Susp. medicação</th><th>Contato</th><th>Status</th><th></th></tr></thead>
+  <tbody>
+  {% for d in rows %}
+    <tr><td>{{ d.data_dose|data_br }}</td>
+      <td>{% if d.cliente_id %}<a href="{{ url_for('cad.cliente_editar', cid=d.cliente_id) }}">{{ d.paciente }}</a>{% else %}{{ d.paciente }}{% endif %}</td>
+      <td>{{ d.medicamento }}</td><td>{{ d.mci or '' }}</td><td>{{ d.preparo or '' }}</td><td>{{ d.dieta|data_br }}</td><td>{{ d.susp_medicacao|data_br }}</td>
+      <td>{{ d.contato or '' }}</td><td><span class="etiqueta {{ (d.status or '')|lower }}">{{ d.status }}</span></td>
+      <td class="num" style="white-space:nowrap">
+        <a class="btn sec peq" href="{{ url_for('med.imprimir', did=d.id) }}">Ficha</a>
+        <a class="btn sec peq" href="{{ url_for('med.editar', did=d.id) }}">Editar</a>
+        <form method="post" action="{{ url_for('med.status', did=d.id) }}" style="display:inline"
+              data-confirmar="{{ 'Deseja marcar este medicamento como CONCLUIDO?' if d.status == 'AGENDADO' else 'Voltar este medicamento para AGENDADO?' }}">
+          {{ csrf_input }}<input type="hidden" name="voltar" value="{{ request.full_path }}">
+          <input type="hidden" name="status" value="{{ 'CONCLUIDO' if d.status == 'AGENDADO' else 'AGENDADO' }}">
+          <button class="btn peq" type="submit">{{ 'Concluir' if d.status == 'AGENDADO' else 'Reabrir' }}</button></form>
+      </td></tr>
+  {% else %}<tr><td colspan="10" class="vazio">Nenhum medicamento encontrado.</td></tr>{% endfor %}
+  </tbody>
+</table></div>
+{% endblock %}

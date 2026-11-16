@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Questionário impresso da pesquisa de satisfação</title>
+<style>
+  @page { size: A4 portrait; margin: 10mm; }
+  * { box-sizing: border-box; }
+  body { font-family: Verdana, Arial, sans-serif; font-size: 11px; color: #111; margin: 0; padding: 14px; }
+  .barra { margin-bottom: 10px; display: flex; gap: 8px; align-items: center; }
+  .barra button { font-size: 14px; padding: 6px 14px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+  .ic { width: 16px; height: 16px; }
+  .cabeca { display: flex; align-items: center; gap: 12px; border-bottom: 2px solid #1f7a4d; padding-bottom: 6px; }
+  .cabeca img { width: 160px; }
+  .cabeca .txt { flex: 1; }
+  h1 { font-size: 17px; margin: 0; color: #1f7a4d; }
+  .clinica { font-size: 11px; color: #444; }
+  .instrucao { margin: 6px 0; font-size: 11px; }
+  .perfil { display: flex; flex-wrap: wrap; gap: 6px 16px; margin: 6px 0 8px; font-size: 11px; }
+  .perfil .linha { border-bottom: 1px solid #444; display: inline-block; min-width: 90px; }
+  .bolinha { display: inline-block; width: 10px; height: 10px; border: 1px solid #111; border-radius: 50%; vertical-align: -1px; margin-right: 3px; }
+  .opcoes-perfil { display: inline-flex; align-items: center; margin-right: 8px; }
+  table { width: 100%; border-collapse: collapse; }
+  td.pergunta { padding: 4px 4px 3px; border-top: 1px solid #bbb; font-weight: 700; font-size: 11px; vertical-align: top; }
+  td.pergunta .num { display: inline-block; min-width: 16px; }
+  td.escolhas { padding: 0 0 4px 16px; }
+  .esc { display: flex; gap: 4px; }
+  .esc div { flex: 1; text-align: center; font-size: 10px; padding-top: 2px; }
+  .esc .bolinha { display: block; margin: 0 auto 2px; }
+  .nps { display: flex; gap: 3px; }
+  .nps div { flex: 1; border: 1px solid #111; text-align: center; font-size: 10px; padding: 2px 0; }
+  .legenda { font-size: 9px; color: #444; margin-top: 2px; display: flex; justify-content: space-between; }
+  .campo { margin-top: 8px; font-weight: 700; font-size: 11px; }
+  .linhas { margin-top: 2px; }
+  .linhas div { border-bottom: 1px dotted #555; height: 20px; }
+  .dados { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 14px; margin-top: 8px; }
+  .dados div { border-bottom: 1px dotted #555; padding-top: 6px; font-size: 11px; }
+  .rodape { margin-top: 10px; font-size: 9px; color: #333; display: flex; justify-content: space-between; align-items: flex-end; gap: 10px; }
+  .interno { border: 1px solid #111; padding: 4px 6px; font-size: 9px; white-space: nowrap; }
+  @media print { .barra { display: none; } body { padding: 0; } }
+</style>
+</head>
+<body>
+<div class="barra">
+  <button type="button" onclick="window.print()"><svg class="ic" aria-hidden="true"><use href="{{ url_for('static', filename='img/icones.svg') }}#i-file-down"/></svg> Imprimir</button>
+</div>
+
+<div class="cabeca">
+  <img src="{{ url_for('static', filename='img/logo/verde-claro.png') }}" alt="Nucleleste">
+  <div class="txt">
+    <h1>Pesquisa de satisfação</h1>
+    {% if clinica %}<div class="clinica">{{ clinica }}</div>{% endif %}
+  </div>
+</div>
+
+<p class="instrucao">Sua opinião nos ajuda a melhorar. Marque um X em uma opção de cada pergunta. Ao terminar, entregue na recepção.</p>
+
+<div class="perfil">
+  <div>Data: <span class="linha" style="min-width:110px">&nbsp;</span></div>
+  <div>Exame: <span class="linha" style="min-width:200px">&nbsp;</span></div>
+</div>
+<div class="perfil">
+  <div>Atendimento:
+    <span class="opcoes-perfil"><span class="bolinha"></span>Convênio</span>
+    <span class="opcoes-perfil"><span class="bolinha"></span>Particular</span>
+  </div>
+  <div>Quem responde:
+    <span class="opcoes-perfil"><span class="bolinha"></span>Paciente</span>
+    <span class="opcoes-perfil"><span class="bolinha"></span>Acompanhante</span>
+  </div>
+</div>
+
+<table>
+  {% for p in perguntas %}
+  <tr><td class="pergunta" colspan="2"><span class="num">{{ loop.index }}.</span> {{ p.texto }}</td></tr>
+  <tr><td class="escolhas" colspan="2">
+    {% if p.tipo == 'SIMNAO' %}
+      <div class="esc" style="max-width:240px">
+        {% for o in p.opcoes %}<div><span class="bolinha"></span>{{ o }}</div>{% endfor %}
+      </div>
+    {% elif p.tipo == 'NPS' %}
+      <div class="nps">
+        {% for o in p.opcoes %}<div>{{ o }}</div>{% endfor %}
+      </div>
+      <div class="legenda"><span>0 = nada provável</span><span>10 = muito provável</span></div>
+    {% else %}
+      <div class="esc">
+        {% for o in p.opcoes %}<div><span class="bolinha"></span>{{ o }}</div>{% endfor %}
+      </div>
+    {% endif %}
+  </td></tr>
+  {% endfor %}
+</table>
+
+<div class="campo">Elogio</div>
+<div class="linhas"><div></div><div></div></div>
+<div class="campo">Sugestão</div>
+<div class="linhas"><div></div><div></div></div>
+
+<div class="dados">
+  <div>Nome (opcional)</div>
+  <div>Telefone (opcional)</div>
+</div>
+
+<div class="rodape">
+  <div>Suas respostas são usadas apenas para melhorar o atendimento.</div>
+  <div class="interno">Uso interno: lançado no sistema em ____/____/______ por __________</div>
+</div>
+
+<script>if (location.search.indexOf('auto=1') >= 0) window.print();</script>
+</body>
+</html>

@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% from '_ic.html' import ic %}
+{% from '_fat_macros.html' import pilula, visualizador %}
+{% block titulo %}Fatura{% endblock %}
+{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/fat.css') }}">{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='js/fat.js') }}"></script>{% endblock %}
+{% block conteudo %}
+<h1>{{ 'Editar fatura' if fat else 'Nova fatura' }}</h1>
+<p class="sub">{% if fat %}Registrada por {{ fat.usuario or '—' }} em {{ (fat.criado_em or '')[:10]|data_br }}{% if fat.atualizado_por %} · última alteração por {{ fat.atualizado_por }}{% endif %} · situação:
+  <strong>{{ rotulos[fat.status] if fat.status in rotulos else fat.status }}</strong>{% else %}Informe os dados da fatura enviada ao convênio. A nota fiscal <b>não é obrigatória</b>: sem ela, a fatura fica como “Faturado” e a nota é lançada depois, em “Emissão da nota fiscal”.{% endif %}</p>
+<form class="cartao fat-form" method="post" enctype="multipart/form-data" autocomplete="off">
+  {{ csrf_input }}
+  <div class="grade">
+    <div class="c4"><label class="obrig">Convênio / particular</label>
+      <select name="convenio" required><option value=""></option>
+        {% set achou = namespace(v=false) %}
+        {% for c in convenios %}<option {% if c == f.convenio %}selected{% set achou.v = true %}{% endif %}>{{ c }}</option>{% endfor %}
+        {% if f.convenio and not achou.v %}<option selected>{{ f.convenio }}</option>{% endif %}</select></div>
+    <div class="c4"><label class="obrig">Data de referência</label><input type="date" name="referencia" value="{{ f.referencia }}" required>
+      <div class="ajuda">Competência da fatura (ex.: último dia do mês faturado).</div></div>
+    <div class="c4"><label class="obrig">Protocolo do faturamento</label><input type="text" name="protocolo" value="{{ f.protocolo }}" maxlength="40" required placeholder="Número do protocolo"></div>
+
+    <div class="c4"><label class="obrig">Valor faturado (R$)</label><input type="text" name="valor_bruto" value="{{ f.valor_bruto }}" required inputmode="decimal" placeholder="0,00"></div>
+    <div class="c4"><label class="obrig">Quantidade de guias faturadas</label><input type="number" name="qtd_guias" value="{{ f.qtd_guias }}" min="1" required inputmode="numeric"></div>
+    <div class="c4"><label>Nota fiscal <small>(opcional)</small></label><input type="text" name="nota_fiscal" value="{{ f.nota_fiscal }}" maxlength="30" placeholder="Pode ficar vazio por enquanto">
+      <div class="ajuda">Informando a nota aqui, a fatura já fica como “Nota fiscal emitida”.</div></div>
+
+    <div class="c4"><label>Previsão de recebimento</label><input type="date" name="previsao" value="{{ f.previsao }}"></div>
+    <div class="c8"><label>Observação</label><input type="text" name="obs" value="{{ f.obs }}" maxlength="300"></div>
+
+    <div class="c12 fat-pdf-campo">
+      <label>{{ ic('file-text', 16) }} PDF do protocolo <small>(opcional; para consultar depois, abre dentro do sistema)</small></label>
+      {% if fat and fat.anexo_id %}
+        <p class="ajuda" style="margin:0 0 6px">Já importado: <b>{{ fat.protocolo_nome }}</b> ({{ '%.0f'|format((fat.protocolo_tamanho or 0) / 1024) }} KB).
+          <a href="{{ url_for('fat.protocolo', fid=fat.id) }}">Ver / baixar / remover</a>. Escolher outro arquivo abaixo substitui este.</p>
+      {% endif %}
+      <input type="file" name="protocolo_pdf" accept="application/pdf,.pdf"><div class="ajuda">Somente PDF, até {{ max_mb }} MB.</div>
+    </div>
+  </div>
+  <div class="acoes">
+    <button class="btn" type="submit">Salvar</button>
+    {% if not fat %}<button class="btn sec" type="submit" name="continuar" value="1">Salvar e cadastrar outra</button>{% endif %}
+    <a class="btn sec" href="{{ url_for('fat.lista') }}">Voltar</a>
+  </div>
+</form>
+{% if fat %}
+<form method="post" action="{{ url_for('fat.excluir', fid=fat.id) }}" data-confirmar="Excluir esta fatura definitivamente?">{{ csrf_input }}<button class="btn perigo peq" type="submit">Excluir fatura</button></form>
+{% endif %}
+{% endblock %}

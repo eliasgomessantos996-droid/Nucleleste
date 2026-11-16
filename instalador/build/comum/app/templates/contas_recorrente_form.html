@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+{% block titulo %}Conta recorrente{% endblock %}
+{% block conteudo %}
+<h1>Editar conta recorrente</h1>
+<p class="sub">As contas já lançadas não mudam: a alteração vale para as próximas.</p>
+<form class="cartao" method="post">
+  {{ csrf_input }}
+  <div class="grade">
+    <div class="c8"><label class="obrig">Descrição</label><input type="text" name="descricao" value="{{ f.descricao }}" required data-maiusculas autofocus></div>
+    <div class="c4"><label class="obrig">Categoria</label>
+      <select name="categoria" required><option value=""></option>{% for c in categorias %}<option {% if c == f.categoria %}selected{% endif %}>{{ c }}</option>{% endfor %}
+        {% if f.categoria and f.categoria not in categorias %}<option selected>{{ f.categoria }}</option>{% endif %}</select></div>
+    <div class="c4"><label class="obrig">Valor (R$)</label><input type="text" name="valor" value="{{ f.valor }}" required inputmode="decimal" placeholder="0,00"></div>
+    <div class="c4"><label class="obrig">Dia do vencimento (1 a 31)</label><input type="number" name="dia" min="1" max="31" value="{{ f.dia }}" required></div>
+    <div class="c6"><label for="f-fornecedor">Fornecedor cadastrado</label>
+      <select name="fornecedor_id" id="f-fornecedor"><option value="">(sem cadastro)</option>
+        {% for x in fornecedores %}<option value="{{ x.id }}" {% if f.fornecedor_id|string == x.id|string %}selected{% endif %}>{{ x.nome }}</option>{% endfor %}</select></div>
+    <div class="c6"><label>Ou digite o fornecedor (sem cadastro)</label><input type="text" name="fornecedor" value="{{ f.fornecedor or '' }}" data-maiusculas></div>
+    <div class="c12"><label>Observação</label><input type="text" name="obs" value="{{ f.obs or '' }}"></div>
+  </div>
+  <div class="acoes">
+    <button class="btn" type="submit">Salvar</button>
+    <a class="btn sec" href="{{ url_for('fin.conta_recorrentes') }}">Voltar</a>
+  </div>
+</form>
+{% endblock %}

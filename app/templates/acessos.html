@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+{% block titulo %}Log de acessos{% endblock %}
+{% block conteudo %}
+<h1>Log de acessos</h1>
+<p class="sub">Últimos 1000 registros (inclui o histórico importado da aba “log” da planilha).</p>
+<div class="tabela-wrap"><table class="tabela">
+  <thead><tr><th>Data</th><th>Hora</th><th>Usuário</th><th>Evento</th><th>Computador / IP</th><th>Detalhe</th></tr></thead>
+  <tbody>{% for a in rows %}<tr><td>{{ a.data_hora[:10]|data_br }}</td><td>{{ a.data_hora[11:19] }}</td><td>{{ a.usuario or '' }}</td><td>{{ a.evento or '' }}</td>
+    <td>{{ a.computador or '' }}</td><td style="max-width:320px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ a.detalhe or '' }}</td></tr>{% endfor %}</tbody>
+</table></div>
+{% endblock %}

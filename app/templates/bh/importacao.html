@@ -1,0 +1,19 @@
+{% extends 'bh/layout.html' %}
+{% block titulo %}Detalhes da importação{% endblock %}
+{% block conteudo %}
+<div class="cabecalho"><div><a href="{{ url_for('bh.importacoes') }}">← Importações</a><h1>Detalhes da importação</h1><p class="sub">{{ batch.filename }}</p></div><div class="acoes"><a class="btn sec" href="{{ url_for('bh.importacao_original', batch_id=batch.id) }}">Baixar arquivo original</a></div></div>
+<div class="bh-cartoes">
+  <div class="bh-cartao"><div class="r">Período</div><div class="v" style="font-size:20px">{{ batch.period_start|bh_data }}</div><div class="d">até {{ batch.period_end|bh_data }}</div></div>
+  <div class="bh-cartao"><div class="r">Funcionários identificados</div><div class="v">{{ batch.employee_count if batch.employee_count is defined else batch.employees|length }}</div></div>
+  <div class="bh-cartao"><div class="r">Lançamentos</div><div class="v">{{ batch.record_count if batch.record_count is defined else '—' }}</div></div>
+  <div class="bh-cartao"><div class="r">Importado em</div><div class="v" style="font-size:18px">{{ batch.created_at|bh_datahora }}</div><div class="d">por {{ batch.actor }}</div></div>
+</div>
+{% if batch.warnings %}<div class="bh-aviso"><h2>Avisos da importação</h2><ul>{% for w in batch.warnings %}<li>{{ w }}</li>{% endfor %}</ul></div>{% endif %}
+<div class="cartao"><h2>Funcionários da planilha</h2><p class="sub">A associação usa o Número I. Batidas originais são preservadas.</p>
+  <div class="tabela-wrap"><table class="tabela"><thead><tr><th>Nome na planilha</th><th>Número I</th><th>Associação</th><th></th></tr></thead><tbody>
+  {% for p in batch.employees %}<tr><td><strong>{{ p.name }}</strong></td><td><span class="bh-id">{{ p.clock_id }}</span></td>
+    <td>{% if p.employee_id %}<span class="etiqueta pago">Cadastrado</span>{% else %}<span class="etiqueta aberto">Aguardando cadastro</span>{% endif %}</td>
+    <td class="num">{% if p.employee_id %}<a class="btn sec peq" href="{{ url_for('bh.extrato', employee_id=p.employee_id, month=batch.period_start[:7]) }}">Conferir extrato →</a>
+      {% elif pode('bh_gestao') %}<a class="btn peq" href="{{ url_for('bh.funcionario_novo', clock_id=p.clock_id, name=p.name, start_date=batch.period_start) }}">Cadastrar funcionário →</a>{% endif %}</td></tr>
+  {% endfor %}</tbody></table></div></div>
+{% endblock %}

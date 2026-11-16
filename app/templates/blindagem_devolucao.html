@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+{% block titulo %}Solicitar devolução{% endblock %}
+{% block conteudo %}
+<div class="cabecalho">
+  <div><h1>Solicitar devolução</h1><p class="sub">Marque as blindagens <strong>vencidas</strong> que serão devolvidas. {{ vencidas }} vencida(s) disponível(is) para solicitar.</p></div>
+</div>
+
+<form method="post" id="form-devolucao" data-confirmar="Solicitar a devolução das blindagens marcadas? O status delas passará para DEVOLUÇÃO SOLICITADA.">
+  {{ csrf_input }}
+  <div class="tabela-wrap"><table class="tabela">
+    <thead><tr>
+      <th><input type="checkbox" id="marcar-vencidas" title="Marcar todas as vencidas" {{ 'disabled' if not vencidas }}></th>
+      <th>Lote</th><th>Nota fiscal</th><th>Série</th><th>Data da nota</th><th>CFOP</th><th>Validade</th><th>Status</th></tr></thead>
+    <tbody>
+    {% for b in rows %}
+      {% set pode = b.status == 'VENCIDO' %}
+      <tr {% if not pode %}style="opacity:.6"{% endif %}>
+        <td><input type="checkbox" name="ids" value="{{ b.id }}" aria-label="Marcar lote {{ b.lote }}" {{ '' if pode else 'disabled' }} {% if not pode %}title="Só blindagens vencidas podem ser devolvidas"{% endif %}></td>
+        <td><strong>{{ b.lote }}</strong></td><td>{{ b.nota_fiscal }}</td><td>{{ b.serie }}</td><td>{{ b.data_nota|data_br }}</td><td>{{ b.cfop }}</td>
+        <td>{{ b.validade|data_br }}</td>
+        <td><span class="etiqueta {{ classe_status_blindagem(b.status) }}">{{ b.status }}</span></td>
+      </tr>
+    {% else %}<tr><td colspan="8" class="vazio">Nenhuma blindagem cadastrada.</td></tr>{% endfor %}
+    </tbody>
+  </table></div>
+
+  <div class="cartao filtros" style="margin-top:16px">
+    <div><label for="valor_unitario">Valor da mercadoria por volume (R$)</label><input type="text" id="valor_unitario" name="valor_unitario" value="{{ valor }}" inputmode="decimal" style="max-width:160px"><div class="ajuda">Usado na declaração para transporte.</div></div>
+    <div><button class="btn" type="submit" id="botao-solicitar" disabled>Solicitar devolução</button></div>
+    <div><span class="ajuda" id="contador-marcadas">Nenhuma blindagem marcada.</span></div>
+  </div>
+</form>
+{% endblock %}
+{% block scripts %}
+<script>
+(function () {
+  var caixas = [].slice.call(document.querySelectorAll('input[name=ids]:not([disabled])'));
+  var todas = document.getElementById('marcar-vencidas');
+  var botao = document.getElementById('botao-solicitar');
+  var contador = document.getElementById('contador-marcadas');
+  function atualizar() {
+    var n = caixas.filter(function (c) { return c.checked; }).length;
+    botao.disabled = n === 0;
+    botao.textContent = n ? 'Solicitar devolução (' + n + ')' : 'Solicitar devolução';
+    contador.textContent = n ? n + ' blindagem(ns) marcada(s).' : 'Nenhuma blindagem marcada.';
+    if (todas) { todas.checked = n > 0 && n === caixas.length; todas.indeterminate = n > 0 && n < caixas.length; }
+  }
+  caixas.forEach(function (c) { c.addEventListener('change', atualizar); });
+  if (todas) todas.addEventListener('change', function () { caixas.forEach(function (c) { c.checked = todas.checked; }); atualizar(); });
+  atualizar();
+})();
+</script>
+{% endblock %}

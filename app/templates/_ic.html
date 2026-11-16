@@ -1,0 +1,2 @@
+{# Ícone do sprite static/img/icones.svg (traço fino, currentColor). Uso: {% from '_ic.html' import ic %}{{ ic('check') }} #}
+{% macro ic(nome, tam=18, classe='') -%}<svg class="ic {{ classe }}" width="{{ tam }}" height="{{ tam }}" aria-hidden="true" focusable="false"><use href="{{ url_for('static', filename='img/icones.svg') }}#i-{{ nome }}"/></svg>{%- endmacro %}

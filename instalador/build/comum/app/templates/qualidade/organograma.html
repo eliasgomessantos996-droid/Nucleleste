@@ -1,0 +1,28 @@
+{% extends 'qualidade/_base.html' %}
+{% from 'qualidade/_modelos.html' import galeria_organogramas, pdf_botoes with context %}
+{% block titulo %}Organograma{% endblock %}
+{% block titulo_q %}Organograma empresarial{% endblock %}
+{% block sub_q %}Cargos ligados ao cargo superior, com setor, pessoa e cor por área. O desenho se arruma sozinho; imprima em paisagem.{% endblock %}
+{% block acoes_q %}{{ pdf_botoes(url_for('qual.organograma_pdf')) }}<button type="button" class="btn sec" data-org-png>⬇ PNG</button>{% endblock %}
+{% block corpo_q %}
+{{ galeria_organogramas(modelos, nos|length > 0, not nos) }}
+<div class="cartao q-folha-paisagem"><div class="q-org" data-org='{{ nos|tojson }}' data-editar="{{ url_for('qual.organograma') }}"></div>
+  {% if not nos %}<p class="sub">Comece pelo cargo mais alto (ex.: Diretoria) e depois inclua os cargos abaixo dele.</p>{% endif %}</div>
+{% set n = editar or {} %}
+<form class="cartao q-form q-nao-imprime" method="post" action="{{ url_for('qual.org_salvar') }}">
+  {{ csrf_input }}{% if editar %}<input type="hidden" name="id" value="{{ editar.id }}">{% endif %}
+  <h2>{{ 'Editar: ' ~ editar.cargo if editar else 'Novo cargo' }}</h2>
+  <div class="q-linha3"><label>Cargo<input type="text" name="cargo" value="{{ n.cargo or '' }}" required maxlength="120"></label>
+    <label>Pessoa<input type="text" name="pessoa" value="{{ n.pessoa or '' }}" maxlength="120"></label>
+    <label>Setor / área<input type="text" name="setor" value="{{ n.setor or '' }}" maxlength="80"></label></div>
+  <div class="q-linha3">
+    <label>Cargo superior<select name="pai_id"><option value="">(topo)</option>{% for x in nos %}{% if not editar or x.id != editar.id %}<option value="{{ x.id }}" {{ 'selected' if x.id == n.pai_id }}>{{ x.cargo }}{{ ' · ' ~ x.pessoa if x.pessoa }}</option>{% endif %}{% endfor %}</select></label>
+    <label>Funcionário do Banco de Horas (opcional)<select name="funcionario_id"><option value="">—</option>{% for f in funcionarios %}<option value="{{ f.id }}" {{ 'selected' if f.id == n.funcionario_id }}>{{ f.name }}</option>{% endfor %}</select></label>
+    <label>Cor da área<input type="color" name="cor" value="{{ n.cor or '#255f39' }}"></label></div>
+  <label style="max-width:12em">Ordem entre irmãos<input type="number" name="ordem" value="{{ n.ordem or 0 }}"></label>
+  <button class="btn" type="submit">Salvar</button>{% if editar %} <a class="btn sec" href="{{ url_for('qual.organograma') }}">Cancelar</a>{% endif %}
+</form>
+{% if editar %}
+<form class="q-nao-imprime" method="post" action="{{ url_for('qual.org_excluir', nid=editar.id) }}" onsubmit="return confirm('Excluir o cargo? Quem estava abaixo passa para o cargo superior.')">{{ csrf_input }}<button class="btn perigo" type="submit">Excluir este cargo</button></form>
+{% endif %}
+{% endblock %}

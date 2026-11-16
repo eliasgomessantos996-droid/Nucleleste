@@ -1,0 +1,144 @@
+{% extends 'base.html' %}
+{% block titulo %}Pendências Medcloud{% endblock %}
+{% block conteudo %}
+<style>
+.mp-topo{display:flex;align-items:center;gap:14px;margin-bottom:4px}
+.mp-topo svg.mp-nuvem{width:46px;height:46px;flex:none;color:var(--verde,#1f7a4d)}
+.mp-seta{animation:mp-sobe 1.8s ease-in-out infinite}
+@keyframes mp-sobe{0%,100%{transform:translateY(2px);opacity:.55}50%{transform:translateY(-3px);opacity:1}}
+.mp-filtro{display:flex;flex-wrap:wrap;gap:8px;align-items:end;margin:12px 0}
+.mp-filtro input[type=search]{min-width:240px}
+.mp-celula{min-width:230px}
+.mp-linha-estado{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:6px}
+.mp-arquivos{list-style:none;margin:6px 0;padding:0;font-size:12.5px}
+.mp-arquivos li{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:2px 0}
+.mp-arquivos .nome{max-width:190px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mp-acoes{display:flex;gap:6px;flex-wrap:wrap}
+.mp-acoes form{margin:0}
+.mp-gira{display:inline-block;width:12px;height:12px;border:2px solid currentColor;border-top-color:transparent;border-radius:50%;animation:mp-gira .9s linear infinite;vertical-align:-2px}
+@keyframes mp-gira{to{transform:rotate(360deg)}}
+.mp-erro{color:var(--erro,#b42318)}
+.mp-arq-oculto{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+@media (prefers-reduced-motion:reduce){.mp-seta,.mp-gira{animation:none!important}}
+</style>
+
+<div class="mp-topo">
+  <svg class="mp-nuvem" viewBox="0 0 48 48" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M14 34a8 8 0 0 1-1.2-15.9A11 11 0 0 1 34 15.5 9 9 0 0 1 35 34" opacity=".6"/>
+    <g class="mp-seta"><path d="M24 40V24"/><path d="m18 29 6-6 6 6"/></g>
+  </svg>
+  <p class="sub" style="margin:0">Anexos e laudos dos estudos criados na Medcloud. Escolha o arquivo aqui e o robô leva ao estudo do paciente; depois você marca como enviado/entregue.</p>
+</div>
+
+{% if a_liberar[0] %}
+<div class="msg aviso" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+  <span>{{ a_liberar[0] }} arquivo(s) já enviados à Medcloud ainda ocupam {{ '%.1f'|format(a_liberar[1] / 1048576) }} MB no banco de anexos do sistema. A Medcloud já guarda esses arquivos; depois de limpar, o download passa a ser feito direto de lá.</span>
+  <form method="post" action="{{ url_for('mpend.limpar_enviados') }}" style="margin:0" onsubmit="return confirm('Apagar do banco de anexos {{ a_liberar[0] }} arquivo(s) que já estão na Medcloud? Para baixar de novo, o sistema buscará na Medcloud.')">{{ csrf_input }}
+    <button class="btn sec" type="submit">{{ ico('circle-x', 16) }} Liberar espaço</button></form>
+</div>
+{% endif %}
+
+{% if not robo_ligado %}
+<div class="msg aviso">O robô da Medcloud está desligado ou fora do horário de funcionamento: os arquivos escolhidos ficam na fila e são enviados quando ele voltar.</div>
+{% endif %}
+
+<form method="get" class="mp-filtro">
+  <div><label for="mp-q">Paciente ou exame</label><input type="search" id="mp-q" name="q" value="{{ q }}" placeholder="Buscar"></div>
+  <div><label for="mp-mostrar">Mostrar</label>
+    <select id="mp-mostrar" name="mostrar">
+      <option value="pendentes" {% if mostrar == 'pendentes' %}selected{% endif %}>Só com pendência</option>
+      <option value="todos" {% if mostrar == 'todos' %}selected{% endif %}>Todos os estudos</option>
+    </select></div>
+  <button class="btn sec" type="submit">{{ ico('refresh-cw', 16) }} Filtrar</button>
+</form>
+
+{% set ns = namespace(andando=false) %}
+<div class="cartao" style="padding:0;overflow:auto">
+<table class="tabela">
+  <thead><tr><th>Data</th><th>Paciente / exame</th><th>Anexos</th><th>Laudos</th></tr></thead>
+  <tbody>
+  {% for it in itens %}
+    <tr id="aten-{{ it.atendimento_id }}">
+      <td style="white-space:nowrap">{{ it.data|data_br }}</td>
+      <td><strong>{{ it.cliente_nome }}</strong><div class="ajuda">{{ it.exame }}{% if it.convenio %} · {{ it.convenio }}{% endif %}</div></td>
+      {% for tipo, pend, ok_por, ok_em, rotulo, feito_txt in (
+           ('ANEXO', it.anexos_pend, it.anexos_ok_por, it.anexos_ok_em, 'anexo', 'Anexos enviados'),
+           ('LAUDO', it.laudos_pend, it.laudos_ok_por, it.laudos_ok_em, 'laudo', 'Laudos entregues')) %}
+      <td class="mp-celula">
+        <div class="mp-linha-estado">
+          {% if pend %}<span class="etiqueta aberto">{{ ico('clock', 13) }} Pendente</span>
+          {% else %}<span class="etiqueta concluido">{{ ico('circle-check', 13) }} {{ feito_txt }}</span>
+            <span class="ajuda">{{ ok_por }}{% if ok_em %} · {{ ok_em|data_br }}{% endif %}</span>{% endif %}
+        </div>
+        {% set lista = it.envios[tipo] %}
+        {% if lista %}
+        <ul class="mp-arquivos">
+          {% for e in lista %}
+          <li>
+            <a class="nome" href="{{ url_for('mpend.baixar', eid=e.id) }}" title="{{ e.arquivo_nome }}{% if e.estado == 'OK' and e.local_apagado_em %} (guardado só na Medcloud: o download busca de lá, pode levar alguns segundos){% endif %}">{{ e.arquivo_nome }}</a>
+            {% if e.estado == 'OK' %}<span class="etiqueta concluido" title="Enviado ao estudo em {{ e.enviado_em }}">{{ ico('check', 12) }} no estudo</span>
+            {% elif e.estado == 'PROCESSANDO' %}{% set ns.andando = true %}<span class="etiqueta aberto"><span class="mp-gira"></span> {{ e.fase or 'Enviando' }}</span>
+            {% elif e.estado == 'PENDENTE' %}{% set ns.andando = true %}<span class="etiqueta aberto"><span class="mp-gira"></span> Na fila{% if e.tentativas %} (tentativa {{ e.tentativas + 1 }}){% endif %}</span>
+            {% else %}<span class="etiqueta cancelado" title="{{ e.erro }}">{{ ico('triangle-alert', 12) }} Erro</span>
+              <span class="mp-erro">{{ e.erro }}</span>{% endif %}
+            {% if e.estado == 'ERRO' %}
+            <form method="post" action="{{ url_for('mpend.tentar', eid=e.id) }}">{{ csrf_input }}<input type="hidden" name="mostrar" value="{{ mostrar }}"><input type="hidden" name="q" value="{{ q }}">
+              <button class="btn sec peq" type="submit">{{ ico('rotate-ccw', 13) }} Tentar de novo</button></form>
+            {% endif %}
+            {% if e.estado in ('ERRO', 'PENDENTE') %}
+            <form method="post" action="{{ url_for('mpend.remover', eid=e.id) }}" onsubmit="return confirm('Retirar este arquivo da fila?')">{{ csrf_input }}<input type="hidden" name="mostrar" value="{{ mostrar }}"><input type="hidden" name="q" value="{{ q }}">
+              <button class="btn sec peq" type="submit" title="Retirar da fila" aria-label="Retirar da fila">{{ ico('x', 13) }}</button></form>
+            {% endif %}
+          </li>
+          {% endfor %}
+        </ul>
+        {% endif %}
+        <div class="mp-acoes">
+          <form method="post" action="{{ url_for('mpend.enviar', aid=it.atendimento_id) }}" enctype="multipart/form-data" class="mp-enviar">
+            {{ csrf_input }}<input type="hidden" name="tipo" value="{{ tipo }}"><input type="hidden" name="mostrar" value="{{ mostrar }}"><input type="hidden" name="q" value="{{ q }}">
+            <input class="mp-arq-oculto" type="file" name="arquivo" multiple accept="{{ extensoes|join(',') }}" tabindex="-1" aria-hidden="true">
+            <button class="btn peq mp-escolher" type="button">{{ ico('upload', 14) }} Enviar {{ rotulo }}</button>
+          </form>
+          {% if pend %}
+          <form method="post" action="{{ url_for('mpend.marcar', aid=it.atendimento_id) }}" onsubmit="return confirm('Confirma que {{ 'todos os anexos' if tipo == 'ANEXO' else 'todos os laudos' }} de {{ it.cliente_nome|e }} foram {{ 'enviados' if tipo == 'ANEXO' else 'entregues' }} corretamente? A pendência vai sumir.')">
+            {{ csrf_input }}<input type="hidden" name="tipo" value="{{ tipo }}"><input type="hidden" name="mostrar" value="{{ mostrar }}"><input type="hidden" name="q" value="{{ q }}">
+            <button class="btn sec peq" type="submit">{{ ico('clipboard-check', 14) }} {{ 'Marcar anexos enviados' if tipo == 'ANEXO' else 'Marcar laudos entregues' }}</button></form>
+          {% else %}
+          <form method="post" action="{{ url_for('mpend.marcar', aid=it.atendimento_id) }}">
+            {{ csrf_input }}<input type="hidden" name="tipo" value="{{ tipo }}"><input type="hidden" name="acao" value="reabrir"><input type="hidden" name="mostrar" value="{{ mostrar }}"><input type="hidden" name="q" value="{{ q }}">
+            <button class="btn sec peq" type="submit">{{ ico('undo-2', 14) }} Reabrir</button></form>
+          {% endif %}
+        </div>
+      </td>
+      {% endfor %}
+    </tr>
+  {% else %}
+    <tr><td colspan="4" class="vazio">{% if mostrar == 'pendentes' %}Nenhuma pendência: todos os estudos já têm anexos e laudos resolvidos.{% else %}Nenhum estudo criado na Medcloud ainda.{% endif %}</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+<p class="ajuda">Formatos: PDF, Word, Excel, TXT, JPG e PNG, até {{ max_mb }} MB cada. O arquivo vai ao estudo como "Anexar arquivo como anexo" (o paciente vê no portal); o laudo em arquivo segue o mesmo caminho. Mandar o arquivo não tira a pendência: quem confere e marca é a equipe.</p>
+
+<script>
+(function () {
+  // "Enviar anexo/laudo" abre a janela para escolher o arquivo e envia assim que escolher
+  document.querySelectorAll('.mp-enviar').forEach(function (f) {
+    var arq = f.querySelector('input[type=file]');
+    f.querySelector('.mp-escolher').addEventListener('click', function () { arq.click(); });
+    arq.addEventListener('change', function () { if (arq.files.length) f.submit(); });
+  });
+  // enquanto há arquivo na fila, a tela se atualiza sozinha quando o robô avança
+  var andando = {{ 'true' if ns.andando else 'false' }};
+  var assinatura = {{ assinatura|tojson }};
+  if (andando) {
+    setInterval(function () {
+      fetch({{ url_for('mpend.andamento')|tojson }}, { credentials: 'same-origin', cache: 'no-store' })
+        .then(function (r) { return r.json(); })
+        .then(function (j) { if (j.assinatura !== assinatura) location.reload(); })
+        .catch(function () {});
+    }, 3000);
+  }
+})();
+</script>
+{% endblock %}

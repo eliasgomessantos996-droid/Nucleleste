@@ -1,0 +1,34 @@
+{% extends 'qualidade/_base.html' %}
+{% from 'qualidade/_modelos.html' import galeria, cartao, pdf_botoes with context %}
+{% from '_ic.html' import ic %}
+{% block titulo %}Protocolos (POPs){% endblock %}
+{% block titulo_q %}Protocolos operacionais padrão (POPs){% endblock %}
+{% block sub_q %}Passo a passo oficial de cada rotina do centro de medicina nuclear, com versão, aprovação e PDF com campos de assinatura e validação para apresentar a auditorias e órgãos de fiscalização.{% endblock %}
+{% block acoes_q %}{% if lista %}{{ pdf_botoes(url_for('qual.protocolos_lista_pdf'), 'Lista mestra') }}{% endif %}{% endblock %}
+{% block corpo_q %}
+{% call galeria('Protocolos prontos para medicina nuclear', 'Cada modelo traz objetivo, abrangência, responsabilidades, definições, materiais, passo a passo, registros, referências normativas e o fluxograma do processo. Crie, ajuste ao seu serviço, aprove e imprima com as assinaturas.', modelos_pop|length, not lista) %}
+{% for g in modelos_pop %}{{ cartao(g.codigo ~ ' · ' ~ g.titulo, g.objetivo, [g.setor, g.passos ~ ' passos'], url_for('qual.protocolo_modelo', chave=g.chave), botao=('Abrir o protocolo criado' if g.id else 'Criar este protocolo')) }}{% endfor %}
+<form class="q-modelo q-modelo-todos" method="post" action="{{ url_for('qual.protocolo_modelos_todos') }}">{{ csrf_input }}
+  <h3>Criar todos de uma vez</h3><p>Cria os {{ modelos_pop|length }} protocolos que ainda não existem, como rascunho, para revisar um a um.</p>
+  <button class="btn peq" type="submit">{{ ic('check', 16) }} Criar todos os protocolos</button>
+</form>
+{% endcall %}
+<div class="tabela-wrap"><table class="tabela">
+  <thead><tr><th>Código</th><th>Protocolo</th><th>Setor</th><th class="num">Versão</th><th>Situação</th><th>Aprovado por</th><th>Próxima revisão</th><th class="q-nao-imprime">PDF</th></tr></thead>
+  <tbody>{% for p in lista %}
+    <tr><td><strong>{{ p.codigo }}</strong></td><td><a href="{{ url_for('qual.protocolo_pagina', pid=p.id) }}"><strong>{{ p.titulo }}</strong></a></td><td>{{ p.setor }}</td><td class="num">v{{ p.versao }}</td>
+      <td><span class="q-chip {{ 'ok' if p.status == 'APROVADO' else 'atencao' }}">{{ p.status }}</span></td>
+      <td>{{ p.aprovado_por or '—' }}{% if p.aprovado_em %} <small>{{ p.aprovado_em[:10]|data_br }}</small>{% endif %}</td>
+      <td>{% if p.proxima_revisao %}{{ p.proxima_revisao|data_br }}{% if p.vencido %} <span class="q-chip critico">vencida</span>{% endif %}{% else %}—{% endif %}</td>
+      <td class="q-nao-imprime" style="white-space:nowrap"><a class="btn sec peq" href="{{ url_for('qual.protocolo_pdf', pid=p.id) }}" target="_blank" rel="noopener">PDF</a> <a class="btn sec peq" href="{{ url_for('qual.protocolo_pdf', pid=p.id, baixar=1) }}">Baixar</a></td></tr>
+  {% else %}<tr><td colspan="8" class="sub">Nenhum protocolo ainda. Comece pelos modelos prontos acima ou crie um em branco abaixo.</td></tr>{% endfor %}</tbody>
+</table></div>
+<form class="cartao q-form q-nao-imprime" method="post" action="{{ url_for('qual.protocolo_novo') }}">
+  {{ csrf_input }}<h2>Novo protocolo em branco</h2>
+  <div class="q-linha3"><label>Título<input type="text" name="titulo" required maxlength="200" placeholder="Ex.: Limpeza da sala de exames"></label>
+    <label>Setor ou área<input type="text" name="setor" maxlength="120"></label>
+    <label>Código (opcional)<input type="text" name="codigo" maxlength="30" placeholder="gerado automaticamente"></label></div>
+  <label>Objetivo<textarea name="objetivo" rows="2"></textarea></label>
+  <button class="btn" type="submit">Criar e abrir</button>
+</form>
+{% endblock %}

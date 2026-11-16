@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Quitação · Nucleleste</title>
+<style>
+  body { font-family: Arial, Helvetica, sans-serif; color: #1d2522; margin: 40px; }
+  .folha { max-width: 720px; margin: 0 auto; border: 1px solid #9aa8a0; border-radius: 8px; padding: 28px 32px; }
+  h1 { font-size: 20px; margin: 0 0 4px; color: #255f39; }
+  .sub { font-size: 13px; color: #555; margin: 0 0 22px; }
+  .valor { font-size: 22px; font-weight: 700; margin: 18px 0; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  td { padding: 6px 4px; border-bottom: 1px solid #e3e9e6; }
+  td.r { text-align: right; }
+  .assina { margin-top: 56px; text-align: center; font-size: 13px; }
+  .assina div { display: inline-block; border-top: 1px solid #1d2522; padding-top: 4px; min-width: 300px; }
+  .acoes { text-align: center; margin-top: 18px; }
+  .acoes button { padding: 8px 16px; background: #255f39; color: #fff; border: 0; border-radius: 6px; cursor: pointer; }
+  @media print { .acoes { display: none; } body { margin: 0; } .folha { border: 0; } }
+</style>
+</head>
+<body>
+<div class="folha">
+  <h1>Quitação de pagamento</h1>
+  <p class="sub">{{ clinica }}</p>
+  <p>Recebemos de <strong>{{ r.cliente }}</strong>{% if r.cpf %} (CPF {{ r.cpf }}){% endif %} a importância de
+    <span class="valor">R$ {{ r.valor|moeda }}</span>
+    referente ao procedimento <strong>{{ r.procedimento or '—' }}</strong>{% if r.convenio %} ({{ r.convenio }}){% endif %},
+    {% if r.forma_pagamento2 %}pago em <strong>{{ r.forma_pagamento|capitalize }}</strong> (R$ {{ (r.valor - r.valor_pagamento2)|moeda }}) e em <strong>{{ r.forma_pagamento2|capitalize }}</strong> (R$ {{ r.valor_pagamento2|moeda }}).
+    {% else %}pago em <strong>{{ r.forma_pagamento|capitalize }}</strong>.{% endif %}</p>
+  <table>
+    <tr><td>Nota fiscal nº</td><td class="r"><strong>{{ r.nota_fiscal or '—' }}</strong></td></tr>
+    <tr><td>Data do recebimento</td><td class="r">{{ (r.pago_em or '')[8:10] }}/{{ (r.pago_em or '')[5:7] }}/{{ (r.pago_em or '')[:4] }} {{ (r.pago_em or '')[11:16] }}</td></tr>
+    <tr><td>Valor pago</td><td class="r">R$ {{ r.valor_recebido|moeda }}</td></tr>
+    {% if r.troco %}<tr><td>Troco</td><td class="r">R$ {{ r.troco|moeda }}</td></tr>{% endif %}
+    <tr><td>Recebido por</td><td class="r">{{ r.recebido_por or '' }}</td></tr>
+  </table>
+  <p style="margin-top:22px;font-size:13px">{{ cidade }}, {{ hoje }}.</p>
+  <div class="assina"><div>Assinatura do responsável pelo recebimento</div></div>
+</div>
+<div class="acoes"><button onclick="window.print()">Imprimir</button></div>
+</body>
+</html>

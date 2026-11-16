@@ -1,0 +1,73 @@
+{% extends 'qualidade/_base.html' %}
+{% from 'qualidade/_modelos.html' import pdf_botoes, arte with context %}
+{% block titulo %}Ocorrências e satisfação{% endblock %}
+{% block titulo_q %}Ocorrências e satisfação{% endblock %}
+{% block sub_q %}Registro de não conformidades, eventos adversos, quase falhas, reclamações, elogios e retrabalho, e das pesquisas de satisfação. Alimenta os indicadores, o Pareto e o robô.{% endblock %}
+{% block acoes_q %}
+{{ pdf_botoes(url_for('qual.ocorrencias_arquivo', tipo='pdf') ~ '?de=' ~ de ~ '&ate=' ~ ate) }}
+<a class="btn sec" href="{{ url_for('qual.ocorrencias_arquivo', tipo='xlsx') }}?de={{ de }}&ate={{ ate }}">⬇ Excel</a>
+{% endblock %}
+{% block corpo_q %}
+<form class="cartao filtros q-nao-imprime" method="get">
+  <div><label for="de">De</label><input type="date" id="de" name="de" value="{{ de }}"></div>
+  <div><label for="ate">Até</label><input type="date" id="ate" name="ate" value="{{ ate }}"></div>
+  <div><button class="btn" type="submit">Filtrar</button></div>
+</form>
+<div class="q-cartoes-resumo">
+  <div class="q-num"><strong>{{ resumo.ocorrencias }}</strong><span>ocorrência(s) no período</span></div>
+  <div class="q-num {{ 'critico' if resumo.ocorrencias_graves }}"><strong>{{ resumo.ocorrencias_graves }}</strong><span>grave(s)</span></div>
+  <div class="q-num {{ 'atencao' if resumo.ocorrencias_abertas }}"><strong>{{ resumo.ocorrencias_abertas }}</strong><span>ainda em aberto</span></div>
+  <div class="q-num"><strong>{{ '%.1f'|format(resumo.satisfacao) if resumo.satisfacao is not none else '—' }}</strong><span>satisfação média ({{ resumo.pesquisas }} pesquisa(s)){% if resumo.nps is not none %} · NPS {{ resumo.nps }}{% endif %}</span></div>
+</div>
+<div class="tabela-wrap"><table class="tabela">
+  <thead><tr><th>Data</th><th>Tipo</th><th>Gravidade</th><th>Setor</th><th>Exame</th><th>Descrição</th><th>Ação imediata</th><th>Situação</th><th class="q-nao-imprime"></th></tr></thead>
+  <tbody>{% for o in lista %}
+    <tr><td>{{ o.data|data_br }}</td><td>{{ o.tipo }}</td><td><span class="q-chip {{ 'critico' if o.gravidade == 'Grave' else 'atencao' if o.gravidade == 'Moderada' }}">{{ o.gravidade }}</span></td>
+      <td>{{ o.setor }}</td><td>{{ o.exame }}</td><td>{{ o.descricao }}</td><td>{{ o.acao_imediata }}</td><td>{{ o.status }}</td>
+      <td class="q-nao-imprime" style="white-space:nowrap"><a class="btn sec peq" href="?editar={{ o.id }}&de={{ de }}&ate={{ ate }}">Editar</a>
+        {% if o.problema_id %}<a class="btn sec peq" href="{{ url_for('qual.problema_pagina', pid=o.problema_id) }}">PDCA</a>
+        {% else %}<form method="post" action="{{ url_for('qual.ocorrencia_problema', oid=o.id) }}" style="display:inline">{{ csrf_input }}<button class="btn sec peq" type="submit" title="Abrir um problema no PDCA a partir desta ocorrência">→ PDCA</button></form>{% endif %}</td></tr>
+  {% else %}<tr><td colspan="9" class="sub">Nenhuma ocorrência no período.</td></tr>{% endfor %}</tbody>
+</table></div>
+<div class="q-duas q-nao-imprime">
+  {% set o = editar or {} %}
+  <form class="cartao q-form" method="post" action="{{ url_for('qual.ocorrencia_salvar') }}">
+    {{ csrf_input }}{% if editar %}<input type="hidden" name="id" value="{{ editar.id }}">{% endif %}
+    <h2>{{ 'Editar ocorrência' if editar else 'Registrar ocorrência' }}</h2>
+    {% if not editar %}<label class="q-modelo-ocor">{{ arte() }}<span><b>Começar de um modelo pronto</b><small>preenche tipo, gravidade, setor, descrição e ação imediata; ajuste os detalhes</small>
+      <select id="oc-modelo"><option value="">(registro em branco)</option>{% for m in modelos_ocor %}<option value="{{ loop.index0 }}">{{ m.nome }}</option>{% endfor %}</select></span></label>{% endif %}
+    <div class="q-linha3"><label>Data<input type="date" name="data" value="{{ o.data or hoje }}"></label>
+      <label>Tipo<select name="tipo" required>{% for t in tipos %}<option {{ 'selected' if t == o.tipo }}>{{ t }}</option>{% endfor %}</select></label>
+      <label>Gravidade<select name="gravidade">{% for t in gravidades %}<option {{ 'selected' if t == o.gravidade }}>{{ t }}</option>{% endfor %}</select></label></div>
+    <div class="q-linha3"><label>Setor<input type="text" name="setor" value="{{ o.setor or '' }}"></label>
+      <label>Exame<input type="text" name="exame" value="{{ o.exame or '' }}"></label>
+      <label>Convênio<input type="text" name="convenio" value="{{ o.convenio or '' }}"></label></div>
+    <label>Descrição (sem nome de paciente)<textarea name="descricao" rows="3" required>{{ o.descricao or '' }}</textarea></label>
+    <label>Ação imediata<textarea name="acao_imediata" rows="2">{{ o.acao_imediata or '' }}</textarea></label>
+    <label>Situação<select name="status">{% for t in status_ocorrencia %}<option {{ 'selected' if t == o.status }}>{{ t }}</option>{% endfor %}</select></label>
+    <button class="btn" type="submit">Salvar</button>{% if editar %} <a class="btn sec" href="{{ url_for('qual.ocorrencias') }}">Cancelar</a>{% endif %}
+  </form>
+  <form class="cartao q-form" method="post" action="{{ url_for('qual.pesquisa') }}">
+    {{ csrf_input }}<h2>Pesquisa de satisfação</h2>
+    <p class="sub">"De 0 a 10, quanto você recomendaria a clínica?" Lance cada resposta recebida (papel, telefone ou mensagem).</p>
+    <div class="q-linha3"><label>Data<input type="date" name="data" value="{{ hoje }}"></label>
+      <label>Nota (0 a 10)<input type="number" name="nota" min="0" max="10" value="10" required></label>
+      <label>Exame<input type="text" name="exame"></label></div>
+    <label>Comentário<textarea name="comentario" rows="2"></textarea></label>
+    <button class="btn" type="submit">Registrar</button>
+  </form>
+</div>
+<script>
+(function () {
+  var modelos = {{ modelos_ocor|tojson }}, sel = document.getElementById('oc-modelo');
+  if (!sel) return;
+  sel.addEventListener('change', function () {
+    var m = modelos[parseInt(sel.value, 10)], f = sel.closest('form');
+    if (!m || !f) return;
+    var set = function (n, v) { var e = f.elements[n]; if (e) e.value = v; };
+    set('tipo', m.tipo); set('gravidade', m.gravidade); set('setor', m.setor); set('descricao', m.descricao); set('acao_imediata', m.acao);
+  });
+})();
+</script>
+{% if editar %}<form class="q-nao-imprime" method="post" action="{{ url_for('qual.ocorrencia_excluir', oid=editar.id) }}" onsubmit="return confirm('Excluir a ocorrência?')">{{ csrf_input }}<button class="btn perigo" type="submit">Excluir esta ocorrência</button></form>{% endif %}
+{% endblock %}

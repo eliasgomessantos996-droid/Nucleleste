@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+{% block titulo %}Guias digitadas{% endblock %}
+{% block conteudo %}
+<h1>Guias digitadas</h1>
+<p class="sub">Guias de convênio digitadas aqui. Reimprima, edite ou exclua as guias salvas.</p>
+<div class="acoes">
+  <a class="btn" href="{{ url_for('doc.guia_editar', modelo='unimed_sadt') }}">Nova guia SP/SADT Unimed</a>
+  <a class="btn sec" href="{{ url_for('doc.guia_editar', modelo='ipsemg_pedido') }}">Novo pedido IPSEMG</a>
+  <a class="btn sec" href="{{ url_for('doc.indice') }}">Voltar</a>
+</div>
+{% if guias %}
+<table class="tabela" style="margin-top:18px">
+  <thead><tr><th>Modelo</th><th>Paciente</th><th>Última alteração</th><th></th></tr></thead>
+  <tbody>
+  {% for g in guias %}
+    <tr>
+      <td>{{ g.titulo }}</td>
+      <td>{{ g.paciente or '—' }}</td>
+      <td>{{ g.atualizado_em or '' }}</td>
+      <td style="white-space:nowrap">
+        <a href="{{ url_for('doc.guia_editar', gid=g.id) }}">Abrir</a> ·
+        <a href="{{ url_for('doc.guia_imprimir', gid=g.id) }}" target="_blank">Imprimir</a> ·
+        <form method="post" action="{{ url_for('doc.guia_excluir', gid=g.id) }}" style="display:inline" data-confirmar="Excluir esta guia? Ela não poderá ser recuperada.">
+          {{ csrf_input }}
+          <button class="btn sec peq" type="submit">Excluir</button>
+        </form>
+      </td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p class="ajuda" style="margin-top:18px">Nenhuma guia digitada ainda.</p>
+{% endif %}
+{% endblock %}

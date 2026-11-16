@@ -1,0 +1,23 @@
+{% extends 'qualidade/_base.html' %}
+{% from 'qualidade/_modelos.html' import galeria_problemas, pdf_botoes with context %}
+{% block titulo %}Cinco porquês{% endblock %}
+{% block titulo_q %}Cinco porquês{% endblock %}
+{% block sub_q %}Pergunte "por quê?" sobre a resposta anterior até chegar a uma causa que, se resolvida, impede o problema de voltar.{% endblock %}
+{% block acoes_q %}{% if p %}{{ pdf_botoes(url_for('qual.porques_pdf', p=pid)) }}{% endif %}{% endblock %}
+{% block corpo_q %}
+{{ galeria_problemas(modelos, 'porques', not p) }}
+{% include 'qualidade/_escolher_problema.html' %}
+{% if p %}
+<div class="cartao q-porques-visual">
+  <div class="q-pq-problema">{{ p.titulo }}</div>
+  {% for t in p.porques %}<div class="q-pq-degrau" style="--n: {{ loop.index }}"><b>{{ loop.index }}º por quê?</b><span>{{ t or '—' }}</span></div>{% endfor %}
+  <div class="q-pq-raiz"><b>Causa raiz:</b> {{ p.plan_causa or '—' }}</div>
+</div>
+<form class="cartao q-porques q-nao-imprime" method="post" action="{{ url_for('qual.porques_salvar', pid=p.id) }}">
+  {{ csrf_input }}<input type="hidden" name="voltar" value="{{ url_for('qual.porques', p=p.id) }}">
+  {% for t in p.porques %}<label><span>{{ loop.index }}º por quê?</span><input type="text" name="porque_{{ loop.index }}" value="{{ t }}" maxlength="500"></label>{% endfor %}
+  <label><span>Causa raiz</span><input type="text" name="causa_raiz" value="{{ p.plan_causa }}" maxlength="500"></label>
+  <div><button class="btn" type="submit">Salvar</button></div>
+</form>
+{% endif %}
+{% endblock %}

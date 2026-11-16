@@ -1,0 +1,51 @@
+{% from '_ic.html' import ic %}
+{# Peças comuns das telas de faturamento: situação, glosa, botões do protocolo em PDF e o visualizador. #}
+
+{% macro pilula(f) -%}
+{%- if f.status == 'RECEBIDO' -%}<span class="fat-pilula recebido">{{ ic('circle-check', 14) }} Recebido</span>
+{%- elif f.status == 'NF_EMITIDA' -%}<span class="fat-pilula emitida">{{ ic('badge-check', 14) }} Nota fiscal emitida</span>
+{%- else -%}<span class="fat-pilula faturado">{{ ic('file-text', 14) }} Faturado · sem nota</span>{%- endif -%}
+{%- if f.atrasada %} <span class="fat-pilula atrasada" title="Previsão de recebimento: {{ f.previsao|data_br }}">{{ ic('triangle-alert', 14) }} atrasada</span>{% endif -%}
+{%- endmacro %}
+
+{# Selo da glosa: vermelho (recebeu menos), verde (sem glosa) ou azul (recebeu a mais) #}
+{% macro selo_glosa(g) -%}
+{%- if g -%}
+<span class="fat-glosa {{ g.sentido }}" title="Bruto faturado − bruto recebido">
+  {%- if g.sentido == 'glosa' %}{{ ic('circle-x', 15) }} R$ {{ g.valor|moeda }} <small>({{ '%.1f'|format(g.pct)|replace('.', ',') }}%)</small>
+  {%- elif g.sentido == 'acima' %}{{ ic('trending-up', 15) }} +R$ {{ (-g.valor)|moeda }}
+  {%- else %}{{ ic('circle-check', 15) }} sem glosa{% endif -%}
+</span>
+{%- endif -%}
+{%- endmacro %}
+
+{# Botões do PDF do protocolo numa linha de tabela: ver dentro do sistema, baixar, ou importar #}
+{% macro protocolo_acoes(f, voltar, curto=False) -%}
+<div class="fat-pdf-acoes">
+{%- if f.anexo_id %}
+  <button type="button" class="btn peq com-icone" data-pdf="{{ url_for('fat.protocolo_pdf', fid=f.id) }}" data-baixar="{{ url_for('fat.protocolo_pdf', fid=f.id, baixar=1) }}"
+    data-pagina="{{ url_for('fat.protocolo', fid=f.id) }}" data-titulo="{{ f.convenio }} · protocolo {{ f.protocolo or '—' }}" title="Abrir o PDF aqui mesmo, sem baixar">{{ ic('file-text', 15) }} {{ 'Ver' if curto else 'Ver PDF' }}</button>
+  <a class="btn sec peq com-icone" href="{{ url_for('fat.protocolo_pdf', fid=f.id, baixar=1) }}" title="Baixar o PDF do protocolo">{{ ic('file-down', 15) }}</a>
+{%- else %}
+  <form method="post" action="{{ url_for('fat.protocolo_enviar', fid=f.id) }}" enctype="multipart/form-data" class="fat-importar">
+    {{ csrf_input }}<input type="hidden" name="voltar" value="{{ voltar }}">
+    <label class="btn sec peq com-icone" title="Importar o PDF do protocolo desta fatura">{{ ic('upload', 15) }} {{ 'Importar' if curto else 'Importar PDF' }}
+      <input type="file" name="protocolo_pdf" accept="application/pdf,.pdf" data-auto hidden></label>
+  </form>
+{%- endif %}
+</div>
+{%- endmacro %}
+
+{# Visualizador do PDF: a página abre o PDF dentro de uma janela, sem baixar #}
+{% macro visualizador() -%}
+<dialog id="dlg-pdf" class="fat-visualizador">
+  <header>
+    <strong id="pdf-titulo">Protocolo</strong>
+    <span class="fat-esp"></span>
+    <a class="btn sec peq com-icone" id="pdf-baixar" href="#">{{ ic('file-down', 15) }} Baixar</a>
+    <a class="btn sec peq com-icone" id="pdf-pagina" href="#">{{ ic('layout-grid', 15) }} Abrir em página</a>
+    <button type="button" class="btn peq com-icone" data-fechar>{{ ic('x', 15) }} Fechar</button>
+  </header>
+  <iframe id="pdf-quadro" title="PDF do protocolo" src="about:blank"></iframe>
+</dialog>
+{%- endmacro %}

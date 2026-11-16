@@ -1,0 +1,369 @@
+/* Fichas convertidas da planilha: cada .folha é uma página A4. */
+@page { size: A4 portrait; margin: 0; }
+@page paisagem { size: A4 landscape; margin: 0; }
+
+.pagina-impressao { background: #e9ecea; }
+.barra-impressao {
+  position: sticky; top: 0; z-index: 10; background: #fff; border-bottom: 1px solid var(--borda);
+  padding: 10px 18px; box-shadow: 0 2px 8px rgba(0,0,0,.06);
+}
+.barra-topo { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; flex-wrap: wrap; }
+.docs-escolha { display: flex; flex-wrap: wrap; gap: 4px 6px; align-items: center; margin-top: 8px; }
+.docs-escolha label.inline { background: #f4f6f5; border: 1px solid var(--borda); border-radius: 6px; padding: 3px 6px; margin: 0; font-size: 13px; }
+.folhas { padding: 18px 0 40px; }
+
+.folha {
+  width: 210mm; height: 297mm; padding: var(--mt) var(--mr) var(--mb) var(--ml);
+  box-sizing: border-box; overflow: hidden; background: #fff; margin: 0 auto 18px;
+  box-shadow: 0 2px 12px rgba(0,0,0,.15); position: relative;
+  break-after: page; page-break-after: always;
+  color: #000;
+}
+.folha.paisagem { width: 297mm; height: 210mm; page: paisagem; }
+.folha:last-child { break-after: auto; page-break-after: auto; }
+
+.xl-sheet { position: relative; }
+.xl-sheet.centralizado { margin-left: auto; margin-right: auto; }
+table.xl {
+  border-collapse: collapse; table-layout: fixed;
+  font-family: Calibri, Carlito, "Segoe UI", Arial, sans-serif; font-size: 11pt; line-height: 1.12;
+}
+table.xl td { padding: 0 2px; white-space: nowrap; overflow: visible; vertical-align: bottom; }
+.xl-obj { position: absolute; }
+.xl-shape {
+  display: flex; flex-direction: column; box-sizing: border-box; overflow: visible;
+  font-family: Calibri, Carlito, "Segoe UI", Arial, sans-serif; line-height: 1.1; white-space: pre-wrap;
+}
+.xl-shape div { margin: 0; }
+
+@keyframes folha-entra { from { opacity: 0; transform: translateY(28px) scale(.97); } to { opacity: 1; transform: none; } }
+@keyframes barra-entra { from { opacity: 0; transform: translateY(-100%); } to { opacity: 1; transform: none; } }
+@media screen and (prefers-reduced-motion: no-preference) {
+  .barra-impressao { animation: barra-entra .5s cubic-bezier(.2, .8, .2, 1) backwards; }
+  .folha { animation: folha-entra .7s cubic-bezier(.2, .8, .2, 1) backwards; }
+  .folha:nth-child(2) { animation-delay: .1s; } .folha:nth-child(3) { animation-delay: .2s; }
+  .folha:nth-child(4) { animation-delay: .3s; } .folha:nth-child(n+5) { animation-delay: .4s; }
+}
+@media print {
+  .folha, .barra-impressao { animation: none !important; }
+  html, body { background: #fff !important; }
+  .barra-impressao { display: none !important; }
+  .folhas { padding: 0; }
+  .folha { margin: 0; box-shadow: none; }
+  * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+
+/* ---------- fichas personalizadas (texto escrito pela clínica) ---------- */
+.ficha-extra { font-family: Arial, Calibri, sans-serif; font-size: 11pt; line-height: 1.45; color: #000; }
+.ficha-extra .fx-cab { display: block; width: 100%; height: auto; margin: 0 0 14px; }
+.ficha-extra .fx-h1 { text-align: center; font-size: 17pt; margin: 8px 0 10px; text-decoration: underline; }
+.ficha-extra .fx-h2 { font-size: 13pt; margin: 12px 0 4px; }
+.ficha-extra .fx-p { margin: 0; white-space: pre-wrap; }
+.ficha-extra .fx-esp { height: 10px; }
+.ficha-extra .fx-hr { border: 0; border-top: 1px solid #000; margin: 8px 0; }
+
+/* ---------- pedido de exame (restrito a data-ficha="pedido_exame") ---------- */
+.folha[data-ficha="pedido_exame"] {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  font-family: "Segoe UI", Calibri, Arial, sans-serif;
+  font-size: 10.5pt;
+  line-height: 1.4;
+  color: #142229;
+}
+.folha[data-ficha="pedido_exame"] .pe-corpo {
+  display: flex;
+  flex-direction: column;
+  gap: 5mm;
+  flex: 1 1 auto;
+}
+.folha[data-ficha="pedido_exame"] .pe-cabecalho {
+  border: 1.5px solid #0f566e;
+  border-radius: 6px;
+  overflow: hidden;
+  background: #fff;
+}
+.folha[data-ficha="pedido_exame"] .pe-cab-topo {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 14px;
+  border-bottom: 1px solid #c7dce3;
+}
+.folha[data-ficha="pedido_exame"] .pe-logo {
+  width: 190px;
+  max-height: 68px;
+  height: auto;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+.folha[data-ficha="pedido_exame"] .pe-clinica-dados {
+  flex: 1;
+  min-width: 0;
+  text-align: right;
+}
+.folha[data-ficha="pedido_exame"] .pe-clinica-nome {
+  font-size: 10.5pt;
+  font-weight: 700;
+  color: #0b465a;
+  letter-spacing: 0.2px;
+  line-height: 1.25;
+}
+.folha[data-ficha="pedido_exame"] .pe-clinica-sub {
+  font-size: 8.8pt;
+  font-weight: 600;
+  color: #2f697c;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-top: 2px;
+}
+.folha[data-ficha="pedido_exame"] .pe-clinica-info {
+  margin-top: 4px;
+  font-size: 8.5pt;
+  color: #334852;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 3px 12px;
+}
+.folha[data-ficha="pedido_exame"] .pe-titulo-faixa {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #0f566e;
+  color: #fff;
+  padding: 6px 14px;
+}
+.folha[data-ficha="pedido_exame"] .pe-titulo-doc {
+  font-size: 13pt;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+}
+.folha[data-ficha="pedido_exame"] .pe-meta-doc {
+  font-size: 9.2pt;
+  font-weight: 600;
+  opacity: 0.95;
+}
+.folha[data-ficha="pedido_exame"] .pe-bloco {
+  border: 1px solid #b8ced6;
+  border-radius: 6px;
+  background: #fff;
+  overflow: hidden;
+}
+.folha[data-ficha="pedido_exame"] .pe-bloco-titulo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #eaf3f6;
+  border-bottom: 1px solid #b8ced6;
+  padding: 5px 12px;
+  font-size: 9.2pt;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: #0b465a;
+}
+.folha[data-ficha="pedido_exame"] .pe-qtd-exames {
+  font-size: 8.5pt;
+  font-weight: 600;
+  color: #365c69;
+  text-transform: none;
+  letter-spacing: 0;
+}
+.folha[data-ficha="pedido_exame"] .pe-grade-paciente {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px 14px;
+  padding: 10px 12px;
+}
+.folha[data-ficha="pedido_exame"] .pe-campo {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.folha[data-ficha="pedido_exame"] .pe-campo-paciente {
+  grid-column: span 2;
+}
+.folha[data-ficha="pedido_exame"] .pe-campo-largo {
+  grid-column: 1 / -1;
+  padding-top: 6px;
+  border-top: 1px dashed #d3e2e7;
+}
+.folha[data-ficha="pedido_exame"] .pe-rotulo {
+  font-size: 7.8pt;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: #4d6a75;
+}
+.folha[data-ficha="pedido_exame"] .pe-valor {
+  font-size: 10.5pt;
+  font-weight: 600;
+  color: #111f26;
+  margin-top: 1px;
+  word-break: break-word;
+}
+.folha[data-ficha="pedido_exame"] .pe-valor-destaque {
+  font-size: 12pt;
+  font-weight: 700;
+  color: #083747;
+}
+.folha[data-ficha="pedido_exame"] .pe-bloco-conteudo {
+  padding: 10px 14px 12px;
+}
+.folha[data-ficha="pedido_exame"] .pe-bloco-exames {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+}
+.folha[data-ficha="pedido_exame"] .pe-bloco-exames .pe-bloco-conteudo {
+  flex: 1 1 auto;
+}
+.folha[data-ficha="pedido_exame"] .pe-intro-solicitacao {
+  margin: 0 0 8px;
+  font-size: 9.5pt;
+  color: #36505a;
+}
+.folha[data-ficha="pedido_exame"] .pe-lista-exames {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.folha[data-ficha="pedido_exame"] .pe-item-exame {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 7px 10px;
+  background: #f7fbfc;
+  border: 1px solid #d7e6eb;
+  border-left: 3.5px solid #0f566e;
+  border-radius: 4px;
+}
+.folha[data-ficha="pedido_exame"] .pe-num-exame {
+  font-size: 9pt;
+  font-weight: 700;
+  color: #0f566e;
+  min-width: 20px;
+}
+.folha[data-ficha="pedido_exame"] .pe-nome-exame {
+  font-size: 11pt;
+  font-weight: 700;
+  color: #0e2229;
+  flex: 1;
+}
+.folha[data-ficha="pedido_exame"] .pe-obs-conteudo {
+  min-height: 16mm;
+}
+.folha[data-ficha="pedido_exame"] .pe-obs-texto {
+  font-size: 10pt;
+  color: #16262e;
+  white-space: pre-wrap;
+}
+.folha[data-ficha="pedido_exame"] .pe-obs-linhas {
+  display: flex;
+  flex-direction: column;
+  gap: 7mm;
+  padding-top: 5mm;
+}
+.folha[data-ficha="pedido_exame"] .pe-obs-linhas span {
+  display: block;
+  border-bottom: 1px dashed #b9cdd5;
+}
+.folha[data-ficha="pedido_exame"] .pe-rodape {
+  margin-top: auto;
+  padding-top: 6mm;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+}
+.folha[data-ficha="pedido_exame"] .pe-local-data {
+  align-self: flex-end;
+  font-size: 9.8pt;
+  color: #263b44;
+  margin-bottom: 11mm;
+}
+.folha[data-ficha="pedido_exame"] .pe-assinatura-area {
+  width: 88mm;
+  text-align: center;
+  margin-bottom: 5mm;
+}
+.folha[data-ficha="pedido_exame"] .pe-assinatura-linha {
+  border-top: 1.2px solid #142229;
+  margin-bottom: 4px;
+}
+.folha[data-ficha="pedido_exame"] .pe-assinatura-medico {
+  font-size: 10.8pt;
+  font-weight: 700;
+  color: #0d2229;
+}
+.folha[data-ficha="pedido_exame"] .pe-assinatura-detalhe {
+  font-size: 9.2pt;
+  color: #36505a;
+  margin-top: 1px;
+}
+.folha[data-ficha="pedido_exame"] .pe-rodape-clinica {
+  width: 100%;
+  border-top: 1px solid #cfe0e6;
+  padding-top: 4px;
+  text-align: center;
+  font-size: 8pt;
+  color: #4f6973;
+}
+
+/* ---------- protocolo de acesso ao portal Medcloud (restrito a data-ficha="medcloud") ---------- */
+.folha[data-ficha="medcloud"] {
+  display: flex; flex-direction: column; justify-content: space-between;
+  font-family: "Segoe UI", Calibri, Arial, sans-serif; font-size: 10.5pt; line-height: 1.4; color: #142229;
+}
+.folha[data-ficha="medcloud"] .mp-corpo { display: flex; flex-direction: column; gap: 5mm; flex: 1 1 auto; }
+.folha[data-ficha="medcloud"] .mp-cabecalho { border: 1.5px solid #0f566e; border-radius: 6px; overflow: hidden; background: #fff; }
+.folha[data-ficha="medcloud"] .mp-cab-topo { display: flex; align-items: center; gap: 14px; padding: 10px 14px; border-bottom: 1px solid #c7dce3; }
+.folha[data-ficha="medcloud"] .mp-logo { width: 190px; max-height: 68px; height: auto; object-fit: contain; flex-shrink: 0; }
+.folha[data-ficha="medcloud"] .mp-clinica-dados { flex: 1; min-width: 0; text-align: right; }
+.folha[data-ficha="medcloud"] .mp-clinica-nome { font-size: 10.5pt; font-weight: 700; color: #0b465a; letter-spacing: .2px; line-height: 1.25; }
+.folha[data-ficha="medcloud"] .mp-clinica-sub { font-size: 8.8pt; font-weight: 600; color: #2f697c; text-transform: uppercase; letter-spacing: .5px; margin-top: 2px; }
+.folha[data-ficha="medcloud"] .mp-clinica-info { margin-top: 4px; font-size: 8.5pt; color: #334852; display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 3px 12px; }
+.folha[data-ficha="medcloud"] .mp-faixa { display: flex; align-items: center; justify-content: space-between; background: #0f566e; color: #fff; padding: 6px 14px; }
+.folha[data-ficha="medcloud"] .mp-faixa-titulo { font-size: 13pt; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; }
+.folha[data-ficha="medcloud"] .mp-faixa-meta { font-size: 9.2pt; font-weight: 600; opacity: .95; }
+.folha[data-ficha="medcloud"] .mp-boas-vindas { margin: 0; font-size: 10.5pt; color: #24404b; padding: 0 2px; }
+.folha[data-ficha="medcloud"] .mp-bloco { border: 1px solid #b8ced6; border-radius: 6px; background: #fff; overflow: hidden; }
+.folha[data-ficha="medcloud"] .mp-bloco-titulo { background: #eaf3f6; border-bottom: 1px solid #b8ced6; padding: 5px 12px; font-size: 9.2pt; font-weight: 700; text-transform: uppercase; letter-spacing: .6px; color: #0b465a; }
+.folha[data-ficha="medcloud"] .mp-grade { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 14px; padding: 10px 12px; }
+.folha[data-ficha="medcloud"] .mp-campo { display: flex; flex-direction: column; min-width: 0; }
+.folha[data-ficha="medcloud"] .mp-campo-largo { grid-column: 1 / -1; }
+.folha[data-ficha="medcloud"] .mp-rotulo { font-size: 7.8pt; font-weight: 700; text-transform: uppercase; letter-spacing: .4px; color: #4d6a75; }
+.folha[data-ficha="medcloud"] .mp-valor { font-size: 10.5pt; font-weight: 600; color: #111f26; margin-top: 1px; word-break: break-word; }
+.folha[data-ficha="medcloud"] .mp-valor-destaque { font-size: 12pt; font-weight: 700; color: #083747; }
+.folha[data-ficha="medcloud"] .mp-bloco-acesso { border: 1.5px solid #0f566e; }
+.folha[data-ficha="medcloud"] .mp-bloco-acesso .mp-bloco-titulo { background: #0f566e; color: #fff; border-bottom-color: #0f566e; }
+.folha[data-ficha="medcloud"] .mp-acesso { display: flex; align-items: center; gap: 14px; padding: 12px 14px; }
+.folha[data-ficha="medcloud"] .mp-credenciais { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+.folha[data-ficha="medcloud"] .mp-cred { background: #f7fbfc; border: 1px solid #d7e6eb; border-left: 4px solid #0f566e; border-radius: 4px; padding: 6px 12px; display: flex; flex-direction: column; }
+.folha[data-ficha="medcloud"] .mp-cred-valor { font-family: Consolas, "Courier New", monospace; font-size: 17pt; letter-spacing: .6px; color: #0a2f3c; word-break: break-all; }
+.folha[data-ficha="medcloud"] .mp-link { padding: 2px 4px 0; display: flex; flex-direction: column; font-size: 10.5pt; color: #0b465a; }
+.folha[data-ficha="medcloud"] .mp-qr { flex-shrink: 0; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px; border: 1px dashed #8fb3c0; border-radius: 6px; font-size: 8pt; font-weight: 600; color: #4d6a75; }
+.folha[data-ficha="medcloud"] .mp-qr img { width: 42mm; height: 42mm; display: block; }
+.folha[data-ficha="medcloud"] .mp-passos { list-style: none; margin: 0; padding: 10px 14px; display: flex; flex-direction: column; gap: 7px; }
+.folha[data-ficha="medcloud"] .mp-passos li { display: flex; align-items: flex-start; gap: 10px; font-size: 10pt; color: #1d343e; }
+.folha[data-ficha="medcloud"] .mp-num { flex-shrink: 0; width: 6mm; height: 6mm; border-radius: 50%; background: #0f566e; color: #fff; font-size: 9pt; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+.folha[data-ficha="medcloud"] .mp-bloco-laudo { border: 1.5px dashed #0f566e; }
+.folha[data-ficha="medcloud"] .mp-laudo { display: flex; flex-direction: column; gap: 4px; padding: 10px 14px 12px; }
+/* linha para escrever a data à mão: dia / mês / ano, bem larga para a letra caber */
+.folha[data-ficha="medcloud"] .mp-data-linha { display: flex; align-items: flex-end; gap: 4mm; height: 13mm; margin-top: 2mm; }
+.folha[data-ficha="medcloud"] .mp-data-linha span { display: block; width: 22mm; height: 100%; border-bottom: 1.4px solid #142229; }
+.folha[data-ficha="medcloud"] .mp-data-linha span.mp-ano { width: 34mm; }
+.folha[data-ficha="medcloud"] .mp-data-linha i { font: 400 20pt/1 "Segoe UI", Arial, sans-serif; font-style: normal; color: #4d6a75; padding-bottom: 1mm; }
+.folha[data-ficha="medcloud"] .mp-laudo-dica { font-size: 8.5pt; color: #4d6a75; margin-top: 2mm; }
+.folha[data-ficha="medcloud"] .mp-rodape { margin-top: auto; flex-shrink: 0; width: 100%; border-top: 1px solid #cfe0e6; padding-top: 4px; text-align: center; font-size: 8pt; color: #4f6973; }
+
+.selo-interno { position:absolute; top:6mm; right:8mm; z-index:5; border:3px solid #000; border-radius:6px; padding:2mm 5mm; text-align:center; background:#fff; color:#000; transform:rotate(-4deg); }
+.selo-interno-t { display:block; font:900 26pt/1 Arial,Helvetica,sans-serif; letter-spacing:2px; }
+.selo-interno-l { display:block; font:600 8pt/1.2 Arial,Helvetica,sans-serif; margin-top:1mm; max-width:55mm; }
+@media print { .selo-interno { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+

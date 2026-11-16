@@ -1,0 +1,41 @@
+{% extends 'enfermagem/_base.html' %}
+{% from '_ic.html' import ic %}
+{% block titulo %}Medicamentos e insumos{% endblock %}
+{% block titulo_e %}Medicamentos e insumos{% endblock %}
+{% block sub_e %}Lote, validade, quantidade e estoque mínimo, com avisos em 60, 30, 15, 7, 1 e 0 dias. Quando um item é usado, a baixa é feita e ele entra na lista de reposição.{% endblock %}
+{% block acoes_e %}<form method="post" action="{{ url_for('enf.medicamento_carregar') }}" style="display:inline">{{ csrf_input }}<button class="btn sec" type="submit">{{ ic('pill', 16) }} Incluir os de medicina nuclear</button></form>{% endblock %}
+{% block corpo_e %}
+<div class="tabela-wrap"><table class="tabela">
+  <thead><tr><th>Medicamento / insumo</th><th>Onde fica</th><th>Lote</th><th>Validade</th><th class="num">Qtd</th><th class="num">Mín.</th><th></th></tr></thead>
+  <tbody>{% for m in lista %}
+    <tr class="{{ 'enf-linha-vermelha' if m.vermelho }}"><td><b>{{ m.nome }}</b>{% if m.pendente %} <span class="enf-chip amarelo">{{ m.pendente }} a repor</span>{% endif %}</td><td>{{ m.local }}</td><td>{{ m.lote or '—' }}</td>
+      <td>{% if m.validade %}{{ m.validade|data_br }} <span class="enf-chip {{ 'vermelho' if m.situacao == 'vencido' else 'amarelo' if m.situacao == 'vence' else 'verde' }}">{{ 'vencido' if m.situacao == 'vencido' else (m.dias ~ ' d') }}</span>{% else %}<span class="enf-chip amarelo">sem validade</span>{% endif %}</td>
+      <td class="num">{{ m.qtd }}</td><td class="num">{{ m.qtd_min }}</td>
+      <td class="enf-nao-imprime" style="white-space:nowrap"><details class="q-editar"><summary>Usar / editar</summary>
+        <form method="post" action="{{ url_for('enf.medicamento_usar', mid=m.id) }}" class="enf-form-inline">{{ csrf_input }}<input type="number" name="qtd" min="1" value="1" title="Quantidade usada"><input type="text" name="motivo" placeholder="Motivo (ex.: exame de estresse)"><button class="btn peq" type="submit">Registrar uso</button></form>
+        <form method="post" action="{{ url_for('enf.medicamento_salvar') }}" class="enf-form-inline">{{ csrf_input }}<input type="hidden" name="id" value="{{ m.id }}">
+          <input type="text" name="nome" value="{{ m.nome }}" required><select name="local">{% for l in locais %}<option {{ 'selected' if m.local == l }}>{{ l }}</option>{% endfor %}</select><input type="text" name="lote" value="{{ m.lote }}" placeholder="Lote">
+          <input type="date" name="validade" value="{{ m.validade or '' }}"><input type="number" name="qtd" min="0" value="{{ m.qtd }}"><input type="number" name="qtd_min" min="0" value="{{ m.qtd_min }}"><button class="btn peq" type="submit">Salvar</button></form></details></td></tr>
+  {% else %}<tr><td colspan="7" class="sub">Nada cadastrado. Use “Incluir os de medicina nuclear” ou cadastre abaixo.</td></tr>{% endfor %}</tbody>
+</table></div>
+<form class="cartao enf-form enf-nao-imprime" method="post" action="{{ url_for('enf.medicamento_salvar') }}">
+  {{ csrf_input }}<h2>Cadastrar medicamento ou insumo</h2>
+  <div class="enf-form-inline"><input type="text" name="nome" required maxlength="100" placeholder="Nome"><select name="local">{% for l in locais %}<option>{{ l }}</option>{% endfor %}</select><input type="text" name="lote" maxlength="40" placeholder="Lote">
+    <input type="date" name="validade" title="Validade"><input type="number" name="qtd" min="0" value="0" title="Quantidade"><input type="number" name="qtd_min" min="0" value="1" title="Estoque mínimo"><button class="btn" type="submit">Cadastrar</button></div>
+</form>
+<h2>{{ ic('clipboard-list', 18) }} Lista de reposição</h2>
+<div class="tabela-wrap"><table class="tabela"><thead><tr><th>Item</th><th>Onde</th><th class="num">A repor</th><th>Motivo</th><th></th></tr></thead><tbody>
+{% for r in reposicao %}<tr><td>{{ r.nome }}</td><td>{{ r.local }}</td><td class="num">{{ r.qtd }}</td><td>{{ r.motivo }}</td><td class="enf-nao-imprime">
+  <form method="post" action="{{ url_for('enf.reposicao_repor', rid=r.id) }}" class="enf-form-inline">{{ csrf_input }}<input type="number" name="qtd" min="1" value="{{ r.qtd }}"><input type="text" name="lote" placeholder="Novo lote"><input type="date" name="validade"><button class="btn peq" type="submit">Reposto</button></form></td></tr>
+{% else %}<tr><td colspan="5" class="sub">Nada para repor.</td></tr>{% endfor %}</tbody></table></div>
+<h2>{{ ic('gauge', 18) }} Temperatura da geladeira</h2>
+{% if pendentes_temp %}<div class="cartao enf-alerta amarelo">{{ ic('clock', 18) }} Temperatura de hoje ainda não registrada: {{ pendentes_temp|join(', ') }}.</div>{% endif %}
+<form class="cartao enf-form enf-nao-imprime" method="post" action="{{ url_for('enf.temperatura_registrar') }}">
+  {{ csrf_input }}<div class="enf-form-inline"><select name="local">{% for l in locais_geladeira %}<option>{{ l }}</option>{% endfor %}</select><input type="text" name="temperatura" required placeholder="°C (ex.: 4,5)" inputmode="decimal"><input type="text" name="obs" placeholder="Observação"><button class="btn" type="submit">Registrar temperatura</button></div>
+  <p class="ajuda">Limite aceito: de <b>{{ t_min|string|replace('.', ',') }}</b> a <b>{{ t_max|string|replace('.', ',') }}</b> °C.</p>
+</form>
+{% if gestao %}<form class="cartao enf-form enf-nao-imprime" method="post" action="{{ url_for('enf.temperatura_limites') }}">{{ csrf_input }}<div class="enf-form-inline"><label>Mínimo °C<input type="text" name="enf_temp_min" value="{{ t_min }}"></label><label>Máximo °C<input type="text" name="enf_temp_max" value="{{ t_max }}"></label><button class="btn sec" type="submit">Salvar limites</button></div></form>{% endif %}
+<div class="tabela-wrap"><table class="tabela"><thead><tr><th>Data</th><th>Hora</th><th>Local</th><th class="num">°C</th><th>Situação</th><th>Quem</th></tr></thead><tbody>
+{% for t in temperaturas %}<tr class="{{ '' if t.ok else 'enf-linha-vermelha' }}"><td>{{ t.data|data_br }}</td><td>{{ t.hora }}</td><td>{{ t.local }}</td><td class="num">{{ '%.1f'|format(t.temperatura)|replace('.', ',') }}</td><td><span class="enf-chip {{ 'verde' if t.ok else 'vermelho' }}">{{ 'dentro do limite' if t.ok else 'FORA do limite' }}</span></td><td>{{ t.profissional }}</td></tr>
+{% else %}<tr><td colspan="6" class="sub">Nenhuma temperatura nos últimos 14 dias.</td></tr>{% endfor %}</tbody></table></div>
+{% endblock %}

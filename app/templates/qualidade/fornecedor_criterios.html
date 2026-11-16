@@ -1,0 +1,23 @@
+{% extends 'qualidade/_base.html' %}
+{% from 'qualidade/_modelos.html' import galeria_criterios with context %}
+{% block titulo %}Critérios de avaliação de fornecedores{% endblock %}
+{% block titulo_q %}Critérios de avaliação de fornecedores{% endblock %}
+{% block sub_q %}Defina os critérios e o peso (1 a 5). Os critérios iniciais são um ponto de partida: confira com o manual da ONA vigente e com a política de compras da clínica.{% endblock %}
+{% block corpo_q %}
+{{ galeria_criterios(modelos, false) }}
+<form class="cartao q-form" method="post">
+  {{ csrf_input }}
+  <table class="tabela"><thead><tr><th>Ativo</th><th>Critério</th><th>Descrição</th><th class="num">Peso</th></tr></thead><tbody>
+  {% for c in criterios %}
+    <tr><td><input type="checkbox" name="ativo_{{ c.id }}" value="1" {{ 'checked' if c.ativo }} aria-label="Ativo"></td>
+      <td><input type="text" name="nome_{{ c.id }}" value="{{ c.nome }}" required maxlength="120"></td>
+      <td><input type="text" name="descricao_{{ c.id }}" value="{{ c.descricao }}" maxlength="400"></td>
+      <td><input type="number" name="peso_{{ c.id }}" min="1" max="5" value="{{ c.peso }}" style="width:5em"></td></tr>
+  {% endfor %}
+    <tr><td>novo</td><td><input type="text" name="novo_nome" maxlength="120" placeholder="Novo critério"></td><td><input type="text" name="novo_descricao" maxlength="400"></td>
+      <td><input type="number" name="novo_peso" min="1" max="5" value="1" style="width:5em"></td></tr>
+  </tbody></table>
+  <button class="btn" type="submit">Gravar critérios</button> <a class="btn sec" href="{{ url_for('qual.forn') }}">Voltar</a>
+  <p class="sub">Avaliações já gravadas guardam os critérios e pesos da época; mudar aqui vale para as próximas.</p>
+</form>
+{% endblock %}

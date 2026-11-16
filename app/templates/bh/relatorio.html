@@ -1,0 +1,25 @@
+{% extends 'bh/layout.html' %}
+{% set employee = report.employee %}
+{% block titulo %}Relatório · {{ employee.name }}{% endblock %}
+{% block conteudo %}
+<div class="cabecalho nao-imprimir"><div><a href="{{ url_for('bh.extrato', employee_id=employee.id, month=report.month) }}">← Extrato de {{ employee.name }}</a><h1>Relatório mensal</h1><p class="sub">Confira os dados antes de emitir o PDF para assinatura.</p></div>
+  <div class="acoes">{% if report.complete and pode('bh_gestao') %}
+    <form method="post" action="{{ url_for('bh.relatorio_pdf', employee_id=employee.id) }}" data-download>{{ csrf_input }}<input type="hidden" name="month" value="{{ report.month }}"><button class="btn" type="submit">Emitir PDF para assinatura ↓</button></form>
+    {% else %}<a class="btn sec" href="{{ url_for('bh.extrato', employee_id=employee.id, month=report.month) }}">Resolver pendências →</a>{% endif %}
+    <button class="btn sec" type="button" data-print>Imprimir esta tela</button></div></div>
+{% if not report.complete %}<div class="bh-aviso nao-imprimir"><h2>Prévia com pendências</h2><p>Há {{ report.pending_count }} dia(s) pendente(s) neste mês ou em meses anteriores. A emissão do PDF para assinatura estará disponível após a conferência completa.</p></div>{% endif %}
+<article class="bh-folha {{ 'rascunho' if not report.complete }}">
+  <div class="bh-folha-cab"><div><div class="emp">{{ company_name }}</div><h2>Banco de horas</h2><p class="bh-muted" style="margin:0">Relatório mensal individual</p></div>
+    <div class="bh-folha-periodo"><span>Período de referência</span><strong>{{ report.month[5:7] }}/{{ report.month[:4] }}</strong></div></div>
+  <div class="bh-identidade"><div><span>Funcionário</span><strong>{{ employee.name }}</strong></div><div><span>Número I</span><strong>{{ employee.clock_id }}</strong></div><div><span>Período</span><strong>{{ report.period_start|bh_data }} a {{ report.period_end|bh_data }}</strong></div></div>
+  <div class="bh-saldos"><div><span>Saldo anterior</span><strong>{{ report.previous_balance|bh_smin }}</strong></div><div><span>Movimento do mês</span><strong>{{ report.movement|bh_smin }}</strong></div><div><span>Saldo acumulado</span><strong>{{ report.final_balance|bh_smin }}</strong></div></div>
+  <div class="tabela-wrap"><table class="tabela"><thead><tr><th>Data</th><th>Batidas</th><th>Classificação</th><th class="num">Jornada</th><th class="num">Trabalhado</th><th class="num">Saldo</th></tr></thead><tbody>
+    {% for row in report.rows %}<tr><td>{{ row.date|bh_data }}</td><td>{{ row.punches|join(' · ') or '—' }}{% if row.reason %}<small class="bh-bloco">{{ row.reason }}</small>{% endif %}{% if row.pending %}<small class="bh-bloco" style="color:var(--aviso)">{{ row.status_label }}</small>{% endif %}</td>
+      <td>{{ {'normal':'Normal','falta':'Falta','abono':'Abono','folga':'Folga','feriado':'Feriado'}.get(row.kind, row.kind) }}</td><td class="num">{{ row.expected_minutes|bh_min }}</td><td class="num">{{ row.worked_minutes|bh_min }}</td><td class="num">{{ row.delta_minutes|bh_smin }}</td></tr>{% endfor %}
+  </tbody></table></div>
+  {% if report.adjustments %}<h3>Ajustes de saldo</h3>{% for a in report.adjustments %}<p><strong>{{ a.date|bh_data }} · {{ a.minutes|bh_smin }}</strong> — {{ a.reason }}</p>{% endfor %}{% endif %}
+  <p class="bh-muted">{% if report.complete %}Os saldos incluem os lançamentos confirmados e os ajustes registrados até este período.{% else %}Rascunho para conferência. Os saldos consideram somente os valores confirmados e podem mudar após a resolução das pendências.{% endif %}</p>
+  <div class="bh-assinaturas"><div><span class="linha"></span><strong>Funcionário</strong><small>{{ employee.name }}</small></div><div><span class="linha"></span><strong>Gerência</strong><small>Assinatura</small></div><div><span class="linha"></span><strong>Administração</strong><small>Assinatura</small></div></div>
+  <p style="margin-top:26px">Local e data: ______________________________________________</p>
+</article>
+{% endblock %}

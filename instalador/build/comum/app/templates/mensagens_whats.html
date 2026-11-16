@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% block titulo %}Mensagens do WhatsApp{% endblock %}
+{% block conteudo %}
+<h1>Mensagens do WhatsApp</h1>
+<p class="sub">Textos enviados pela agenda e pela tela de faltas. Só a gerência vê esta página. Use as marcas entre chaves para o sistema preencher os dados do paciente.</p>
+
+<div class="cartao" style="max-width:760px">
+  <h2>Marcas disponíveis</h2>
+  <ul>{% for marca, quando in variaveis %}<li><code>{{ marca }}</code>: {{ quando }}</li>{% endfor %}</ul>
+</div>
+
+<form method="post" style="max-width:760px">
+  {{ csrf_input }}
+  {% for tipo, (rotulo, padrao) in tipos.items() %}
+  <div class="cartao">
+    <h2>{{ rotulo }}</h2>
+    <textarea name="{{ tipo }}" rows="6" maxlength="1000" style="width:100%">{{ textos[tipo] }}</textarea>
+  </div>
+  {% endfor %}
+  <div class="acoes">
+    <button class="btn" type="submit" name="acao" value="salvar">Salvar mensagens</button>
+    <button class="btn sec" type="submit" name="acao" value="restaurar" onclick="return confirm('Voltar todas as mensagens ao texto padrão?')">Restaurar texto padrão</button>
+  </div>
+</form>
+{% endblock %}

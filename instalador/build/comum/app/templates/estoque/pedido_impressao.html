@@ -1,0 +1,18 @@
+{% extends '_lista_impressao.html' %}
+{% block titulo %}Pedido de compra {{ pedido.numero }}{% endblock %}
+{% block subtitulo %}Data {{ pedido.data|data_br }} · Situação: {{ status_nome }}{% endblock %}
+{% block conteudo %}
+<style>.assinaturas { display: grid; grid-template-columns: repeat(2, 1fr); gap: 30px; margin-top: 46px; text-align: center; } .assinaturas > div { border-top: 1px solid #333; padding-top: 4px; }</style>
+<p><strong>Fornecedor:</strong>
+  {% if pedido.fornecedor %}{{ pedido.fornecedor.nome }}{% if pedido.fornecedor.cnpj %} · CNPJ {{ pedido.fornecedor.cnpj }}{% endif %}{% if pedido.fornecedor.telefone %} · Tel. {{ pedido.fornecedor.telefone }}{% endif %}{% if pedido.fornecedor.email %} · {{ pedido.fornecedor.email }}{% endif %}
+  {% else %}{{ pedido.fornecedor_nome or 'Não informado' }}{% endif %}
+</p>
+<p><strong>Condições de pagamento e prazo:</strong> {{ pedido.condicoes or '-' }}</p>
+<table class="lista">
+  <thead><tr><th>#</th><th>Item</th><th>Unidade</th><th class="num">Qtd</th><th class="num">Valor unit. (R$)</th><th class="num">Total (R$)</th></tr></thead>
+  <tbody>{% for i in itens %}<tr><td>{{ loop.index }}</td><td>{{ i.item_nome }}{% if i.obs %} · {{ i.obs }}{% endif %}</td><td>{{ i.unidade or '' }}</td><td class="num">{{ i.qtd|est_qtd }}</td><td class="num">{{ i.valor_unitario|moeda }}</td><td class="num">{{ i.total|moeda }}</td></tr>{% endfor %}</tbody>
+  <tfoot><tr><td colspan="5"><strong>TOTAL DO PEDIDO</strong></td><td class="num"><strong>{{ pedido.total|moeda }}</strong></td></tr></tfoot>
+</table>
+{% if pedido.observacao %}<p><strong>Observação:</strong> {{ pedido.observacao }}</p>{% endif %}
+<div class="assinaturas"><div>Solicitante{% if pedido.solicitante %}: {{ pedido.solicitante }}{% endif %}</div><div>Direção</div></div>
+{% endblock %}

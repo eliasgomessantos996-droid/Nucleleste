@@ -1,0 +1,28 @@
+{% extends 'enfermagem/_base.html' %}
+{% from '_ic.html' import ic %}
+{% block titulo %}Assinatura do profissional{% endblock %}
+{% block titulo_e %}Assinatura de {{ nome }}{% endblock %}
+{% block sub_e %}{% if pend %}A permissão do módulo Enfermagem e Segurança só será salva depois que a assinatura for importada. Se você cancelar ou sair desta página, nada é alterado.{% else %}Importe ou troque a assinatura e os dados do conselho profissional.{% endif %}{% endblock %}
+{% block corpo_e %}
+{% if pend %}<div class="cartao q-alerta enf-alerta">{{ ic('triangle-alert', 18) }} Nada foi salvo ainda: as mudanças de permissão de <b>{{ alvo.usuario }}</b> aguardam a assinatura.</div>{% endif %}
+<form class="cartao enf-form" method="post" enctype="multipart/form-data">
+  {{ csrf_input }}
+  {% if atual and atual.assinatura_id %}
+  <div class="enf-atual"><span>Assinatura atual</span><img class="enf-ass-previa" src="{{ url_for('enf.assinatura_png', uid=alvo.id) }}" alt="Assinatura atual">
+    <label class="q-check"><input type="radio" name="acao" value="manter" checked> manter a atual</label>
+    <label class="q-check"><input type="radio" name="acao" value="trocar"> trocar por uma nova</label></div>
+  {% endif %}
+  <label>Imagem da assinatura (PNG ou JPG, até 2 MB){% if atual and atual.assinatura_id %} — só se for trocar{% endif %}
+    <input type="file" name="assinatura" accept="image/png,image/jpeg" {{ '' if atual and atual.assinatura_id else 'required' }}></label>
+  <p class="ajuda">Assine em papel branco, fotografe ou digitalize. O sistema remove o fundo branco e reduz a imagem.</p>
+  <div class="q-linha3">
+    <label>Cargo<input type="text" name="cargo" required maxlength="80" value="{{ f.get('cargo') or (atual.cargo if atual else '') }}" placeholder="Ex.: Enfermeira"></label>
+    <label>Conselho<select name="conselho">{% for c in conselhos %}<option {{ 'selected' if (f.get('conselho') or (atual.conselho if atual else 'COREN')) == c }}>{{ c }}</option>{% endfor %}</select></label>
+    <label>Número<input type="text" name="numero" required maxlength="20" value="{{ f.get('numero') or (atual.numero if atual else '') }}" placeholder="123456"></label>
+  </div>
+  <label style="max-width:140px">UF<select name="uf">{% for u in ufs %}<option {{ 'selected' if (f.get('uf') or (atual.uf if atual else 'MG')) == u }}>{{ u }}</option>{% endfor %}</select></label>
+  <p class="ajuda">Como vai sair nas fichas: <b>{{ nome }} — cargo — CONSELHO-UF número</b>, sobre a linha de assinatura.</p>
+  <div class="acoes"><button class="btn" type="submit">{{ ic('check', 16) }} {{ 'Importar assinatura e concluir' if pend else 'Salvar assinatura' }}</button></div>
+</form>
+<form method="post" action="{{ url_for('enf.assinatura_cancelar', uid=alvo.id) }}">{{ csrf_input }}<button class="btn sec" type="submit">Cancelar e voltar sem salvar</button></form>
+{% endblock %}

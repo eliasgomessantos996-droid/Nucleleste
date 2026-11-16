@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+{% block titulo %}Devolução solicitada{% endblock %}
+{% block conteudo %}
+<div class="cabecalho">
+  <div><h1>Devolução nº {{ cab.id }} solicitada</h1><p class="sub">{{ itens|length }} blindagem(ns) com status <strong>DEVOLUÇÃO SOLICITADA</strong> · {{ cab.criado_em[:10]|data_br }} · por {{ cab.criado_por or '—' }}</p></div>
+  <div class="acoes"><a class="btn sec" href="{{ url_for('blind.devolucao') }}">Voltar</a></div>
+</div>
+
+<div class="cartao">
+  <h2>Planilha</h2>
+  <p class="ajuda" style="margin-bottom:10px">Lote, nota fiscal, série, data da nota fiscal, CFOP e validade das blindagens selecionadas.</p>
+  <div class="tabela-wrap" style="margin-bottom:12px"><table class="tabela">
+    <thead><tr><th>Lote</th><th>Nota fiscal</th><th>Série</th><th>Data da nota</th><th>CFOP</th><th>Validade</th></tr></thead>
+    <tbody>{% for b in itens %}<tr><td><strong>{{ b.lote }}</strong></td><td>{{ b.nota_fiscal }}</td><td>{{ b.serie }}</td><td>{{ b.data_nota|data_br }}</td><td>{{ b.cfop }}</td><td>{{ b.validade|data_br }}</td></tr>{% endfor %}</tbody>
+  </table></div>
+  <div class="acoes" style="margin-top:0">
+    <a class="btn" href="{{ url_for('blind.planilha_pdf', did=cab.id) }}" data-download>⬇ Baixar planilha (PDF)</a>
+    <a class="btn sec" href="{{ url_for('blind.planilha_xlsx', did=cab.id) }}" data-download>⬇ Baixar planilha (Excel)</a>
+  </div>
+</div>
+
+<div class="cartao">
+  <h2>Documentação</h2>
+  <p class="ajuda" style="margin-bottom:10px">Documentos preenchidos com os dados da devolução (lotes: {{ ctx.lotes|join(', ') }}). Ajuste a quantidade de cada um e imprima individualmente, ou baixe todos juntos em um PDF.</p>
+  <form id="form-docs" method="get" action="{{ url_for('blind.documentos_pdf', did=cab.id) }}" data-download>
+    <input type="hidden" name="baixar" value="1">
+    <div class="tabela-wrap"><table class="tabela">
+      <thead><tr><th>Documento</th><th style="width:140px">Quantidade</th><th></th></tr></thead>
+      <tbody>
+      {% for d in docs %}
+        <tr>
+          <td><strong>{{ d.titulo }}</strong><br><small>{{ 'cópias (vias)' if d.unidade == 'vias' else 'etiquetas' }}</small></td>
+          <td><input type="number" name="q_{{ d.slug }}" value="{{ d.qtd }}" min="0" max="{{ max_qtd }}" step="1" data-qtd="{{ d.slug }}" aria-label="Quantidade de {{ d.titulo }}"></td>
+          <td class="num" style="white-space:nowrap">
+            <button class="btn peq" type="button" data-imprimir="{{ url_for('blind.documento_pdf', did=cab.id, slug=d.slug) }}" data-slug="{{ d.slug }}">🖨 Imprimir</button>
+            <button class="btn sec peq" type="button" data-baixar="{{ url_for('blind.documento_pdf', did=cab.id, slug=d.slug) }}" data-slug="{{ d.slug }}">⬇ PDF</button>
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table></div>
+    <div class="acoes">
+      <button class="btn" type="submit">⬇ Baixar toda a documentação (PDF)</button>
+      <button class="btn sec" type="button" id="imprimir-tudo">🖨 Imprimir tudo</button>
+    </div>
+  </form>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+(function () {
+  function qtd(slug) {
+    var v = parseInt(document.querySelector('[data-qtd="' + slug + '"]').value, 10);
+    return isNaN(v) || v < 0 ? 0 : v;
+  }
+  document.querySelectorAll('[data-imprimir]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var n = qtd(b.dataset.slug);
+      if (!n) { alert('Informe a quantidade a imprimir.'); return; }
+      window.open(b.dataset.imprimir + '?qtd=' + n, '_blank');
+    });
+  });
+  document.querySelectorAll('[data-baixar]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var n = qtd(b.dataset.slug);
+      if (!n) { alert('Informe a quantidade.'); return; }
+      window.location.href = b.dataset.baixar + '?baixar=1&qtd=' + n;
+    });
+  });
+  document.getElementById('imprimir-tudo').addEventListener('click', function () {
+    var f = document.getElementById('form-docs'), p = new URLSearchParams();
+    f.querySelectorAll('[data-qtd]').forEach(function (i) { p.set('q_' + i.dataset.qtd, qtd(i.dataset.qtd)); });
+    window.open(f.action + '?' + p.toString(), '_blank');
+  });
+})();
+</script>
+{% endblock %}

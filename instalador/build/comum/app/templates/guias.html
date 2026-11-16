@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% block titulo %}Protocolo de guias{% endblock %}
+{% block conteudo %}
+<div class="cabecalho">
+  <div><h1>Protocolo de guias</h1><p class="sub">Guias geradas automaticamente pelos atendimentos de convênio. Total de guias: <strong>{{ rows|length }}</strong></p></div>
+  <div class="acoes"><a class="btn" href="{{ url_for('atend.guias', de=de, ate=ate, convenio=convenio, imprimir=1) }}">Imprimir protocolo</a></div>
+</div>
+<form class="cartao filtros" method="get">
+  <div><label>De</label><input type="date" name="de" value="{{ de }}"></div>
+  <div><label>Até</label><input type="date" name="ate" value="{{ ate }}"></div>
+  <div><label>Convênio</label><select name="convenio"><option value="">Todos</option>{% for c in convenios %}<option {% if c == convenio %}selected{% endif %}>{{ c }}</option>{% endfor %}</select></div>
+  <div><button class="btn" type="submit">Filtrar</button></div>
+</form>
+<div class="tabela-wrap"><table class="tabela">
+  <thead><tr><th>Nº</th><th>Paciente</th><th>Convênio</th><th>Data</th><th>Exame</th><th>Horário</th><th>Usuário</th><th></th></tr></thead>
+  <tbody>
+  {% for r in rows %}
+    <tr><td>{{ r.id }}</td><td>{{ r.paciente }}</td><td>{{ r.convenio or '' }}</td><td>{{ r.data|data_br }}</td><td>{{ r.exame }}</td>
+      <td>{{ r.horario or '' }}</td><td>{{ r.usuario or '' }}</td>
+      <td class="num" style="white-space:nowrap">
+        <button class="btn sec peq" type="button" data-dialogo="dlg-guia" data-gid="{{ r.id }}" data-horario="{{ r.horario or '' }}" data-paciente="{{ r.paciente }}">Horário</button>
+        <form method="post" action="{{ url_for('atend.guia_salvar', gid=r.id) }}" style="display:inline" data-confirmar="Remover esta guia do protocolo?">
+          {{ csrf_input }}<input type="hidden" name="acao" value="excluir"><input type="hidden" name="voltar" value="{{ request.full_path }}">
+          <button class="btn perigo peq" type="submit">Remover</button></form>
+      </td></tr>
+  {% else %}<tr><td colspan="8" class="vazio">Nenhuma guia no período.</td></tr>{% endfor %}
+  </tbody>
+</table></div>
+<dialog id="dlg-guia">
+  <form method="post" id="form-guia">
+    {{ csrf_input }}<input type="hidden" name="voltar" value="{{ request.full_path }}"><input type="hidden" data-campo="gid" id="guia-id">
+    <h2 style="margin-top:0">Horário da guia</h2>
+    <p><span data-campo="paciente"></span></p>
+    <label>Horário</label><input type="text" name="horario" data-campo="horario" placeholder="ex.: 08:30">
+    <div class="acoes"><button class="btn" type="submit">Salvar</button><button class="btn sec" type="button" data-fechar>Cancelar</button></div>
+  </form>
+</dialog>
+{% endblock %}
+{% block scripts %}
+<script>
+document.getElementById('form-guia').addEventListener('submit', function () {
+  this.action = '/guias/' + document.getElementById('guia-id').value;
+});
+</script>
+{% endblock %}

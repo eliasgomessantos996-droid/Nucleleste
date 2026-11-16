@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+{% block titulo %}Reservas do convênio{% endblock %}
+{% block conteudo %}
+<div class="cabecalho">
+  <div><h1>Reservas do convênio</h1><p class="sub">Gere as planilhas com as vagas reservadas, envie ao convênio e, quando ele devolver preenchidas, importe aqui: o sistema preenche nome, contato, senha e observação de cada vaga na agenda. Cada dia reservado tem a sua planilha; as planilhas não ficam guardadas no sistema.</p></div>
+  <div class="acoes"><a class="btn sec" href="{{ url_for('agenda.pagina') }}">← Agenda de exames</a></div>
+</div>
+
+<form class="cartao filtros" method="get" action="{{ url_for('agenda.reservas_planilha') }}">
+  <h2 style="width:100%;margin:0 0 6px">1. Gerar as planilhas em branco</h2>
+  <p class="ajuda" style="width:100%;margin:0">Um dia reservado gera uma planilha (.xlsx). Num período maior, vem um arquivo .zip com uma planilha para cada dia reservado e um relatório simples em PDF com as datas e a quantidade de vagas.</p>
+  <div><label for="convenio">Convênio</label>
+    <select id="convenio" name="convenio"><option value="">Todos os convênios</option>{% for c in convenios %}<option {{ 'selected' if c == convenio }}>{{ c }}</option>{% endfor %}</select></div>
+  <div><label for="de">De</label><input type="date" id="de" name="de" value="{{ de }}" required></div>
+  <div><label for="ate">Até</label><input type="date" id="ate" name="ate" value="{{ ate }}" required></div>
+  <div><button class="btn" type="submit">Baixar planilhas (Excel)</button></div>
+  {% if not convenios %}<div class="ajuda" style="width:100%">Nenhum convênio tem vagas reservadas ainda. Reserve horários na agenda (Reservar para convênio).</div>{% endif %}
+</form>
+
+{% if convenios %}
+<form class="cartao" method="post" action="{{ url_for('agenda.reservas_importar') }}" enctype="multipart/form-data" id="importar">
+  {{ csrf_input }}
+  <h2 style="margin-top:0">2. Importar a planilha preenchida</h2>
+  <p class="ajuda">Use a planilha gerada acima, devolvida pelo convênio. O sistema encontra cada vaga pelo código e preenche nome, contato, senha e observação; vagas já preenchidas na agenda não são alteradas.</p>
+  <input type="file" name="planilha" accept=".xlsx" required>
+  <div class="acoes"><button class="btn" type="submit">Importar para a agenda</button></div>
+</form>
+{% endif %}
+
+{% if resultado %}
+<div class="cartao">
+  <h2 style="margin-top:0">Resultado da importação</h2>
+  <p><strong>{{ resultado.preenchidas }}</strong> vaga(s) preenchida(s) na agenda · {{ resultado.ignoradas }} linha(s) em branco ignorada(s) · {{ resultado.problemas|length }} com problema.</p>
+  {% if resultado.problemas %}<ul>{% for p in resultado.problemas %}<li>{{ p }}</li>{% endfor %}</ul>{% endif %}
+</div>
+{% endif %}
+{% endblock %}

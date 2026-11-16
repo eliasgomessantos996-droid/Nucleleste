@@ -1,0 +1,59 @@
+{% extends 'qualidade/_base.html' %}
+{% from 'qualidade/_modelos.html' import galeria_riscos, pdf_botoes with context %}
+{% block titulo %}Matriz de risco{% endblock %}
+{% block titulo_q %}Matriz de risco{% endblock %}
+{% block sub_q %}Probabilidade × impacto (1 a 5). Verde: baixo · amarelo: moderado · laranja: alto · vermelho: crítico. Cada risco tem resposta, ação e responsável.{% endblock %}
+{% block acoes_q %}
+{{ pdf_botoes(url_for('qual.riscos_arquivo', tipo='pdf')) }}
+<a class="btn sec" href="{{ url_for('qual.riscos_arquivo', tipo='xlsx') }}">⬇ Excel</a>
+{% endblock %}
+{% block corpo_q %}
+{{ galeria_riscos(modelos, not lista) }}
+<div class="cartao q-folha-paisagem q-matriz-wrap">
+  <div class="q-matriz">
+    <div class="q-eixo-y">Probabilidade →</div>
+    {% for linha in grade %}
+      <div class="q-rotulo-y">{{ linha[0].prob }}</div>
+      {% for c in linha %}
+      <div class="q-celula" style="--c: {{ c.cor }}" title="{{ c.nivel }} ({{ c.pontos }})">
+        <span class="q-pts">{{ c.pontos }}</span>
+        {% for r in c.riscos %}<a class="q-risco-ponto" href="?editar={{ r.id }}" title="{{ r.titulo }}">R{{ r.id }}</a>{% endfor %}
+      </div>
+      {% endfor %}
+    {% endfor %}
+    <div></div><div></div>{% for i in range(1, 6) %}<div class="q-rotulo-x">{{ i }}</div>{% endfor %}
+    <div class="q-eixo-x">Impacto →</div>
+  </div>
+</div>
+<div class="tabela-wrap"><table class="tabela">
+  <thead><tr><th>#</th><th>Risco</th><th>Processo</th><th class="num">P</th><th class="num">I</th><th>Nível</th><th>Resposta</th><th>Ação</th><th>Responsável</th><th>Prazo</th><th>Situação</th><th class="q-nao-imprime"></th></tr></thead>
+  <tbody>{% for r in lista %}
+    <tr><td>R{{ r.id }}</td><td><strong>{{ r.titulo }}</strong><br><small>{{ r.causa }}{% if r.consequencia %} → {{ r.consequencia }}{% endif %}</small></td><td>{{ r.processo }}</td>
+      <td class="num">{{ r.probabilidade }}</td><td class="num">{{ r.impacto }}</td><td><span class="q-nivel" style="--c: {{ r.cor }}">{{ r.nivel }} · {{ r.pontos }}</span></td>
+      <td>{{ r.resposta }}</td><td>{{ r.acao }}</td><td>{{ r.responsavel }}</td><td>{{ r.prazo|data_br if r.prazo else '' }}</td><td>{{ r.status }}</td>
+      <td class="q-nao-imprime"><a class="btn sec peq" href="?editar={{ r.id }}">Editar</a></td></tr>
+  {% else %}<tr><td colspan="12" class="sub">Nenhum risco cadastrado.</td></tr>{% endfor %}</tbody>
+</table></div>
+{% set r = editar or {} %}
+<form class="cartao q-form q-nao-imprime" method="post" action="{{ url_for('qual.risco_salvar') }}" id="form-risco">
+  {{ csrf_input }}{% if editar %}<input type="hidden" name="id" value="{{ editar.id }}">{% endif %}
+  <h2>{{ 'Editar o risco R%d'|format(editar.id) if editar else 'Novo risco' }}</h2>
+  <div class="q-linha3"><label>Risco<input type="text" name="titulo" value="{{ r.titulo or '' }}" required maxlength="200"></label>
+    <label>Processo<input type="text" name="processo" value="{{ r.processo or '' }}"></label>
+    <label>Situação<select name="status">{% for s in ('ATIVO', 'TRATADO', 'ENCERRADO') %}<option {{ 'selected' if s == r.status }}>{{ s }}</option>{% endfor %}</select></label></div>
+  <div class="q-linha3"><label>Causa<input type="text" name="causa" value="{{ r.causa or '' }}"></label>
+    <label>Consequência<input type="text" name="consequencia" value="{{ r.consequencia or '' }}"></label><div></div></div>
+  <div class="q-linha3">
+    <label>Probabilidade (1 a 5)<input type="number" name="probabilidade" min="1" max="5" value="{{ r.probabilidade or 3 }}"></label>
+    <label>Impacto (1 a 5)<input type="number" name="impacto" min="1" max="5" value="{{ r.impacto or 3 }}"></label>
+    <label>Resposta<select name="resposta">{% for s in respostas %}<option {{ 'selected' if s == r.resposta }}>{{ s }}</option>{% endfor %}</select></label></div>
+  <label>Ação<textarea name="acao" rows="2">{{ r.acao or '' }}</textarea></label>
+  <div class="q-linha3"><label>Responsável<input type="text" name="responsavel" value="{{ r.responsavel or '' }}"></label>
+    <label>Prazo<input type="date" name="prazo" value="{{ r.prazo or '' }}"></label><div></div></div>
+  <button class="btn" type="submit">Salvar</button>
+  {% if editar %}<a class="btn sec" href="{{ url_for('qual.riscos') }}">Cancelar</a>{% endif %}
+</form>
+{% if editar %}
+<form class="q-nao-imprime" method="post" action="{{ url_for('qual.risco_excluir', rid=editar.id) }}" onsubmit="return confirm('Excluir o risco?')">{{ csrf_input }}<button class="btn perigo" type="submit">Excluir o risco R{{ editar.id }}</button></form>
+{% endif %}
+{% endblock %}

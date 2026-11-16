@@ -1,0 +1,92 @@
+{% extends 'qualidade/_base.html' %}
+{% from 'qualidade/_modelos.html' import pdf_botoes with context %}
+{% block titulo %}Satisfação: respostas{% endblock %}
+{% block titulo_q %}Satisfação do cliente: respostas e indicadores{% endblock %}
+{% block sub_q %}Cada pesquisa recebida pelo QR Code, com o resultado por pergunta. A nota (0 a 10) também entra no indicador "Satisfação do paciente" do painel da qualidade.{% endblock %}
+{% block acoes_q %}
+<a class="btn sec" href="{{ url_for('qual.satisf') }}">QR Code e perguntas</a>
+{{ pdf_botoes(url_for('qual.satisf_relatorio', tipo='pdf') ~ '?de=' ~ de ~ '&ate=' ~ ate, 'Relatório ONA') }}
+<a class="btn sec" href="{{ url_for('qual.satisf_relatorio', tipo='xlsx') }}?de={{ de }}&ate={{ ate }}">⬇ Excel</a>
+{% endblock %}
+{% block corpo_q %}
+<form class="cartao filtros q-nao-imprime" method="get">
+  <div><label for="de">De</label><input type="date" id="de" name="de" value="{{ de }}"></div>
+  <div><label for="ate">Até</label><input type="date" id="ate" name="ate" value="{{ ate }}"></div>
+  <div><label class="inline"><input type="checkbox" name="pendentes" value="1" {% if so_pendentes %}checked{% endif %}> Só as ainda não avaliadas</label></div>
+  <div><button class="btn" type="submit">Filtrar</button></div>
+</form>
+<div class="q-cartoes-resumo">
+  <div class="q-num"><strong>{{ ind.respostas }}</strong><span>resposta(s) no período</span></div>
+  <div class="q-num {{ 'ok' if ind.geral.satisfacao is not none and ind.geral.satisfacao >= 85 else 'atencao' if ind.geral.satisfacao is not none and ind.geral.satisfacao >= 70 else 'critico' if ind.geral.satisfacao is not none }}"><strong>{{ '%.1f%%'|format(ind.geral.satisfacao)|replace('.', ',') if ind.geral.satisfacao is not none else '—' }}</strong><span>satisfação (Ótimo + Bom)</span></div>
+  <div class="q-num"><strong>{{ '%.1f'|format(ind.media)|replace('.', ',') if ind.media is not none else '—' }}</strong><span>nota média (0 a 10)</span></div>
+  <div class="q-num"><strong>{{ ind.elogios }} / {{ ind.sugestoes }}</strong><span>elogios / sugestões</span></div>
+  <div class="q-num {{ 'atencao' if ind.pendentes }}"><strong>{{ ind.pendentes }}</strong><span>ainda não avaliada(s)</span></div>
+  <div class="q-num"><strong>{{ '%.0f'|format(ind.nps.indice) if ind.nps.indice is not none else '—' }}</strong><span>índice de recomendação (NPS)</span></div>
+  <div class="q-num"><strong>{{ ind.por_origem.QRCODE }} / {{ ind.por_origem.IMPRESSO }}</strong><span>QR Code / impressos</span></div>
+</div>
+
+<h2>Resultado por pergunta (escala)</h2>
+<div class="tabela-wrap"><table class="tabela">
+  <thead><tr><th>Pergunta</th><th class="num">Respostas</th><th class="num">Ótimo</th><th class="num">Bom</th><th class="num">Ruim</th><th class="num">Péssimo</th><th class="num">Satisfação</th><th class="num">Nota média</th></tr></thead>
+  <tbody>{% for l in ind.perguntas + ([ind.geral] if ind.perguntas else []) %}
+    <tr {% if loop.last and ind.perguntas %}style="font-weight:700"{% endif %}><td>{{ l.texto }}</td><td class="num">{{ l.total }}</td><td class="num">{{ l.otimo }}</td><td class="num">{{ l.bom }}</td><td class="num">{{ l.ruim }}</td><td class="num">{{ l.pessimo }}</td>
+      <td class="num">{{ '%.1f%%'|format(l.satisfacao)|replace('.', ',') if l.satisfacao is not none else '—' }}</td><td class="num">{{ '%.1f'|format(l.media)|replace('.', ',') if l.media is not none else '—' }}</td></tr>
+  {% else %}<tr><td colspan="8" class="sub">Nenhuma resposta no período.</td></tr>{% endfor %}</tbody>
+</table></div>
+
+{% if ind.seguranca %}
+<h2>Segurança do paciente (Sim ou Não)</h2>
+<div class="tabela-wrap"><table class="tabela">
+  <thead><tr><th>Pergunta</th><th class="num">Respostas</th><th class="num">Sim</th><th class="num">Não</th><th class="num">% Sim</th></tr></thead>
+  <tbody>{% for l in ind.seguranca %}
+    <tr><td>{{ l.texto }}</td><td class="num">{{ l.total }}</td><td class="num">{{ l.sim }}</td><td class="num">{{ l.nao }}</td>
+      <td class="num">{{ '%.1f%%'|format(l.pct_sim)|replace('.', ',') if l.pct_sim is not none else '—' }}</td></tr>
+  {% endfor %}</tbody>
+</table></div>
+{% endif %}
+
+{% if ind.nps.total %}
+<h2>Recomendação (nota de 0 a 10)</h2>
+<div class="q-cartoes-resumo">
+  <div class="q-num"><strong>{{ ind.nps.promotores }}</strong><span>promotores (9 e 10)</span></div>
+  <div class="q-num"><strong>{{ ind.nps.neutros }}</strong><span>neutros (7 e 8)</span></div>
+  <div class="q-num"><strong>{{ ind.nps.detratores }}</strong><span>detratores (0 a 6)</span></div>
+  <div class="q-num"><strong>{{ '%.0f'|format(ind.nps.indice) if ind.nps.indice is not none else '—' }}</strong><span>índice NPS</span></div>
+  <div class="q-num"><strong>{{ '%.1f'|format(ind.nps.media)|replace('.', ',') if ind.nps.media is not none else '—' }}</strong><span>nota média</span></div>
+</div>
+<p class="sub">O índice NPS é a porcentagem de promotores menos a porcentagem de detratores. Vai de -100 a 100.</p>
+{% endif %}
+
+{% if ind.por_exame %}
+<h2>Satisfação por exame</h2>
+<div class="tabela-wrap"><table class="tabela">
+  <thead><tr><th>Exame</th><th class="num">Respostas</th><th class="num">Satisfação</th></tr></thead>
+  <tbody>{% for l in ind.por_exame %}
+    <tr><td>{{ l.exame }}</td><td class="num">{{ l.respostas }}</td>
+      <td class="num">{{ '%.1f%%'|format(l.satisfacao)|replace('.', ',') if l.satisfacao is not none else '—' }}</td></tr>
+  {% endfor %}</tbody>
+</table></div>
+{% endif %}
+
+<h2>Pesquisas recebidas</h2>
+{% for r in respostas %}
+<article class="cartao" id="resposta-{{ r.id }}" style="margin-bottom:10px;{% if not r.revisada %}border-left:4px solid #d98a1b{% endif %}">
+  <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap">
+    <div><strong>{{ r.data|data_br }} {{ r.criado_em[11:16] }}</strong> · {{ r.nome or 'Anônimo' }}{% if r.telefone %} · {{ r.telefone }}{% endif %}
+      · <span class="q-chip {{ 'ok' if r.satisfeito else 'atencao' }}">nota {{ '%.1f'|format(r.nota)|replace('.', ',') if r.nota is not none else '—' }}</span>
+      <span class="q-chip">{{ r.origem_rotulo }}</span>
+      {% if r.exame or r.atendimento or r.respondente %}<div class="sub">{{ [r.exame, r.atendimento, r.respondente]|select|join(' · ') }}</div>{% endif %}
+      {% if r.origem == 'IMPRESSO' and r.lancado_por %}<div class="sub">lançado por {{ r.lancado_por }}</div>{% endif %}</div>
+    <div class="q-nao-imprime">
+      {% if r.revisada %}<small>Avaliada por {{ r.revisada_por }} em {{ r.revisada_em[:10]|data_br }}</small>
+        <form method="post" action="{{ url_for('qual.satisf_revisar', rid=r.id) }}" style="display:inline">{{ csrf_input }}<input type="hidden" name="revisada" value="0"><input type="hidden" name="voltar" value="{{ request.full_path.rstrip('?') }}"><button class="btn sec peq" type="submit">Reabrir</button></form>
+      {% else %}<form method="post" action="{{ url_for('qual.satisf_revisar', rid=r.id) }}" style="display:inline">{{ csrf_input }}<input type="hidden" name="revisada" value="1"><input type="hidden" name="voltar" value="{{ request.full_path.rstrip('?') }}"><button class="btn peq" type="submit">Marcar como avaliada</button></form>{% endif %}
+    </div>
+  </div>
+  <div class="sub" style="margin:6px 0">{% for i in r.itens %}<span style="white-space:nowrap">{{ i.ordem }}: <b>{{ i.opcao }}</b></span>{{ ' · ' if not loop.last }}{% endfor %}</div>
+  {% if r.elogio %}<p style="margin:4px 0"><strong>Elogio:</strong> {{ r.elogio }}</p>{% endif %}
+  {% if r.sugestao %}<p style="margin:4px 0"><strong>Sugestão:</strong> {{ r.sugestao }}</p>{% endif %}
+  <details class="q-nao-imprime"><summary class="sub">Ver as perguntas</summary><ol>{% for i in r.itens %}<li>{{ i.pergunta }} — <b>{{ i.opcao }}</b></li>{% endfor %}</ol></details>
+</article>
+{% else %}<p class="sub">Nenhuma pesquisa recebida no período.</p>{% endfor %}
+{% endblock %}

@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+{% block titulo %}Responder sugestões{% endblock %}
+{% block conteudo %}
+<div class="cabecalho">
+  <div><h1>Responder sugestões</h1><p class="sub">Todas as sugestões enviadas ao perfil “SUPORTE DO DESENVOLVEDOR”, pelas Mensagens ou pela tela Suporte. A resposta sai em nome do suporte e chega na conversa de quem escreveu.</p></div>
+  <div class="acoes">
+    {% if so_pendentes %}<a class="btn sec" href="{{ url_for('sup.responder', mostrar='todas') }}">Mostrar também as já respondidas</a>
+    {% else %}<a class="btn sec" href="{{ url_for('sup.responder') }}">Mostrar só as sem resposta</a>{% endif %}
+  </div>
+</div>
+
+{% for c in conversas %}
+<section class="cartao" id="u{{ c.uid }}" style="margin-bottom:14px">
+  <h2 style="margin:0 0 6px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">{{ c.nome }}
+    {% if c.pendente %}<span class="etiqueta" style="background:#ffe9b8">sem resposta</span>{% else %}<span class="etiqueta">respondida</span>{% endif %}
+    <small style="font-weight:400;opacity:.7">{{ c.sugestoes }} mensagem(ns) · última em {{ c.ultima_em[8:10] }}/{{ c.ultima_em[5:7] }}/{{ c.ultima_em[:4] }} {{ c.ultima_em[11:16] }}</small></h2>
+  <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:10px">
+    {% for m in c.mensagens %}
+      <div style="max-width:78%;padding:7px 11px;border-radius:10px;border:1px solid var(--borda,#ccd5cf);{{ 'align-self:flex-end;background:rgba(47,138,80,.12)' if m.minha else 'align-self:flex-start' }}">
+        <small style="opacity:.7">{{ 'Suporte' if m.minha else c.nome }} · {{ m.quando[8:10] }}/{{ m.quando[5:7] }}/{{ m.quando[:4] }} {{ m.quando[11:16] }}</small>
+        <div style="white-space:pre-wrap">{{ m.corpo }}</div>
+      </div>
+    {% endfor %}
+  </div>
+  {% if c.ativo %}
+  <form method="post" action="{{ url_for('sup.responder_enviar', uid=c.uid) }}">
+    {{ csrf_input }}
+    {% if not so_pendentes %}<input type="hidden" name="mostrar" value="todas">{% endif %}
+    <textarea id="r{{ c.uid }}" name="resposta" rows="3" maxlength="{{ limite }}" required style="width:100%" placeholder="Escreva a resposta para {{ c.nome }}"></textarea>
+    <div class="acoes"><button class="btn" type="submit">Responder</button></div>
+  </form>
+  {% else %}<p class="ajuda" style="margin:0">Este usuário está inativo; não dá para responder.</p>{% endif %}
+</section>
+{% else %}
+<div class="cartao"><p class="vazio" style="margin:0">{% if so_pendentes %}Nenhuma sugestão esperando resposta.{% else %}Nenhuma sugestão recebida ainda.{% endif %}</p></div>
+{% endfor %}
+{% endblock %}

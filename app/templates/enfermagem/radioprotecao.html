@@ -1,0 +1,39 @@
+{% extends 'enfermagem/_base.html' %}
+{% from '_ic.html' import ic %}
+{% block titulo %}Radioproteção da enfermagem{% endblock %}
+{% block titulo_e %}Radioproteção da enfermagem{% endblock %}
+{% block sub_e %}Teste diário do monitor de contaminação, kit de derramamento (itens e validade) e registro de extravasamento de radiofármaco e de reações adversas.{% endblock %}
+{% block corpo_e %}
+<h2>{{ ic('radiation', 18) }} Monitor de contaminação</h2>
+{% if not hoje %}<div class="cartao enf-alerta amarelo">{{ ic('clock', 18) }} O teste de hoje ainda não foi registrado (limite {{ hora }}).</div>
+{% else %}<div class="cartao enf-alerta {{ 'verde' if hoje.ok else 'vermelho' }}">Teste de hoje registrado às {{ hoje.data_hora[11:16] }}: {{ 'conforme' if hoje.ok else 'NÃO conforme' }}.</div>{% endif %}
+<form class="cartao enf-form enf-nao-imprime" method="post" action="{{ url_for('enf.rp_teste') }}">
+  {{ csrf_input }}<div class="enf-form-inline"><input type="text" name="equipamento" placeholder="Monitor (ex.: Geiger da sala de dose)"><input type="text" name="fundo" placeholder="Leitura de fundo"><input type="text" name="fonte" placeholder="Leitura da fonte de teste">
+    <label class="q-check"><input type="checkbox" name="ok" value="1" checked> conforme</label><input type="text" name="obs" placeholder="Observação"><button class="btn" type="submit">Registrar teste</button></div>
+</form>
+<div class="tabela-wrap"><table class="tabela"><thead><tr><th>Data</th><th>Monitor</th><th>Fundo</th><th>Fonte</th><th>Resultado</th><th>Quem</th></tr></thead><tbody>
+{% for t in testes %}<tr class="{{ '' if t.ok else 'enf-linha-vermelha' }}"><td>{{ t.data_hora[8:10] }}/{{ t.data_hora[5:7] }}/{{ t.data_hora[:4] }} {{ t.data_hora[11:16] }}</td><td>{{ t.equipamento }}</td><td>{{ t.fundo }}</td><td>{{ t.fonte }}</td><td><span class="enf-chip {{ 'verde' if t.ok else 'vermelho' }}">{{ 'conforme' if t.ok else 'não conforme' }}</span></td><td>{{ t.profissional }}</td></tr>
+{% else %}<tr><td colspan="6" class="sub">Nenhum teste registrado.</td></tr>{% endfor %}</tbody></table></div>
+<h2>Kit de derramamento</h2>
+<div class="enf-areas">
+  {% for c in kits %}<a class="enf-area {{ 'vermelho' if c.vermelho else 'verde' }}" href="{{ url_for('enf.carrinho_detalhe', cid=c.id) }}"><span class="enf-area-ico">{{ ic('radiation', 26) }}</span><strong>{{ c.nome }}</strong>
+    <span class="enf-chip {{ 'vermelho' if c.vermelho else 'verde' }}">{% if c.vermelho %}{{ c.problemas|length }} problema(s){% else %}Completo{% endif %}</span><small>{{ c.local or 'sem local' }} · {{ c.itens|length }} itens{% if c.atrasada %} · conferência atrasada{% endif %}</small></a>
+  {% else %}<div class="cartao"><p class="vazio" style="margin:0">Nenhum kit cadastrado.</p></div>{% endfor %}
+</div>
+<form class="cartao enf-form enf-nao-imprime" method="post" action="{{ url_for('enf.carrinho_novo') }}">
+  {{ csrf_input }}<input type="hidden" name="tipo" value="KIT"><div class="enf-form-inline"><input type="text" name="nome" required maxlength="80" placeholder="Nome do kit (ex.: Kit de derramamento da sala de dose)"><input type="text" name="local" maxlength="80" placeholder="Onde fica">
+    <select name="periodicidade"><option value="SEMANAL">Conferência semanal</option><option value="DIARIA">Conferência diária</option></select><button class="btn" type="submit">Cadastrar kit e incluir os itens</button></div>
+</form>
+<h2>Extravasamento e reações adversas</h2>
+<form class="cartao enf-form enf-nao-imprime" method="post" action="{{ url_for('enf.rp_ocorrencia') }}">
+  {{ csrf_input }}<div class="q-linha3"><label>Tipo<select name="tipo">{% for t in tipos %}<option>{{ t }}</option>{% endfor %}</select></label><label>Radiofármaco<input type="text" name="radiofarmaco" maxlength="80"></label>
+    <label>Local (ex.: braço direito, sala de dose)<input type="text" name="local" maxlength="80"></label></div>
+  <div class="q-linha3"><label>Referência (sem nome do paciente)<input type="text" name="referencia" maxlength="80" placeholder="Ex.: iniciais e idade"></label><label>Gravidade<select name="gravidade"><option>Leve</option><option>Moderada</option><option>Grave</option></select></label><div></div></div>
+  <label>Conduta<textarea name="conduta" rows="2" required maxlength="800"></textarea></label>
+  <label class="q-check"><input type="checkbox" name="qualidade" value="1" checked> também registrar nas Ocorrências da Qualidade</label>
+  <button class="btn" type="submit">Registrar ocorrência</button>
+</form>
+<div class="tabela-wrap"><table class="tabela"><thead><tr><th>Data</th><th>Tipo</th><th>Radiofármaco</th><th>Local</th><th>Gravidade</th><th>Conduta</th><th>Quem</th></tr></thead><tbody>
+{% for o in ocorrencias %}<tr><td>{{ o.data_hora[8:10] }}/{{ o.data_hora[5:7] }} {{ o.data_hora[11:16] }}</td><td>{{ o.tipo }}</td><td>{{ o.radiofarmaco }}</td><td>{{ o.local }}</td><td>{{ o.gravidade }}</td><td>{{ o.conduta }}</td><td>{{ o.profissional }}</td></tr>
+{% else %}<tr><td colspan="7" class="sub">Nenhuma ocorrência registrada.</td></tr>{% endfor %}</tbody></table></div>
+{% endblock %}

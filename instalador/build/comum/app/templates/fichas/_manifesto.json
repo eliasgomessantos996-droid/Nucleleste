@@ -1,0 +1,146 @@
+[
+  {
+    "slug": "ficha_geral",
+    "titulo": "Ficha Geral",
+    "aba": "FICHA GERAL",
+    "paisagem": false
+  },
+  {
+    "slug": "ficha_mibi",
+    "titulo": "Ficha MIBI",
+    "aba": "FICHA MIBI",
+    "paisagem": false
+  },
+  {
+    "slug": "pnt_mibi",
+    "titulo": "PNT - MIBI",
+    "aba": "PNT-MIBI",
+    "paisagem": false
+  },
+  {
+    "slug": "pnt_ossea",
+    "titulo": "PNT - Óssea",
+    "aba": "PNT-ÓSSEA",
+    "paisagem": false
+  },
+  {
+    "slug": "pnt_galio",
+    "titulo": "PNT - Gálio",
+    "aba": "PNT-GÁLIO",
+    "paisagem": false
+  },
+  {
+    "slug": "pnt_renal",
+    "titulo": "PNT - Renal",
+    "aba": "PNT-RENAL",
+    "paisagem": false
+  },
+  {
+    "slug": "pnt_linfonodo",
+    "titulo": "PNT - Linfonodo",
+    "aba": "PNT-LINFONODO",
+    "paisagem": false
+  },
+  {
+    "slug": "pnt_pulmonar",
+    "titulo": "PNT - Pulmonar",
+    "aba": "PNT- PULMONAR",
+    "paisagem": false
+  },
+  {
+    "slug": "pnt_spect",
+    "titulo": "PNT - SPECT Cerebral",
+    "aba": "PNT- SPECT",
+    "paisagem": false
+  },
+  {
+    "slug": "pnt_tgi",
+    "titulo": "PNT - Tireoide",
+    "aba": "PNT-TGI",
+    "paisagem": false
+  },
+  {
+    "slug": "pnt_paratgi",
+    "titulo": "PNT - Paratireoide",
+    "aba": "PNT- PARATGI",
+    "paisagem": false
+  },
+  {
+    "slug": "sae_geral",
+    "titulo": "SAE (todos os exames)",
+    "aba": "SAE (TODOS EXAMES)",
+    "paisagem": false
+  },
+  {
+    "slug": "sae_mibi",
+    "titulo": "SAE MIBI",
+    "aba": "SAE MIBI",
+    "paisagem": false
+  },
+  {
+    "slug": "termo_haroldo",
+    "titulo": "Termo de consentimento (MIBI)",
+    "aba": "TERMO DR HAROLDO",
+    "paisagem": false
+  },
+  {
+    "slug": "dr_haroldo",
+    "titulo": "Orientação Dr. Haroldo (MIBI)",
+    "aba": "DR. HAROLDO",
+    "paisagem": false
+  },
+  {
+    "slug": "escore_news",
+    "titulo": "Escore NEWS",
+    "aba": "ESCORE NEWS (MIBI & PULMONAR)",
+    "paisagem": false
+  },
+  {
+    "slug": "etiqueta_cliente",
+    "titulo": "Etiqueta do cliente",
+    "aba": "FICHACLIENTEGERAL",
+    "paisagem": false
+  },
+  {
+    "slug": "ficha_agendamento",
+    "titulo": "Ficha de agendamento (medicamentos)",
+    "aba": "FICHAAGENDAMENTO",
+    "paisagem": false
+  },
+  {
+    "slug": "iodo_15dias",
+    "titulo": "Orientações iodo (preparo 15 dias)",
+    "aba": "IODOHIPER",
+    "paisagem": false
+  },
+  {
+    "slug": "iodo_30dias",
+    "titulo": "Orientações iodo (preparo 30 dias)",
+    "aba": "IODOPOSCIR",
+    "paisagem": false
+  },
+  {
+    "slug": "atestado",
+    "titulo": "Atestado",
+    "aba": "ATESTADO",
+    "paisagem": false
+  },
+  {
+    "slug": "decl_comparecimento",
+    "titulo": "Declaração de comparecimento",
+    "aba": "DECLARAÇÃODECOMPARECIMENTO",
+    "paisagem": false
+  },
+  {
+    "slug": "decl_acompanhante",
+    "titulo": "Declaração de acompanhante",
+    "aba": "DECLARAÇÃODEACOMPANHANTE",
+    "paisagem": false
+  },
+  {
+    "slug": "recibo",
+    "titulo": "Recibo",
+    "aba": "RECIBO",
+    "paisagem": false
+  }
+]

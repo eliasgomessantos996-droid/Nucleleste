@@ -1,0 +1,318 @@
+/* NucleAI IA: cartões no chat (tabela, gráfico, acessos, proposta, links, perfil) e a aba IA online.
+   Só variáveis do tema (--branco, --texto, --borda, --verde...): o tema escuro troca as cores sozinho. */
+.chat-balao-ia { max-width: min(640px, 92%); }
+
+/* ---------- texto formatado da NucleAI (nucleai_formatar.js): negrito, itálico, listas, títulos, chamadas, tabelas ---------- */
+.nf { line-height: 1.42; overflow-wrap: anywhere; white-space: normal; }
+.nf > * + * { margin-top: .5em; }
+.nf-p { margin: 0; }
+.nf strong { font-weight: 700; }
+.nf code { font-family: Consolas, "Courier New", monospace; font-size: .92em; padding: 0 .3em; border-radius: 4px; background: rgba(127, 127, 127, .2); }
+.nf-pre { margin: 0; padding: 8px 10px; border-radius: 8px; overflow-x: auto; background: rgba(127, 127, 127, .16); font-size: .9em; line-height: 1.35; }
+.nf-pre code { padding: 0; background: none; white-space: pre; }
+.nf-titulo { font-weight: 700; line-height: 1.25; }
+.nf-t1 { font-size: 1.18em; } .nf-t2 { font-size: 1.08em; } .nf-t3 { font-size: 1em; opacity: .9; }
+.nf-lista { margin: 0; padding-left: 1.35em; }
+.nf-lista li { margin: .15em 0; }
+.nf-hr { border: 0; border-top: 1px solid rgba(127, 127, 127, .45); margin: .6em 0; }
+.nf-citacao { margin: 0; padding: 4px 10px; border-left: 3px solid rgba(127, 127, 127, .6); background: rgba(127, 127, 127, .1); border-radius: 0 8px 8px 0; }
+.nf-chamada { border-left-width: 4px; border-radius: 6px; padding: 6px 10px; }
+.nf-chamada::before { display: block; font-size: .72em; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; margin-bottom: 1px; }
+.nf-aviso { border-left-color: #d98e04; background: rgba(217, 142, 4, .16); } .nf-aviso::before { content: "Atenção"; color: #b87400; }
+.nf-dica { border-left-color: #1e88c9; background: rgba(30, 136, 201, .14); } .nf-dica::before { content: "Dica"; color: #1976b0; }
+.nf-ok { border-left-color: #2e9d56; background: rgba(46, 157, 86, .15); } .nf-ok::before { content: "Tudo certo"; color: #247e45; }
+.nf-erro { border-left-color: #d64545; background: rgba(214, 69, 69, .15); } .nf-erro::before { content: "Problema"; color: #c03a3a; }
+.nf-info { border-left-color: #7a6bd6; background: rgba(122, 107, 214, .15); } .nf-info::before { content: "Informação"; color: #6558c0; }
+html[data-brilho="escuro"] .nf-aviso::before { color: #f2b64a; } html[data-brilho="escuro"] .nf-dica::before { color: #6cb8ee; }
+html[data-brilho="escuro"] .nf-ok::before { color: #6fcf8f; } html[data-brilho="escuro"] .nf-erro::before { color: #f08a8a; }
+html[data-brilho="escuro"] .nf-info::before { color: #aaa0f0; }
+.nf-tabela-rolagem { overflow-x: auto; }
+.nf-tabela { border-collapse: collapse; font-size: .94em; }
+.nf-tabela th, .nf-tabela td { border: 1px solid rgba(127, 127, 127, .45); padding: 3px 8px; text-align: left; }
+.nf-tabela th { background: rgba(127, 127, 127, .18); }
+.nia-cartao { background: var(--branco); color: var(--texto); border: 1px solid var(--borda); border-radius: 12px; padding: 12px 14px;
+  margin-top: 4px; box-shadow: var(--sombra-card, none); animation: nia-entra .35s var(--ease, ease) both; min-width: 260px; }
+.nia-topo { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.nia-selo { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: var(--verde-claro); color: var(--verde-2);
+  animation: nia-pulso 2.4s ease-in-out infinite; flex: none; }
+.nia-tt { display: flex; flex-direction: column; line-height: 1.25; }
+.nia-tt small, .nia-rodape, .nia-vazio { color: var(--suave); font-size: 12px; }
+.nia-rodape { margin: 8px 0 0; }
+.nia-link { display: inline-flex; align-items: center; gap: 6px; margin-top: 10px; padding: 6px 12px; border-radius: 99px; font-weight: 600; font-size: 13px;
+  background: var(--verde-claro); color: var(--verde-2); text-decoration: none; transition: transform .15s, filter .15s; }
+.nia-link:hover { transform: translateY(-1px); filter: brightness(1.05); }
+.nia-links { display: flex; flex-wrap: wrap; gap: 6px; }
+
+.nia-filtro { width: 100%; margin-bottom: 6px; padding: 5px 8px; border: 1px solid var(--borda); border-radius: 6px; background: var(--branco); color: var(--texto); }
+.nia-tabela-wrap { max-height: 320px; overflow: auto; border: 1px solid var(--borda); border-radius: 8px; }
+.nia-tabela { width: 100%; border-collapse: collapse; font-size: 13px; }
+.nia-tabela th { position: sticky; top: 0; background: var(--verde-claro); color: var(--texto); text-align: left; padding: 6px 8px; font-weight: 700; }
+.nia-tabela td { padding: 5px 8px; border-top: 1px solid var(--borda); }
+.nia-tabela tbody tr { animation: nia-entra .3s var(--ease, ease) both; }
+.nia-st { font-weight: 600; }
+.nia-st.st-veio, .nia-st.st-retorno { color: #1a7f37; }
+.nia-st.st-faltou, .nia-st.st-desistiu { color: var(--erro); }
+.nia-st.st-agendado { color: var(--verde-2); }
+
+.nia-graf { width: 100%; height: auto; display: block; overflow: visible; }
+.nia-graf .g-grade { stroke: var(--borda); stroke-dasharray: 3 4; }
+.nia-graf .g-eixo { fill: var(--suave); font-size: 11px; }
+.nia-graf .g-valor { fill: var(--texto); font-size: 11px; font-weight: 700; }
+.nia-graf .g-valor.proj { fill: var(--brilho-2, #2f9e6a); }
+.nia-graf .g-barra { fill: var(--verde-2); transform-box: fill-box; transform-origin: bottom; animation: nia-cresce .6s var(--ease, ease) both; }
+.nia-graf .g-barra:hover { fill: var(--brilho-2, #2f9e6a); }
+.nia-graf .g-linha { fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 1200; stroke-dashoffset: 1200;
+  animation: nia-traca 1.1s var(--ease, ease) forwards; }
+.nia-graf .g-linha.real { stroke: var(--verde-2); }
+.nia-graf .g-linha.proj { stroke: var(--brilho-2, #2f9e6a); animation: nia-traca 1.1s .5s var(--ease, ease) forwards, nia-tracejado 1.2s 1.6s linear infinite; }
+.nia-graf .g-faixa { fill: var(--brilho, #5bc0a0); opacity: 0; animation: nia-faixa .8s 1s ease forwards; }
+.nia-graf .g-ponto { stroke: var(--branco); stroke-width: 2; animation: nia-entra .3s both; }
+.nia-graf .g-ponto.real { fill: var(--verde-2); }
+.nia-graf .g-ponto.proj { fill: var(--brilho-2, #2f9e6a); }
+.nia-legenda { display: flex; gap: 14px; font-size: 12px; color: var(--suave); margin-bottom: 4px; }
+.nia-legenda .lg { display: inline-flex; align-items: center; gap: 6px; }
+.nia-legenda i { width: 18px; height: 0; border-top: 3px solid var(--verde-2); }
+.nia-legenda .proj i { border-top: 3px dashed var(--brilho-2, #2f9e6a); }
+.nia-destaque { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; padding: 8px 12px; margin-bottom: 8px; border-radius: 10px; background: var(--verde-claro); }
+.nia-destaque b { font-size: 26px; color: var(--verde-2); }
+.nia-destaque small, .nia-destaque span { color: var(--suave); font-size: 12px; }
+
+.nia-acessos { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 8px 14px; max-height: 380px; overflow: auto; }
+.nia-grupo h4 { margin: 4px 0; font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--suave); }
+.nia-mod { display: flex; align-items: center; gap: 6px; font-size: 13px; padding: 3px 6px; border-radius: 6px; color: var(--suave); }
+.nia-mod.tem { color: var(--texto); }
+.nia-mod.tem .ic { color: #1a7f37; }
+.nia-mod em { margin-left: auto; font-style: normal; font-size: 11px; font-weight: 700; padding: 1px 6px; border-radius: 99px; }
+.nia-mod.mais { background: var(--ok-fundo); animation: nia-destaca 1.4s ease-in-out 2; }
+.nia-mod.mais em { color: #1a7f37; }
+.nia-mod.menos { background: var(--erro-fundo); text-decoration: line-through; animation: nia-destaca 1.4s ease-in-out 2; }
+.nia-mod.menos em { color: var(--erro); text-decoration: none; }
+
+.nia-prop { display: grid; grid-template-columns: max-content 1fr; gap: 4px 12px; margin: 0; font-size: 13px; }
+.nia-prop dt { color: var(--suave); }
+.nia-prop dd { margin: 0; font-weight: 600; }
+.nia-botoes { display: flex; gap: 8px; margin-top: 10px; }
+.nia-botoes .btn { display: inline-flex; align-items: center; gap: 6px; }
+
+.nia-perfil { display: flex; flex-direction: column; gap: 6px; }
+.nia-campo { display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: 10px; font-size: 13px; }
+.nia-campo .nc-nome { font-size: 11px; color: var(--suave); }
+.nia-escala { display: inline-flex; align-items: center; gap: 3px; }
+.nia-escala i { width: 14px; height: 8px; border-radius: 3px; background: var(--borda); }
+.nia-escala i.on { background: var(--verde-2); animation: nia-cresce .4s both; }
+.nia-escala b { margin-left: 6px; font-size: 12px; }
+
+/* ---------------------------------------------------------- aba IA online */
+.nia-pagina { display: grid; grid-template-columns: minmax(340px, 1.3fr) minmax(300px, 1fr); gap: 16px; align-items: start; }
+@media (max-width: 1050px) { .nia-pagina { grid-template-columns: 1fr; } }
+.nia-hero { display: flex; align-items: center; gap: 16px; }
+.nia-hero svg.nia-atomo { width: 64px; height: 64px; flex: none; }
+.nia-atomo .orb { fill: none; stroke: var(--verde-2); stroke-width: 2; opacity: .75; transform-origin: 32px 32px; }
+.nia-atomo .orb.a { animation: nia-gira 6s linear infinite; }
+.nia-atomo .orb.b { animation: nia-gira 9s linear infinite reverse; }
+.nia-atomo .orb.c { animation: nia-gira 12s linear infinite; }
+.nia-atomo .nucleo { fill: var(--brilho-2, #2f9e6a); animation: nia-pulso 2.4s ease-in-out infinite; transform-origin: 32px 32px; }
+.nia-atomo.desligada .orb { animation-play-state: paused; opacity: .35; }
+.nia-estado { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 99px; font-size: 12px; font-weight: 700; }
+.nia-estado.TREINO { background: var(--aviso-fundo); color: var(--aviso); }
+.nia-estado.LIBERADA { background: var(--ok-fundo); color: #1a7f37; }
+.nia-estado.DESATIVADA { background: var(--erro-fundo); color: var(--erro); }
+.nia-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin: 12px 0; }
+.nia-kpi { background: var(--branco); border: 1px solid var(--borda); border-radius: 12px; padding: 10px 14px; animation: nia-entra .4s both; }
+.nia-kpi small { display: block; color: var(--suave); font-size: 12px; }
+.nia-kpi b { font-size: 22px; color: var(--verde-2); }
+.nia-dist { display: flex; align-items: flex-end; gap: 4px; height: 40px; margin-top: 6px; }
+.nia-dist span { flex: 1; background: var(--verde-2); border-radius: 3px 3px 0 0; min-height: 2px; transform-origin: bottom; animation: nia-cresce .6s both; }
+
+.nia-treino { display: flex; flex-direction: column; height: min(72vh, 760px); background: var(--branco); border: 1px solid var(--borda); border-radius: 14px; overflow: hidden; }
+.nia-treino-topo { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 14px; border-bottom: 1px solid var(--borda); background: var(--verde-claro); }
+.nia-treino-fio { flex: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+.nia-msg { max-width: 88%; padding: 8px 12px; border-radius: 12px; white-space: pre-wrap; font-size: 14px; animation: nia-entra .25s both; }
+.nia-msg.treinador { align-self: flex-end; background: var(--verde-claro); }
+.nia-msg.ia { align-self: flex-start; background: var(--fundo); border: 1px solid var(--borda); }
+.nia-msg.sistema { align-self: center; background: transparent; color: var(--suave); font-size: 12px; text-align: center; }
+.nia-msg small { display: block; margin-top: 3px; color: var(--suave); font-size: 11px; }
+.nia-digitando { align-self: flex-start; display: inline-flex; gap: 4px; padding: 10px 12px; }
+.nia-digitando i { width: 7px; height: 7px; border-radius: 50%; background: var(--verde-2); animation: nia-pula 1s infinite; }
+.nia-digitando i:nth-child(2) { animation-delay: .15s; }
+.nia-digitando i:nth-child(3) { animation-delay: .3s; }
+.nia-treino-form { display: flex; gap: 8px; padding: 10px; border-top: 1px solid var(--borda); }
+.nia-treino-form textarea { flex: 1; resize: none; min-height: 42px; max-height: 140px; padding: 8px 10px; border: 1px solid var(--borda); border-radius: 10px;
+  background: var(--branco); color: var(--texto); font: inherit; }
+.nia-memoria textarea { width: 100%; min-height: 260px; font: 12px/1.45 ui-monospace, Consolas, monospace; background: var(--branco); color: var(--texto);
+  border: 1px solid var(--borda); border-radius: 8px; padding: 8px; }
+.nia-codigo { font: 700 28px/1 ui-monospace, Consolas, monospace; letter-spacing: .25em; padding: 8px 14px; border-radius: 10px; background: var(--aviso-fundo);
+  color: var(--aviso); display: inline-block; animation: nia-destaca 1.6s ease-in-out infinite; }
+.nia-log td { font-size: 12px; vertical-align: top; }
+.nia-log .trecho { max-width: 340px; white-space: pre-wrap; }
+
+@keyframes nia-entra { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@keyframes nia-pulso { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.08); } }
+@keyframes nia-cresce { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+@keyframes nia-traca { to { stroke-dashoffset: 0; } }
+@keyframes nia-tracejado { from { stroke-dasharray: 6 5; stroke-dashoffset: 0; } to { stroke-dasharray: 6 5; stroke-dashoffset: -22; } }
+@keyframes nia-faixa { to { opacity: .16; } }
+@keyframes nia-destaca { 50% { filter: brightness(1.12); } }
+@keyframes nia-gira { to { transform: rotate(360deg); } }
+@keyframes nia-fatia { from { opacity: 0; transform: scale(.86); } to { opacity: 1; transform: scale(1); } }
+@keyframes nia-pula { 0%, 100% { transform: translateY(0); opacity: .5; } 50% { transform: translateY(-4px); opacity: 1; } }
+
+/* ---------------------------------------------------------- Ferramenta Ilustrar (fora do balão comum) */
+.nia-msg.ia.nia-msg-ilustrar { max-width: 96%; background: transparent; border: 0; padding: 2px 0; }
+.nia-ilustrar {
+  --g-c0: var(--verde-2, #255f39);
+  --g-c1: var(--brilho-2, #2f9e6a);
+  --g-c2: #0284c7;
+  --g-c3: #d97706;
+  --g-c4: #7c3aed;
+  --g-c5: #dc2626;
+  background: var(--branco);
+  color: var(--texto);
+  border: 1px solid var(--borda);
+  border-radius: 14px;
+  padding: 14px 16px;
+  margin-top: 0;
+  box-shadow: var(--sombra-card, 0 8px 22px -14px rgba(15, 35, 25, .28));
+}
+html[data-brilho="escuro"] .nia-ilustrar {
+  --g-c0: var(--brilho, #5bc0a0);
+  --g-c1: var(--brilho-2, #38b889);
+  --g-c2: #38bdf8;
+  --g-c3: #fbbf24;
+  --g-c4: #a78bfa;
+  --g-c5: #fb7185;
+}
+.nia-ilustrar.nia-substituida { opacity: .68; border-style: dashed; }
+.nia-sub-badge {
+  margin-left: auto;
+  padding: 2px 8px;
+  border-radius: 99px;
+  font-size: 11px;
+  font-weight: 700;
+  background: var(--aviso-fundo);
+  color: var(--aviso);
+}
+
+.nia-ilus-barra { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+.nia-ilus-cont { font-size: 12px; color: var(--suave); }
+.nia-ilus-acoes { display: flex; flex-wrap: wrap; gap: 6px; }
+.nia-acao-btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 5px 10px; border-radius: 8px;
+  border: 1px solid var(--borda);
+  background: var(--fundo); color: var(--texto);
+  font-size: 12px; font-weight: 600; text-decoration: none; cursor: pointer;
+  transition: background .15s, border-color .15s, transform .15s;
+}
+.nia-acao-btn:hover { background: var(--verde-claro); border-color: var(--verde-2); transform: translateY(-1px); }
+.nia-excel-btn { background: var(--verde-claro); color: var(--verde-2); border-color: var(--borda); }
+
+.nia-planilha-tb th { padding: 0; }
+.nia-sort-btn {
+  width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 6px;
+  padding: 7px 9px; border: 0; background: transparent; color: inherit;
+  font: inherit; text-align: left; cursor: pointer;
+}
+.nia-sort-btn:hover { background: color-mix(in srgb, var(--verde-2) 10%, transparent); }
+.nia-sort-btn.ativo { color: var(--verde-2); }
+.nia-sort-ind { font-size: 10px; opacity: .85; }
+.nia-planilha-tb td.num { text-align: right; font-variant-numeric: tabular-nums; }
+
+.nia-graf-foco {
+  margin-bottom: 6px; padding: 5px 9px; border-radius: 8px;
+  background: var(--fundo); border: 1px solid var(--borda);
+  font-size: 12px; color: var(--suave);
+}
+.nia-graf-foco.ativo { color: var(--texto); font-weight: 600; border-color: var(--verde-2); }
+.nia-graf .g-barra, .nia-graf .g-ponto, .nia-graf .g-fatia { cursor: pointer; outline: none; transition: filter .15s, opacity .15s; }
+.nia-graf .g-barra:hover, .nia-graf .g-barra:focus,
+.nia-graf .g-ponto:hover, .nia-graf .g-ponto:focus,
+.nia-graf .g-fatia:hover, .nia-graf .g-fatia:focus { filter: brightness(1.15); }
+.nia-graf .gc-0 { fill: var(--g-c0); }
+.nia-graf .gc-1 { fill: var(--g-c1); }
+.nia-graf .gc-2 { fill: var(--g-c2); }
+.nia-graf .gc-3 { fill: var(--g-c3); }
+.nia-graf .gc-4 { fill: var(--g-c4); }
+.nia-graf .gc-5 { fill: var(--g-c5); }
+.nia-graf .g-linha-s.gc-0 { fill: none; stroke: var(--g-c0); }
+.nia-graf .g-linha-s.gc-1 { fill: none; stroke: var(--g-c1); }
+.nia-graf .g-linha-s.gc-2 { fill: none; stroke: var(--g-c2); }
+.nia-graf .g-linha-s.gc-3 { fill: none; stroke: var(--g-c3); }
+.nia-graf .g-linha-s.gc-4 { fill: none; stroke: var(--g-c4); }
+.nia-graf .g-linha-s.gc-5 { fill: none; stroke: var(--g-c5); }
+.nia-graf .g-fatia { stroke: var(--branco); stroke-width: 1.5; transform-box: view-box; transform-origin: 120px 110px; animation: nia-fatia .55s var(--ease, ease) both; }
+.nia-graf .g-centro-val { fill: var(--texto); font-size: 18px; font-weight: 800; }
+.nia-graf .g-centro-rot { fill: var(--suave); font-size: 11px; }
+.nia-pizza-wrap { display: grid; grid-template-columns: minmax(180px, 230px) 1fr; gap: 10px 14px; align-items: center; }
+@media (max-width: 560px) { .nia-pizza-wrap { grid-template-columns: 1fr; } }
+.nia-graf-pizza { max-width: 230px; margin: 0 auto; }
+.nia-legenda { display: flex; flex-wrap: wrap; gap: 6px 12px; font-size: 12px; color: var(--suave); margin-top: 6px; }
+.nia-legenda.nia-legenda-pizza { flex-direction: column; align-items: stretch; margin-top: 0; }
+.nia-legenda .lg { display: inline-flex; align-items: center; gap: 6px; }
+.nia-legenda .lg i { width: 12px; height: 12px; border-radius: 3px; border: 0; flex: none; }
+.nia-legenda .lg i.gc-0 { background: var(--g-c0); }
+.nia-legenda .lg i.gc-1 { background: var(--g-c1); }
+.nia-legenda .lg i.gc-2 { background: var(--g-c2); }
+.nia-legenda .lg i.gc-3 { background: var(--g-c3); }
+.nia-legenda .lg i.gc-4 { background: var(--g-c4); }
+.nia-legenda .lg i.gc-5 { background: var(--g-c5); }
+.nia-legenda .lg-pizza {
+  border: 0; background: transparent; color: var(--texto); font: inherit;
+  text-align: left; padding: 3px 6px; border-radius: 6px; cursor: pointer;
+}
+.nia-legenda .lg-pizza:hover, .nia-legenda .lg-pizza:focus { background: var(--fundo); }
+
+.nia-info-selo {
+  display: inline-block; margin-bottom: 8px; padding: 2px 10px; border-radius: 99px;
+  font-size: 12px; font-weight: 700; background: var(--verde-claro); color: var(--verde-2);
+}
+.nia-info-grid { display: grid; grid-template-columns: max-content 1fr; gap: 5px 14px; margin: 0; font-size: 13px; }
+.nia-info-grid.compacto { margin-top: 6px; font-size: 12.5px; }
+.nia-info-grid dt { color: var(--suave); font-weight: 500; }
+.nia-info-grid dd { margin: 0; font-weight: 600; color: var(--texto); word-break: break-word; }
+.nia-info-grid dd.destaque { color: var(--verde-2); font-weight: 700; }
+.nia-info-grid dd.inteiro { grid-column: 1 / -1; }
+
+.nia-decisao-risco {
+  display: inline-block; margin-bottom: 6px; padding: 2px 9px; border-radius: 99px;
+  font-size: 11px; font-weight: 700; background: var(--aviso-fundo); color: var(--aviso);
+}
+.nia-decisao-perg { margin: 2px 0 8px; font-size: 14px; font-weight: 600; color: var(--texto); }
+.nia-decisao-travado {
+  display: inline-flex; align-items: center; gap: 6px; margin-top: 10px; padding: 6px 12px;
+  border-radius: 10px; font-size: 13px; font-weight: 700;
+}
+.nia-decisao-travado.sim { background: var(--ok-fundo); color: var(--verde-2); }
+.nia-decisao-travado.nao { background: var(--erro-fundo); color: var(--erro); }
+
+.nia-perm-aut { margin: 8px 0 10px; padding: 8px 10px; border-radius: 10px; background: var(--fundo); border: 1px solid var(--borda); }
+.nia-perm-tit { display: block; font-size: 11.5px; font-weight: 700; color: var(--suave); text-transform: uppercase; letter-spacing: .04em; margin-bottom: 6px; }
+.nia-perm-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.nia-perm-chip {
+  display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px; border-radius: 99px;
+  background: var(--verde-claro); color: var(--verde-2); font-size: 12px; font-weight: 600;
+}
+.nia-ilus-texto { margin: 0; font-size: 13.5px; white-space: pre-wrap; word-break: break-word; color: var(--texto); }
+
+html[data-brilho="escuro"] .chat-balao.chat-balao-ilustrar .nia-tt small,
+html[data-brilho="escuro"] .chat-balao.chat-balao-ilustrar .nia-rodape,
+html[data-brilho="escuro"] .chat-balao.chat-balao-ilustrar .nia-ilus-cont,
+html[data-brilho="escuro"] .chat-balao.chat-balao-ilustrar .nia-info-grid dt,
+html[data-brilho="escuro"] .chat-balao.chat-balao-ilustrar .nia-perm-tit,
+html[data-brilho="escuro"] .chat-balao.chat-balao-ilustrar .nia-graf-foco:not(.ativo) { color: var(--suave); }
+html[data-brilho="escuro"] .chat-balao.chat-balao-ilustrar .nia-decisao-travado.nao,
+html[data-brilho="escuro"] .chat-balao.chat-balao-ilustrar .nia-mod.menos,
+html[data-brilho="escuro"] .chat-balao.chat-balao-ilustrar .nia-mod.menos em { color: var(--erro); }
+html[data-brilho="escuro"] .chat-balao.chat-balao-ilustrar .nia-decisao-travado.sim,
+html[data-brilho="escuro"] .chat-balao.chat-balao-ilustrar .nia-excel-btn,
+html[data-brilho="escuro"] .chat-balao.chat-balao-ilustrar .nia-info-selo,
+html[data-brilho="escuro"] .chat-balao.chat-balao-ilustrar .nia-perm-chip,
+html[data-brilho="escuro"] .chat-balao.chat-balao-ilustrar .nia-mod.mais em { color: var(--brilho); }
+
+@media (prefers-reduced-motion: reduce) {
+  .nia-cartao, .nia-cartao *, .nia-ilustrar, .nia-ilustrar *, .nia-atomo *, .nia-kpi, .nia-msg {
+    animation: none !important;
+    transition: none !important;
+    stroke-dashoffset: 0 !important;
+  }
+}

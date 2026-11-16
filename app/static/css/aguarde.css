@@ -1,0 +1,102 @@
+/* Tela de espera da atualização: cena animada + frase divertida + barra de progresso */
+.aguarde { text-align: center; font-family: 'Segoe UI', system-ui, sans-serif; color: #1f2d24; }
+.aguarde-palco { position: relative; width: 320px; max-width: 86vw; height: 150px; margin: 0 auto 10px; background: #f1f7f3;
+  border-radius: 20px; overflow: hidden; border: 1px solid #d4e4da; }
+.aguarde-cena { position: absolute; inset: 0; opacity: 0; transition: opacity .5s; pointer-events: none; }
+.aguarde-cena.ativa { opacity: 1; }
+.aguarde-cena i { position: absolute; font-style: normal; font-size: 46px; line-height: 1; }
+.aguarde-frase { min-height: 54px; font-size: 18px; font-weight: 700; margin: 8px auto 4px; max-width: 420px; transition: opacity .4s; }
+.aguarde-frase.some { opacity: 0; }
+.aguarde-barra { width: 320px; max-width: 86vw; height: 10px; border-radius: 999px; background: #dbe8e0; margin: 12px auto 6px; overflow: hidden; }
+.aguarde-barra b { display: block; height: 100%; width: 4%; border-radius: 999px;
+  background: linear-gradient(90deg, var(--verde-2), #6cc28a, var(--verde-2)); background-size: 200% 100%; animation: ag-brilho 1.4s linear infinite; }
+.aguarde-tempo { font-size: 13px; color: #5a6b60; }
+
+/* 1. dose do gerador */
+.c-dose .seringa { left: -60px; top: 52px; animation: ag-seringa 3.2s ease-in-out infinite; }
+.c-dose .frasco { right: 44px; top: 46px; animation: ag-pulso 1.6s ease-in-out infinite; }
+.c-dose .brilho { right: 20px; top: 20px; font-size: 26px; animation: ag-brilha 1.6s ease-in-out infinite; }
+/* 2. eluição */
+.c-eluir .gerador { left: 70px; top: 18px; }
+.c-eluir .gota { left: 100px; top: 56px; font-size: 24px; animation: ag-gota 1.2s ease-in infinite; }
+.c-eluir .gota.g2 { animation-delay: .6s; }
+.c-eluir .tubo { left: 180px; top: 82px; animation: ag-pulso 1.6s ease-in-out infinite; }
+/* 3. gama câmara */
+.c-gama .engrenagem { left: 60px; top: 50px; animation: ag-gira 2.4s linear infinite; }
+.c-gama .imagem { left: 190px; top: 50px; animation: ag-pulso 1.4s ease-in-out infinite; }
+.c-gama .onda { left: 118px; top: 58px; font-size: 28px; animation: ag-onda 1.2s ease-in-out infinite; }
+/* 4. agenda / whatsapp */
+.c-agenda .cal { left: 70px; top: 44px; }
+.c-agenda .balao { left: 170px; top: 30px; animation: ag-sobe 1.8s ease-in-out infinite; }
+.c-agenda .balao.b2 { left: 205px; top: 70px; font-size: 32px; animation-delay: .9s; }
+/* 5. troco */
+.c-caixa .cofre { left: 136px; top: 78px; }
+.c-caixa .moeda { left: 120px; top: -50px; font-size: 32px; animation: ag-moeda 1.5s ease-in infinite; }
+.c-caixa .moeda.m2 { left: 170px; animation-delay: .5s; }
+.c-caixa .moeda.m3 { left: 145px; animation-delay: 1s; }
+/* 6. esteira do MIBI */
+.c-esteira .corredor { left: 130px; top: 36px; animation: ag-corre .5s ease-in-out infinite alternate; }
+.c-esteira .chao { left: 40px; top: 100px; font-size: 20px; letter-spacing: 2px; animation: ag-esteira .6s linear infinite; white-space: nowrap; }
+.c-esteira .suor { left: 175px; top: 26px; font-size: 22px; animation: ag-gota 1s ease-in infinite; }
+/* 7. laudo */
+.c-laudo .raiox { left: 90px; top: 40px; }
+.c-laudo .scan { left: 80px; top: 0; width: 120px; height: 4px; background: var(--verde-2); border-radius: 2px; box-shadow: 0 0 10px var(--verde-2); animation: ag-scan 1.8s ease-in-out infinite alternate; }
+.c-laudo .papel { left: 200px; top: 50px; animation: ag-pulso 1.6s ease-in-out infinite; }
+/* 8. meia-vida */
+.c-meiavida .ampulheta { left: 120px; top: 40px; font-size: 56px; animation: ag-vira 3s ease-in-out infinite; }
+.c-meiavida .atomo { left: 210px; top: 52px; animation: ag-gira 4s linear infinite; }
+/* 9. banco de horas */
+.c-horas .relogio { left: 130px; top: 40px; font-size: 54px; animation: ag-balanca 1s ease-in-out infinite; }
+.c-horas .zzz { left: 200px; top: 30px; font-size: 26px; animation: ag-sobe 2s ease-in-out infinite; }
+/* 10. impressora */
+.c-imprime .impressora { left: 124px; top: 60px; animation: ag-treme .35s linear infinite; }
+.c-imprime .folha { left: 134px; top: 10px; font-size: 38px; animation: ag-folha 1.6s ease-out infinite; }
+
+@keyframes ag-brilho { to { background-position: -200% 0; } }
+@keyframes ag-pulso { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.18); } }
+@keyframes ag-brilha { 0%, 100% { opacity: .2; transform: scale(.7); } 50% { opacity: 1; transform: scale(1.2); } }
+@keyframes ag-seringa { 0% { transform: translateX(0) rotate(-10deg); } 55% { transform: translateX(190px) rotate(0); } 70% { transform: translateX(176px) rotate(0); } 100% { transform: translateX(0) rotate(-10deg); } }
+@keyframes ag-gota { 0% { transform: translateY(0); opacity: 0; } 20% { opacity: 1; } 100% { transform: translateY(50px); opacity: 0; } }
+@keyframes ag-gira { to { transform: rotate(360deg); } }
+@keyframes ag-onda { 0%, 100% { transform: translateX(-6px); opacity: .3; } 50% { transform: translateX(14px); opacity: 1; } }
+@keyframes ag-sobe { 0% { transform: translateY(14px) scale(.7); opacity: 0; } 40% { opacity: 1; } 100% { transform: translateY(-14px) scale(1.1); opacity: 0; } }
+@keyframes ag-moeda { 0% { transform: translateY(0); opacity: 1; } 100% { transform: translateY(125px); opacity: 0; } }
+@keyframes ag-corre { from { transform: translateY(0) rotate(-4deg); } to { transform: translateY(-8px) rotate(4deg); } }
+@keyframes ag-esteira { from { transform: translateX(0); } to { transform: translateX(-16px); } }
+@keyframes ag-scan { from { transform: translateY(8px); } to { transform: translateY(138px); } }
+@keyframes ag-vira { 0%, 40% { transform: rotate(0); } 60%, 100% { transform: rotate(180deg); } }
+@keyframes ag-balanca { 0%, 100% { transform: rotate(-10deg); } 50% { transform: rotate(10deg); } }
+@keyframes ag-treme { 0%, 100% { transform: translateX(-1px); } 50% { transform: translateX(1px); } }
+@keyframes ag-folha { 0% { transform: translateY(70px); opacity: 0; } 30% { opacity: 1; } 100% { transform: translateY(0); opacity: 1; } }
+
+/* sobreposição sobre uma tela já aberta */
+.aguarde-fundo { position: fixed; inset: 0; z-index: 99999; background: rgba(247, 251, 248, .97); display: flex; align-items: center; justify-content: center; }
+.aguarde-aviso { position: fixed; top: 0; left: 0; right: 0; z-index: 99998; background: #b54708; color: #fff; text-align: center;
+  padding: 8px 12px; font-weight: 700; font-family: 'Segoe UI', system-ui, sans-serif; box-shadow: 0 2px 8px rgba(0, 0, 0, .25); }
+
+/* boas-vindas da nova versão */
+.boas-vindas { position: fixed; inset: 0; z-index: 99997; background: rgba(15, 40, 25, .45); display: flex; align-items: center;
+  justify-content: center; padding: 16px; animation: bv-entra .4s ease-out both; }
+.boas-vindas.saindo { animation: bv-sai .4s ease-in both; }
+.boas-vindas-caixa { position: relative; z-index: 1; background: #fff; border-radius: 18px; padding: 26px 24px 22px; max-width: 460px; width: 100%;
+  text-align: center; font-family: 'Segoe UI', system-ui, sans-serif; color: #1f2d24; box-shadow: 0 18px 50px rgba(0, 0, 0, .3);
+  animation: bv-pop .6s cubic-bezier(.2, 1.4, .4, 1) both; }
+.boas-vindas-caixa h2 { margin: 0 0 4px; font-size: 22px; color: var(--verde); }
+.boas-vindas-sub { margin: 0 0 14px; font-size: 13px; color: #5a6b60; }
+.boas-vindas-dica { min-height: 58px; background: #eef7f1; border-radius: 12px; padding: 10px 12px; font-size: 15px; margin-bottom: 16px; }
+.boas-vindas-dica b { display: block; font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--verde-2); margin-bottom: 4px; }
+.boas-vindas-dica span { display: block; transition: opacity .3s, transform .3s; }
+.boas-vindas-dica span.sai { opacity: 0; transform: translateY(6px); }
+.boas-vindas-botao { background: var(--verde); color: #fff; border: 0; border-radius: 10px; padding: 10px 26px; font-size: 15px; font-weight: 700; cursor: pointer; }
+.boas-vindas-botao:hover { background: var(--verde-2); }
+.boas-vindas-chuva { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+.boas-vindas-chuva i { position: absolute; bottom: -40px; font-style: normal; font-size: 26px; animation-name: bv-sobe; animation-iteration-count: infinite;
+  animation-timing-function: ease-in; opacity: 0; }
+@keyframes bv-entra { from { opacity: 0; } to { opacity: 1; } }
+@keyframes bv-sai { to { opacity: 0; } }
+@keyframes bv-pop { from { transform: scale(.7) translateY(20px); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes bv-sobe { 0% { transform: translateY(0) rotate(0); opacity: 0; } 15% { opacity: 1; } 100% { transform: translateY(-110vh) rotate(360deg); opacity: 0; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .aguarde-cena i, .aguarde-barra b, .boas-vindas-chuva i { animation: none !important; }
+}

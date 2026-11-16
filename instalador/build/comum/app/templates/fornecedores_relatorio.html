@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% block titulo %}Contas por fornecedor{% endblock %}
+{% block conteudo %}
+<div class="cabecalho">
+  <div><h1>Contas a pagar por fornecedor</h1><p class="sub">Contas do período (pelo vencimento) agrupadas por fornecedor, com o total em aberto e o total pago.</p></div>
+  <div class="acoes">
+    <a class="btn sec" href="{{ url_for('fin.conta_fornecedores_relatorio_pdf', de=rel.de, ate=rel.ate, status=rel.status, fornecedor=fid or '') }}" target="_blank" rel="noopener">🖨 PDF</a>
+    <a class="btn sec" href="{{ url_for('fin.conta_fornecedores_relatorio_xlsx', de=rel.de, ate=rel.ate, status=rel.status, fornecedor=fid or '') }}">⬇ Excel</a>
+    <a class="btn sec" href="{{ url_for('fin.conta_fornecedores') }}">Fornecedores</a>
+  </div>
+</div>
+<form class="cartao filtros" method="get">
+  <div><label for="de">Vencimento de</label><input type="date" id="de" name="de" value="{{ rel.de }}"></div>
+  <div><label for="ate">até</label><input type="date" id="ate" name="ate" value="{{ rel.ate }}"></div>
+  <div><label for="status">Situação</label><select id="status" name="status">
+    <option value="">Todas</option><option value="ABERTO" {% if rel.status == 'ABERTO' %}selected{% endif %}>Em aberto</option>
+    <option value="PAGO" {% if rel.status == 'PAGO' %}selected{% endif %}>Pagas</option></select></div>
+  <div><label for="fornecedor">Fornecedor</label><select id="fornecedor" name="fornecedor"><option value="">Todos</option>
+    {% for x in fornecedores %}<option value="{{ x.id }}" {% if fid == x.id %}selected{% endif %}>{{ x.nome }}</option>{% endfor %}</select></div>
+  <div><button class="btn" type="submit">Gerar</button></div>
+</form>
+
+<div class="indicadores">
+  <div class="indicador"><div class="n">{{ rel.quantidade }}</div><div class="t">conta(s)</div></div>
+  <div class="indicador" style="border-left-color:#c98a1b"><div class="n">{{ rel.aberto|moeda }}</div><div class="t">em aberto (R$)</div></div>
+  <div class="indicador" style="border-left-color:#2c8a4f"><div class="n">{{ rel.pago|moeda }}</div><div class="t">pago (R$)</div></div>
+  <div class="indicador"><div class="n">{{ rel.total|moeda }}</div><div class="t">total (R$)</div></div>
+</div>
+
+{% for g in rel.grupos %}
+<details class="cartao" style="padding:10px 14px" {% if rel.grupos|length <= 3 %}open{% endif %}>
+  <summary style="cursor:pointer;font-weight:600">{{ g.nome }}{% if g.cnpj %} · <small>{{ g.cnpj }}</small>{% endif %} — {{ g.contas|length }} conta(s) · em aberto R$ {{ g.aberto|moeda }} · pago R$ {{ g.pago|moeda }} · total R$ {{ g.total|moeda }}</summary>
+  <div class="tabela-wrap" style="margin-top:10px"><table class="tabela">
+    <thead><tr><th>Vencimento</th><th>Descrição</th><th>Situação</th><th class="num">Valor (R$)</th></tr></thead>
+    <tbody>
+    {% for c in g.contas %}
+      <tr><td>{{ c.vencimento|data_br }}</td>
+        <td><a href="{{ url_for('fin.conta_editar', cid=c.id) }}">{{ c.descricao }}</a>{% if c.parcela %} <span class="etiqueta aberto">{{ c.parcela }}</span>{% endif %}</td>
+        <td><span class="etiqueta {{ (c.status or '')|lower }}">{{ c.status }}</span>{% if c.data_pagamento %} {{ c.data_pagamento|data_br }}{% endif %}</td>
+        <td class="num">{{ c.valor|moeda }}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+</details>
+{% else %}<p class="vazio">Nenhuma conta no período.</p>{% endfor %}
+{% endblock %}

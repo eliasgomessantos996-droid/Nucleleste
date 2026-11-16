@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% from '_ic.html' import ic %}
+{% block titulo %}Receber pedido {{ pedido.numero }}{% endblock %}
+{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/estoque.css') }}">{% endblock %}
+{% block conteudo %}
+<div class="cabecalho">
+  <div><h1>{{ ic('inbox', 22) }} Registrar recebimento</h1>
+    <p class="sub">Pedido {{ pedido.numero }} · {{ pedido.fornecedor_nome or 'Fornecedor não informado' }}</p></div>
+  <div class="acoes"><a class="btn sec" href="{{ url_for('est.pedido', pid=pedido.id) }}">Voltar ao pedido</a></div>
+</div>
+
+<p class="sub">Confira o que chegou. Cada linha preenchida dá entrada no estoque, com o fornecedor e a nota fiscal deste pedido.
+  Quando tudo chegar, o pedido vira recebido; senão, fica enviado com o recebimento parcial.</p>
+
+<form method="post" class="cartao">
+  {{ csrf_input }}
+  <div class="grade">
+    <div class="c12"><label for="r-doc">Nota fiscal ou documento</label><input id="r-doc" name="documento" value="{{ documento }}"></div>
+  </div>
+
+  <div class="tabela-wrap"><table class="tabela">
+    <thead><tr><th>Item</th><th class="num">Pedido</th><th class="num">Já recebido</th><th class="num">Falta</th><th class="num">Recebendo agora</th><th class="num">Valor pago unit. (R$)</th></tr></thead>
+    <tbody>
+    {% for l in linhas %}
+      <tr>
+        <td>{{ l.item_nome }} <small>{{ l.unidade }}</small></td>
+        <td class="num">{{ l.qtd|est_qtd }}</td>
+        <td class="num">{{ l.qtd_recebida|est_qtd }}</td>
+        <td class="num">{{ l.falta|est_qtd }}</td>
+        <td>
+          <input type="hidden" name="item_id" value="{{ l.item_id }}">
+          <input name="qtd" inputmode="decimal" class="ped-qtd" value="{{ l.qtd_digitada }}" aria-label="Quantidade recebida de {{ l.item_nome }}" {% if l.falta <= 0 %}readonly{% endif %}>
+        </td>
+        <td><input name="valor_unitario" inputmode="decimal" class="ped-valor" value="{{ l.valor_digitado }}" aria-label="Valor pago de {{ l.item_nome }}" placeholder="0,00"></td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+
+  <div class="acoes">
+    <button class="btn" type="submit">Registrar recebimento</button>
+    <a class="btn sec" href="{{ url_for('est.pedido', pid=pedido.id) }}">Cancelar</a>
+  </div>
+</form>
+{% endblock %}

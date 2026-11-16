@@ -1,0 +1,43 @@
+{% extends 'qualidade/_base.html' %}
+{% from 'qualidade/_modelos.html' import galeria_problemas with context %}
+{% block titulo %}Ciclo PDCA{% endblock %}
+{% block titulo_q %}Ciclo PDCA{% endblock %}
+{% block sub_q %}Cada problema percorre Planejar, Fazer, Checar e Agir. Abra um problema para ver o ciclo, as causas e o plano de ação.{% endblock %}
+{% block corpo_q %}
+{{ galeria_problemas(modelos, 'pdca', not problemas) }}
+<div class="q-pdca-roda" aria-hidden="true">
+  <div class="q-fase P"><b>P</b><span>Planejar</span><small>meta, causa, plano</small></div>
+  <div class="q-fase D"><b>D</b><span>Fazer</span><small>executar as ações</small></div>
+  <div class="q-fase C"><b>C</b><span>Checar</span><small>medir o resultado</small></div>
+  <div class="q-fase A"><b>A</b><span>Agir</span><small>padronizar ou corrigir</small></div>
+</div>
+<form class="filtros cartao q-nao-imprime" method="get">
+  <div><label for="status">Situação</label><select id="status" name="status" onchange="this.form.submit()">
+    <option value="">Todas</option>{% for s in statuses %}<option {{ 'selected' if s == status }}>{{ s }}</option>{% endfor %}</select></div>
+</form>
+<div class="tabela-wrap"><table class="tabela">
+  <thead><tr><th>Problema</th><th>Origem</th><th>Fase</th><th class="num">GUT</th><th>Responsável</th><th>Prazo</th><th>Situação</th></tr></thead>
+  <tbody>
+  {% for p in problemas %}
+    <tr><td><a href="{{ url_for('qual.problema_pagina', pid=p.id) }}"><strong>{{ p.titulo }}</strong></a></td><td>{{ p.origem }}</td>
+      <td><span class="q-fase-sel {{ p.fase }}">{{ p.fase }}</span> {{ dict(fases)[p.fase] }}</td><td class="num">{{ p.gut }}</td>
+      <td>{{ p.responsavel }}</td><td>{{ p.prazo|data_br if p.prazo else '' }}</td><td><span class="q-chip {{ 'atencao' if p.status == 'RASCUNHO' }}">{{ p.status }}</span></td></tr>
+  {% else %}
+    <tr><td colspan="7" class="sub">Nenhum problema. Abra um abaixo ou rode o Robô do PDCA.</td></tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+<form class="cartao q-form q-nao-imprime" method="post" action="{{ url_for('qual.problema_novo') }}">
+  {{ csrf_input }}
+  <h2>Abrir um problema</h2>
+  <label>Título<input type="text" name="titulo" maxlength="200" required placeholder="Ex.: Pacientes chegando sem o preparo correto"></label>
+  <label>Descrição<textarea name="descricao" rows="3" placeholder="O que acontece, onde, desde quando e o impacto."></textarea></label>
+  <div class="q-linha3">
+    <label>Gravidade (1 a 5)<input type="number" name="gut_g" min="1" max="5" value="3"></label>
+    <label>Urgência (1 a 5)<input type="number" name="gut_u" min="1" max="5" value="3"></label>
+    <label>Tendência (1 a 5)<input type="number" name="gut_t" min="1" max="5" value="3"></label>
+  </div>
+  <div class="q-linha3"><label>Responsável<input type="text" name="responsavel"></label><label>Prazo<input type="date" name="prazo"></label><div></div></div>
+  <button class="btn" type="submit">Abrir problema</button>
+</form>
+{% endblock %}

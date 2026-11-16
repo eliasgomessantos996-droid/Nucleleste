@@ -1,0 +1,43 @@
+{% extends 'bh/layout.html' %}
+{% macro linha(d, arquivado=False) %}
+<tr>
+  <td><strong>{{ d.title }}</strong><small class="bh-bloco">{{ d.filename }} · {{ (d.size_bytes / 1024)|round(0)|int }} KB{% if d.note %} · {{ d.note }}{% endif %}</small></td>
+  <td>{{ categories[d.category] }}{% if d.month %}<small class="bh-bloco">Mês: {{ d.month[5:] }}/{{ d.month[:4] }}</small>{% endif %}</td>
+  <td>{{ d.uploaded_at|bh_datahora }}<small class="bh-bloco">por {{ d.actor }}</small></td>
+  <td class="num"><div class="bh-linha" style="justify-content:flex-end">
+    <a class="btn sec peq" href="{{ url_for('bh.dp_arquivo', document_id=d.id) }}" target="_blank" rel="noopener">Abrir</a>
+    <a class="btn sec peq" href="{{ url_for('bh.dp_arquivo', document_id=d.id, baixar=1) }}">Baixar</a>
+    <a class="btn sec peq" href="{{ url_for('bh.dp_imprimir', document_id=d.id) }}" target="_blank" rel="noopener">Imprimir</a>
+    {% if pode('bh_gestao') %}<details class="bh-inline"><summary class="btn sec peq">{{ 'Restaurar' if arquivado else 'Arquivar' }}</summary>
+      <form method="post" action="{{ url_for('bh.dp_restaurar' if arquivado else 'bh.dp_arquivar', document_id=d.id) }}">{{ csrf_input }}<input type="text" name="reason" maxlength="2000" placeholder="Justificativa *" required><button class="btn peq" type="submit">Confirmar</button></form></details>{% endif %}
+  </div>{% if arquivado %}<small class="bh-bloco">Arquivado por {{ d.archived_by }} em {{ d.archived_at|bh_datahora }}: {{ d.archive_reason }}</small>{% endif %}</td>
+</tr>
+{% endmacro %}
+{% block titulo %}Pasta de {{ employee.name }}{% endblock %}
+{% block conteudo %}
+<div class="cabecalho"><div><a href="{{ url_for('bh.dp_indice') }}">← Todas as pastas</a><h1>{{ employee.name }}</h1><p class="sub">Número I {{ employee.clock_id }}{{ ' · Estágio' if employee.is_intern }}{{ ' · Inativo' if not employee.active }}</p></div></div>
+<div class="cartao"><h2>Documentos básicos</h2><p class="sub">Itens esperados no cadastro de cada funcionário.</p>
+  <div class="bh-chips">{% for k, rot in required %}<span class="etiqueta {{ 'pago' if k in present else 'aberto' }}">{{ '✓' if k in present else '•' }} {{ rot }}</span>{% endfor %}</div></div>
+{% if pode('bh_gestao') %}
+<form class="cartao" method="post" action="{{ url_for('bh.dp_enviar', employee_id=employee.id) }}" enctype="multipart/form-data">
+  {{ csrf_input }}
+  <h2>Anexar documento</h2><p class="sub">PDF, PNG, JPEG ou WEBP de até {{ max_mb }} MB. Para a folha de ponto assinada, escolha o tipo e o mês.</p>
+  <div class="grade">
+    <div class="c4"><label class="obrig" for="category">Tipo</label><select id="category" name="category" required data-doc-category>{% for k, rot in categories.items() %}<option value="{{ k }}">{{ rot }}</option>{% endfor %}</select></div>
+    <div class="c3 doc-month" hidden><label class="obrig" for="month">Mês da folha</label><input type="month" id="month" name="month" value="{{ current_month }}"></div>
+    <div class="c5"><label for="title">Título (opcional)</label><input type="text" id="title" name="title" maxlength="200" placeholder="Ex.: RG frente e verso"></div>
+    <div class="c6"><label for="note">Observação (opcional)</label><input type="text" id="note" name="note" maxlength="1000"></div>
+    <div class="c6"><label class="obrig" for="file">Arquivo</label><input type="file" id="file" name="file" accept=".pdf,.png,.jpg,.jpeg,.webp,application/pdf,image/*" required></div>
+  </div>
+  <div class="acoes"><button type="submit" class="btn">Anexar à pasta</button></div>
+</form>
+{% endif %}
+<div class="cartao"><h2>Folhas de ponto assinadas</h2><p class="sub">Cópias assinadas dos relatórios mensais. Abra ou imprima sempre que necessário.</p>
+  {% if timesheets %}<div class="tabela-wrap"><table class="tabela"><thead><tr><th>Arquivo</th><th>Tipo</th><th>Enviado</th><th></th></tr></thead><tbody>{% for d in timesheets %}{{ linha(d) }}{% endfor %}</tbody></table></div>
+  {% else %}<p class="bh-muted">Nenhuma folha assinada. Depois de assinada, digitalize a folha e anexe aqui com o mês correspondente.</p>{% endif %}</div>
+<div class="cartao"><h2>Documentos</h2><p class="sub">Documentos pessoais, contratuais e de saúde.</p>
+  {% if documents %}<div class="tabela-wrap"><table class="tabela"><thead><tr><th>Arquivo</th><th>Tipo</th><th>Enviado</th><th></th></tr></thead><tbody>{% for d in documents %}{{ linha(d) }}{% endfor %}</tbody></table></div>
+  {% else %}<p class="bh-muted">Nenhum documento anexado. Anexe cópias de RG, CPF, CTPS, contrato e demais documentos.</p>{% endif %}</div>
+{% if archived %}<div class="cartao"><h2>Arquivados</h2><p class="sub">Mantidos para consulta e para o histórico. Podem ser restaurados com justificativa.</p>
+  <div class="tabela-wrap"><table class="tabela"><thead><tr><th>Arquivo</th><th>Tipo</th><th>Enviado</th><th></th></tr></thead><tbody>{% for d in archived %}{{ linha(d, True) }}{% endfor %}</tbody></table></div></div>{% endif %}
+{% endblock %}

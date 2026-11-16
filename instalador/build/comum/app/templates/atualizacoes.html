@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% from '_ic.html' import ic %}
+{% block titulo %}Log de atualizações{% endblock %}
+{% block conteudo %}
+<div class="cabecalho barra-titulo">
+  <div class="bt-titulo">{% include '_atomo.html' %}<div><h1>Log de atualizações</h1><p class="sub">O que mudou em cada versão do sistema e a apostila completa, em PDF.</p></div></div>
+  <div class="acoes"><a class="btn sec" href="{{ url_for('auth.minha_senha') }}">← Minha conta</a></div>
+</div>
+<div class="cartao">
+  <div class="bt-titulo">{{ ic('file-down', 28) }}<div><h2>Apostila do sistema</h2><p>Guia completo de todas as telas, com sumário e passo a passo. É refeita automaticamente a cada atualização do sistema e sempre que a ajuda da NucleAI é editada. Versão {{ versao_atual }}.</p></div></div>
+  <div class="acoes"><a class="btn com-icone" href="{{ url_for('nov.apostila') }}" target="_blank" rel="noopener">{{ ic('file-down', 16) }} Abrir apostila (PDF)</a></div>
+</div>
+<div class="tabela-wrap"><table class="tabela">
+  <thead><tr><th>Versão</th><th>Data</th><th>O que mudou</th><th class="num">Itens</th><th></th></tr></thead>
+  <tbody>{% for v in versoes %}
+    <tr><td><strong>{{ v.versao }}</strong>{% if loop.first %} <span class="etiqueta pago">atual</span>{% endif %}</td><td>{{ v.data|data_br }}</td><td>{{ v.titulo }}</td><td class="num">{{ v.qtd }}</td>
+      <td class="num"><a class="btn peq com-icone" href="{{ url_for('nov.pdf', versao=v.versao) }}" target="_blank" rel="noopener">{{ ic('file-text', 15) }} Abrir log da atualização</a></td></tr>
+  {% endfor %}</tbody>
+</table></div>
+{% endblock %}

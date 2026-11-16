@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="pt-BR" data-tema="{{ tema_atual }}" data-brilho="{{ brilho_atual }}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gerando acesso à Medcloud</title>
+<link rel="icon" href="{{ url_for('static', filename='img/icone.svg') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/tema.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/tema-escuro.css') }}">
+<style>
+.mca-fundo{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;box-sizing:border-box}
+.mca-card{width:100%;max-width:460px;text-align:center;padding:28px 26px}
+.mca-card h1{font-size:1.25rem;margin:10px 0 2px}
+.mca-card .sub{margin:0 0 14px}
+.mca-atomo{width:116px;height:116px;margin:0 auto;color:var(--mca-cor,#1f7a4d)}
+html[data-brilho="escuro"] .mca-atomo{--mca-cor:#3ddc97}
+.mca-card [hidden]{display:none!important}
+.mca-nucleo{transform-box:view-box;transform-origin:60px 60px;animation:mca-pulso 1.4s ease-in-out infinite}
+@keyframes mca-gira{to{transform:rotate(360deg)}}
+@keyframes mca-pulso{0%,100%{transform:scale(1)}50%{transform:scale(1.22)}}
+.mca-etapas{list-style:none;margin:16px auto 6px;padding:0;text-align:left;display:inline-block}
+.mca-etapas li{display:flex;align-items:center;gap:10px;padding:5px 0;opacity:.45;transition:opacity .25s}
+.mca-etapas li.feito,.mca-etapas li.atual{opacity:1}
+.mca-etapas .bola{width:18px;height:18px;border-radius:50%;border:2px solid currentColor;flex:none;box-sizing:border-box;position:relative}
+.mca-etapas li.feito .bola{background:currentColor}
+.mca-etapas li.feito .bola::after{content:"";position:absolute;left:4px;top:1px;width:4px;height:8px;border:solid #fff;border-width:0 2px 2px 0;transform:rotate(45deg)}
+.mca-etapas li.atual .bola{border-color:transparent;border-top-color:currentColor;animation:mca-gira .9s linear infinite}
+.mca-barra{height:6px;border-radius:3px;background:rgba(128,128,128,.25);overflow:hidden;margin:12px 0 4px}
+.mca-barra i{display:block;height:100%;width:8%;background:currentColor;border-radius:3px;transition:width .5s}
+.mca-acoes{margin-top:14px}
+.mca-msg{min-height:1.3em;font-size:.9rem;margin:6px 0 0}
+@media (prefers-reduced-motion:reduce){.mca-nucleo,.mca-etapas li.atual .bola{animation:none!important}}
+</style>
+</head>
+<body data-tema="{{ tema_atual }}" data-brilho="{{ brilho_atual }}">
+<div class="mca-fundo">
+  <div class="cartao mca-card" role="status" aria-live="polite">
+    <svg class="mca-atomo" viewBox="0 0 120 120" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4">
+      <!-- cada elétron percorre a PRÓPRIA elipse (animateMotion), em vez de girar em torno do centro (que o tirava da órbita) -->
+      <ellipse cx="60" cy="60" rx="50" ry="19" opacity=".55"/>
+      <circle r="5" fill="currentColor" stroke="none"><animateMotion dur="3.2s" repeatCount="indefinite" path="M110,60 A50,19 0 1,1 10,60 A50,19 0 1,1 110,60"/></circle>
+      <g transform="rotate(60 60 60)"><ellipse cx="60" cy="60" rx="50" ry="19" opacity=".55"/>
+        <circle r="5" fill="currentColor" stroke="none"><animateMotion dur="4.6s" begin="-1.5s" repeatCount="indefinite" path="M110,60 A50,19 0 1,0 10,60 A50,19 0 1,0 110,60"/></circle></g>
+      <g transform="rotate(120 60 60)"><ellipse cx="60" cy="60" rx="50" ry="19" opacity=".55"/>
+        <circle r="5" fill="currentColor" stroke="none"><animateMotion dur="6s" begin="-3s" repeatCount="indefinite" path="M110,60 A50,19 0 1,1 10,60 A50,19 0 1,1 110,60"/></circle></g>
+      <circle class="mca-nucleo" cx="60" cy="60" r="9" fill="currentColor" stroke="none"/>
+    </svg>
+    <h1>Gerando o acesso do paciente</h1>
+    <p class="sub">{{ paciente }}</p>
+    <ul class="mca-etapas" id="etapas">
+      <li data-etapa="0"><span class="bola"></span>Abrindo o navegador</li>
+      <li data-etapa="1"><span class="bola"></span>Entrando na Medcloud</li>
+      <li data-etapa="2"><span class="bola"></span>Localizando o paciente</li>
+      <li data-etapa="3"><span class="bola"></span>Cadastrando o paciente</li>
+      <li data-etapa="4"><span class="bola"></span>Gerando o protocolo de acesso</li>
+      <li data-etapa="5"><span class="bola"></span>Criando o estudo</li>
+      <li data-etapa="6"><span class="bola"></span>Conferindo o estudo</li>
+    </ul>
+    <div class="mca-barra"><i id="barra"></i></div>
+    <p class="mca-msg ajuda" id="msg">Aguarde: as fichas abrem assim que o acesso e o estudo forem criados na Medcloud.</p>
+    <div class="msg erro" id="erro" hidden style="margin:10px 0 0;text-align:left"></div>
+    <div class="mca-acoes">
+      <form method="post" action="{{ url_for('atend.medcloud_tentar', aid=aid) }}" id="refazer" hidden style="display:inline">{{ csrf_input }}
+        <button class="btn peq" type="submit">Tentar de novo</button></form>
+      <a class="btn peq" id="continuar" href="#" hidden>Continuar esperando</a>
+      <form method="post" action="{{ url_for('atend.medcloud_sem_estudo', aid=aid) }}" id="semform" hidden style="display:inline">{{ csrf_input }}
+        <input type="hidden" name="qs" value="{{ qs }}">
+        <button class="btn sec peq" type="submit" id="sem">Imprimir sem o estudo</button></form>
+    </div>
+  </div>
+</div>
+<script>
+(function () {
+  const statusUrl = {{ status_url|tojson }};
+  const destino = {{ destino|tojson }};
+  const limite = {{ limite }} * 1000;
+  // (paciente que já existe pula "Cadastrando o paciente": o robô pede novos dados de login e a etapa aparece como feita)
+  const ordem = ['Abrindo o navegador', 'Entrando na Medcloud', 'Localizando o paciente', 'Cadastrando o paciente',
+                 'Gerando o protocolo de acesso', 'Criando o estudo', 'Conferindo o estudo'];
+  const itens = document.querySelectorAll('#etapas li');
+  const barra = document.getElementById('barra');
+  const msg = document.getElementById('msg');
+  const inicio = Date.now();
+  let acabou = false;
+  // quem prefere menos movimento: os elétrons (animação SVG) ficam parados
+  if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    const atomo = document.querySelector('.mca-atomo');
+    if (atomo && atomo.pauseAnimations) atomo.pauseAnimations();
+  }
+
+  function irParaFichas() {
+    if (acabou) return;
+    acabou = true;
+    location.replace(destino);
+  }
+
+  function mostrar(fase) {
+    let atual = ordem.indexOf(fase);
+    if (atual < 0) atual = 0;
+    itens.forEach((li, i) => { li.className = i < atual ? 'feito' : (i === atual ? 'atual' : ''); });
+    barra.style.width = (8 + (atual / ordem.length) * 84) + '%';
+  }
+  mostrar('');
+
+  const caixaErro = document.getElementById('erro');
+  const refazer = document.getElementById('refazer');
+  const continuar = document.getElementById('continuar');
+  let inicioEspera = inicio;
+
+  const semForm = document.getElementById('semform');
+  const semBotao = document.getElementById('sem');
+
+  // A ficha só abre sozinha quando o estudo foi criado. Se não foi (erro ou demora), a pessoa escolhe: tentar de novo
+  // (o protocolo sai junto com o estudo) ou imprimir sem o estudo (sai o protocolo, se o paciente já tem acesso).
+  function mostrarErro(texto, comTentar, temAcesso) {
+    caixaErro.textContent = texto;
+    caixaErro.hidden = false;
+    refazer.hidden = !comTentar;
+    continuar.hidden = comTentar;
+    semForm.hidden = false;
+    semBotao.textContent = temAcesso ? 'Imprimir sem o estudo (com o protocolo)' : 'Imprimir sem o estudo e sem o protocolo';
+    msg.textContent = comTentar
+      ? 'O estudo não foi gerado na Medcloud. Escolha: tentar de novo (o protocolo sai junto com o estudo) ou imprimir sem o estudo.'
+      : 'Você pode continuar esperando ou imprimir sem o estudo.';
+  }
+  continuar.addEventListener('click', (e) => { e.preventDefault(); inicioEspera = Date.now(); caixaErro.hidden = true;
+    continuar.hidden = true; semForm.hidden = true; msg.textContent = 'Aguarde...'; consultar(); });
+
+  async function consultar() {
+    if (acabou) return;
+    let j = null;
+    try {
+      const r = await fetch(statusUrl, { credentials: 'same-origin', cache: 'no-store' });
+      j = await r.json();
+    } catch (e) { /* tenta de novo no próximo ciclo */ }
+    if (Date.now() - inicioEspera > limite && (!j || j.estado === 'pendente')) {
+      // demorou demais: não abre a ficha sozinho; a pessoa escolhe (o robô continua trabalhando em segundo plano)
+      mostrarErro('A Medcloud está demorando mais que o normal para responder.', false, j && j.tem_acesso);
+      return;
+    }
+    try {
+      if (!j) throw new Error('sem resposta');
+      if (j.estado === 'erro') {
+        itens.forEach((li) => { if (li.className !== 'feito') li.className = ''; });
+        mostrarErro('Não foi possível criar o estudo na Medcloud: ' + (j.erro || 'erro desconhecido') + '.', true, j.tem_acesso);
+        return;
+      }
+      if (j.estado !== 'pendente') {
+        itens.forEach((li) => { li.className = 'feito'; });
+        barra.style.width = '100%';
+        setTimeout(irParaFichas, 250);
+        return;
+      }
+      mostrar(j.fase || '');
+      if (j.fase === 'Tentando de novo') {
+        msg.textContent = 'A Medcloud não respondeu como esperado (' + (j.erro || 'erro') + '). Tentando de novo (tentativa '
+          + Math.min((j.tentativas || 0) + 1, 3) + ' de 3)...';
+      }
+    } catch (e) { /* tenta de novo no próximo ciclo */ }
+    setTimeout(consultar, 600);
+  }
+  consultar();
+})();
+</script>
+</body>
+</html>

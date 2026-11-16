@@ -1,0 +1,29 @@
+{% extends 'bh/layout.html' %}
+{% macro valores(dados) %}
+{% set rot = {'clock_id':'Número I','name':'Nome','start_date':'Admissão','end_date':'Desligamento','active':'Ativo','opening_balance_date':'Início do controle','opening_balance_minutes':'Saldo inicial','date':'Data do lançamento','punches':'Batidas','original_punches':'Batidas originais','kind':'Classificação','reason':'Justificativa','effective_date':'Início da jornada','weekdays':'Jornada diária','two_punch_policy':'Regra para duas batidas','required_break_minutes':'Intervalo mínimo','deduct_break_minutes':'Intervalo descontado','minutes':'Horas do ajuste','month':'Mês de referência','version':'Versão','filename':'Planilha','file':'Arquivo','period_start':'Início do período','period_end':'Fim do período','inserted':'Lançamentos incluídos','ignored':'Lançamentos repetidos','conflicts':'Lançamentos divergentes','unknown_ids':'Números I sem cadastro','warnings':'Avisos','total_rows':'Total de lançamentos','notes':'Observações','is_intern':'Estagiário','username':'Usuário','user_id':'Código do usuário','password_reset':'Senha redefinida'} %}
+{% if dados is mapping %}<dl style="margin:4px 0;font-size:12.5px">{% for k, v in dados.items() if k in rot and v is not none %}<div style="display:flex;gap:8px"><dt style="color:var(--suave);min-width:150px">{{ rot[k] }}</dt><dd style="margin:0">
+{%- if k in ['opening_balance_minutes','minutes'] %}{{ v|bh_smin }}
+{%- elif k in ['required_break_minutes','deduct_break_minutes'] %}{{ v|bh_min }}
+{%- elif k in ['start_date','end_date','opening_balance_date','date','effective_date','period_start','period_end'] %}{{ v|bh_data }}
+{%- elif k in ['active','is_intern','password_reset'] %}{{ 'Sim' if v else 'Não' }}
+{%- elif k == 'kind' %}{{ {'normal':'Normal','falta':'Falta','abono':'Abono','folga':'Folga','feriado':'Feriado'}.get(v, v) }}
+{%- elif k == 'two_punch_policy' %}{{ {'review':'Conferência obrigatória','continuous':'Período contínuo','deduct':'Descontar intervalo fixo'}.get(v, v) }}
+{%- elif k == 'weekdays' and v is mapping %}{% for d in ['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'] %}{{ d }} {{ v.get(loop.index0|string, 0)|bh_min }}{{ ' · ' if not loop.last }}{% endfor %}
+{%- elif v is sequence and v is not string %}{{ v|join(' · ') or 'Nenhum' }}
+{%- else %}{{ v if v != '' else 'Não informado' }}{% endif %}</dd></div>{% endfor %}</dl>{% endif %}
+{% endmacro %}
+{% block titulo %}Histórico do ponto{% endblock %}
+{% block conteudo %}
+{% set acoes = {'employee_created':'Cadastro de funcionário','employee_updated':'Alteração de cadastro','schedule_created':'Jornada cadastrada','schedule_updated':'Jornada corrigida','file_imported':'Planilha importada','day_corrected':'Correção de lançamento','balance_adjusted':'Ajuste de saldo','report_issued':'Relatório emitido','roster_updated':'Escala alterada','document_added':'Documento anexado','document_archived':'Documento arquivado','document_restored':'Documento restaurado','employee_access_created':'Acesso de funcionário criado','employee_access_updated':'Acesso de funcionário alterado','backup_created':'Backup criado','backup_restored':'Backup restaurado','settings_updated':'Configurações alteradas'} %}
+<div class="cabecalho"><div><h1>Histórico de alterações do ponto</h1><p class="sub">Quem alterou os dados do Banco de Horas, quando e por qual motivo. Os valores anteriores e novos ficam disponíveis. (O registro geral de todo o sistema está em “Registros de atividades”.)</p></div></div>
+<div class="cartao">
+  <div class="cabecalho" style="margin-bottom:8px"><h2 style="margin:0">Atividades registradas</h2><input type="search" class="bh-busca" data-table-search="auditoria" placeholder="Buscar funcionário ou motivo" aria-label="Buscar no histórico"></div>
+  {% if entries %}<div class="tabela-wrap"><table class="tabela" id="auditoria"><thead><tr><th>Data e usuário</th><th>Atividade</th><th>Funcionário</th><th>Justificativa e detalhes</th></tr></thead><tbody>
+  {% for e in entries %}<tr>
+    <td class="bh-nowrap"><strong>{{ e.created_at|bh_datahora }}</strong><small class="bh-bloco">{{ e.actor }}</small></td>
+    <td>{{ acoes.get(e.action, e.action) }}{% if e.date %}<small class="bh-bloco">{{ e.date|bh_data }}</small>{% endif %}</td>
+    <td>{{ e.employee_name }}</td>
+    <td><div>{{ e.reason or 'Registro automático' }}</div>{% if e.before or e.after %}<details class="bh-inline"><summary>Ver valores registrados</summary><div class="bh-duas-colunas">{% if e.before %}<div><strong>Antes</strong>{{ valores(e.before) }}</div>{% endif %}{% if e.after %}<div><strong>Depois</strong>{{ valores(e.after) }}</div>{% endif %}</div></details>{% endif %}</td></tr>{% endfor %}
+  </tbody></table></div>{% else %}<p class="bh-muted" style="text-align:center;padding:20px">Nenhuma alteração registrada. Cadastros, importações, correções e emissões de relatórios aparecerão aqui.</p>{% endif %}
+</div>
+{% endblock %}

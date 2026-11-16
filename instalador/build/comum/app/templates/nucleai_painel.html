@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+{% block titulo %}NucleAI: painel{% endblock %}
+{% block conteudo %}
+{% macro pct(v) %}{% if v is none %}—{% else %}{{ ('%.1f' % v)|replace('.', ',') }}%{% endif %}{% endmacro %}
+{% include '_nucleai_abas.html' %}
+
+<form class="cartao filtros" method="get">
+  <div><label for="de">De</label><input type="date" id="de" name="de" value="{{ de }}"></div>
+  <div><label for="ate">Até</label><input type="date" id="ate" name="ate" value="{{ ate }}"></div>
+  <div><button class="btn" type="submit">Gerar</button></div>
+  <div class="acoes" style="margin-left:auto">
+    <a class="btn sec" href="{{ url_for('nucleai.pdf') }}?de={{ de }}&ate={{ ate }}">⬇ PDF</a>
+    <a class="btn sec" href="{{ url_for('nucleai.xlsx') }}?de={{ de }}&ate={{ ate }}">⬇ Excel</a>
+  </div>
+</form>
+
+<div class="nai-cards">
+  <div class="nai-card"><b>{{ p.total }}</b><small>consulta(s) no período<br>{{ p.por_texto }} escrita(s) com as palavras do usuário ({{ pct(p.pct_texto) }})</small></div>
+  <div class="nai-card"><b>{{ pct(p.taxa_resolucao) }}</b><small>resolvidas: {{ p.resolveu }} ({{ p.resolveu_e_nova }} com nova pergunta)<br>não resolveram: {{ p.nao_resolveu }}</small></div>
+  <div class="nai-card"><b>{{ ('%.2f' % p.nota_media)|replace('.', ',') if p.nota_media is not none else '—' }}</b><small>nota média (1 a 5)<br>{{ p.n_notas }} avaliação(ões)</small></div>
+  <div class="nai-card {{ 'alerta' if p.chamados }}"><b>{{ p.chamados }}</b><small>chamado(s) à gerência<br>{{ p.chamados_confirmados }} confirmado(s), {{ p.chamados_negados }} negado(s)</small></div>
+</div>
+
+<div class="cartao" style="margin-bottom:16px">
+  <h2 style="margin:0 0 6px">Consultas por dia</h2>
+  {% if p.total %}
+  <div class="nai-dias" role="img" aria-label="Consultas por dia">
+    {% for dia, n in p.por_dia %}<span style="height: {{ (100 * n / p.maior_dia)|round|int if p.maior_dia else 0 }}%" title="{{ dia[8:10] }}/{{ dia[5:7] }}: {{ n }} consulta(s)"></span>{% endfor %}
+  </div>
+  {% else %}<p class="ajuda">Nenhuma consulta no período.</p>{% endif %}
+</div>
+
+<div class="nai-grade">
+  <div class="cartao">
+    <h2 style="margin:0 0 8px">Temas mais consultados</h2>
+    <div class="tabela-wrap"><table class="tabela"><thead><tr><th>Tema</th><th class="num">Consultas</th><th>Resolveu</th></tr></thead><tbody>
+      {% for t in p.temas %}<tr><td>{{ t.chave }}</td><td class="num">{{ t.n }}</td>
+        <td><div class="nai-barra" title="{{ pct(t.taxa_resolveu) }} das avaliadas"><i style="width: {{ t.taxa_resolveu or 0 }}%"></i></div></td></tr>
+      {% else %}<tr><td colspan="3" class="vazio">Sem consultas.</td></tr>{% endfor %}</tbody></table></div>
+  </div>
+  <div class="cartao">
+    <h2 style="margin:0 0 8px">Áreas mais consultadas</h2>
+    <div class="tabela-wrap"><table class="tabela"><thead><tr><th>Área</th><th class="num">Consultas</th></tr></thead><tbody>
+      {% for a in p.mais_consultadas %}<tr><td>{{ a.chave }}</td><td class="num">{{ a.n }}</td></tr>
+      {% else %}<tr><td colspan="2" class="vazio">Sem consultas.</td></tr>{% endfor %}</tbody></table></div>
+  </div>
+  <div class="cartao">
+    <h2 style="margin:0 0 4px">Áreas em que mais usuários disseram “não ajudou”</h2>
+    <p class="ajuda" style="margin:0 0 8px">Boas candidatas a serem reescritas em <a href="{{ url_for('nucleai.conteudo') }}">Conteúdo</a>.</p>
+    <div class="tabela-wrap"><table class="tabela"><thead><tr><th>Área</th><th class="num">Não ajudou</th><th>Taxa</th></tr></thead><tbody>
+      {% for a in p.nao_ajudou %}<tr><td>{{ a.chave }}</td><td class="num">{{ a.nao }} de {{ a.n }}</td>
+        <td><div class="nai-barra ruim" title="{{ pct(a.taxa_nao) }}"><i style="width: {{ a.taxa_nao or 0 }}%"></i></div></td></tr>
+      {% else %}<tr><td colspan="3" class="vazio">Ninguém disse “não ajudou” no período. 🎉</td></tr>{% endfor %}</tbody></table></div>
+  </div>
+  <div class="cartao">
+    <h2 style="margin:0 0 4px">Dúvidas escritas que a NucleAI não entendeu</h2>
+    <p class="ajuda" style="margin:0 0 8px">Mostram o que falta na base de ajuda: crie uma área nova ou acrescente essas palavras.</p>
+    <div class="tabela-wrap"><table class="tabela"><thead><tr><th>Dúvida</th><th class="num">Vezes</th></tr></thead><tbody>
+      {% for x in p.nao_entendidas %}<tr><td>{{ x.texto }}</td><td class="num">{{ x.n }}</td></tr>
+      {% else %}<tr><td colspan="2" class="vazio">Nenhuma no período.</td></tr>{% endfor %}</tbody></table></div>
+  </div>
+  <div class="cartao">
+    <h2 style="margin:0 0 8px">Quem mais pede ajuda</h2>
+    <div class="tabela-wrap"><table class="tabela"><thead><tr><th>Usuário</th><th class="num">Consultas</th></tr></thead><tbody>
+      {% for u in p.usuarios %}<tr><td>{{ u.usuario }}</td><td class="num">{{ u.n }}</td></tr>
+      {% else %}<tr><td colspan="2" class="vazio">Sem consultas.</td></tr>{% endfor %}</tbody></table></div>
+  </div>
+  <div class="cartao">
+    <h2 style="margin:0 0 8px">Notas</h2>
+    <div class="tabela-wrap"><table class="tabela"><thead><tr><th>Nota</th><th class="num">Quantidade</th><th></th></tr></thead><tbody>
+      {% for nota, n in p.distribuicao_notas %}<tr><td>{{ '⭐' * nota }}</td><td class="num">{{ n }}</td>
+        <td><div class="nai-barra"><i style="width: {{ (100 * n / p.n_notas)|round|int if p.n_notas else 0 }}%"></i></div></td></tr>{% endfor %}</tbody></table></div>
+  </div>
+</div>
+<p class="ajuda" style="margin-top:14px">As conversas com a NucleAI são apagadas; este painel usa só o resumo guardado de cada consulta (quem perguntou, o assunto, a dúvida, se resolveu e a nota).</p>
+{% endblock %}

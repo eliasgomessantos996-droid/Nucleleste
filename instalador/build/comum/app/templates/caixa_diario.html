@@ -1,0 +1,161 @@
+{% extends 'base.html' %}
+{% block titulo %}Caixa diário da empresa{% endblock %}
+{% block head %}
+<style>
+  .cxd-cartoes { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; margin-bottom: 16px; }
+  .cxd-conta { border-radius: 12px; padding: 12px 14px; border: 1px solid rgba(0,0,0,.08); color: #1d2522; }
+  .cxd-conta h3 { margin: 0 0 6px; font-size: 13px; }
+  .cxd-conta .valor { font-size: 20px; font-weight: 700; }
+  .cxd-conta small { display: block; color: #44514a; font-size: 12px; }
+  .cxd-linha td { background: var(--cor); }
+  .cxd-linha td:first-child { box-shadow: inset 4px 0 0 rgba(0,0,0,.18); }
+  .cxd-total { font-weight: 700; }
+  .cxd-form { display: grid; grid-template-columns: 110px 1fr 140px 210px; gap: 10px; align-items: end; }
+  .cxd-form .obs { grid-column: 1 / span 3; }
+  @media (max-width: 900px) { .cxd-form { grid-template-columns: 1fr; } .cxd-form .obs { grid-column: auto; } }
+  .cxd-bloco { margin-top: 18px; }
+  .cxd-legenda span { display: inline-block; padding: 3px 10px; border-radius: 99px; margin: 0 6px 6px 0; font-size: 12px; color: #1d2522; }
+</style>
+{% endblock %}
+{% block conteudo %}
+<div class="cabecalho">
+  <div><h1>Caixa diário da empresa</h1>
+  <p class="sub">Controle do caixa da empresa no formato da planilha MOVIMENTO DE CAIXA: cada conta (Banco do Brasil, Unicred, Caixa e movimento
+  de caixa) carrega o saldo do dia anterior, e o saldo total é a soma das quatro.</p></div>
+  <div class="acoes">
+    <a class="btn sec" href="{{ url_for('cxd.relatorio', data=dia) }}">Baixar planilha do dia (Excel)</a>
+  </div>
+</div>
+
+<form method="get" class="cartao" style="display:flex; gap:10px; align-items:end; flex-wrap:wrap; margin-bottom:14px">
+  <label>Dia<br><input type="date" name="data" value="{{ dia }}" required></label>
+  <button class="btn sec" type="submit">Ver o dia</button>
+  <a class="btn sec" href="{{ url_for('cxd.pagina', data=hoje) }}">Hoje</a>
+</form>
+
+{% if not ini %}
+<div class="cartao">
+  <h2 style="margin-top:0">Primeiro passo: saldos iniciais</h2>
+  <p class="sub">Informe os saldos de cada conta no fim do dia anterior ao primeiro dia que vai ser controlado aqui. Na planilha, são os
+  valores da linha de cada conta do último dia fechado.</p>
+  {% include '_cxd_saldos.html' %}
+</div>
+{% else %}
+
+{% if erro_dia %}<div class="msg erro">{{ erro_dia }}</div>{% endif %}
+
+{% if sal %}
+<div class="cxd-cartoes">
+  {% for c, v in sal.contas.items() %}
+  <div class="cxd-conta" style="background: #{{ v.cor }}">
+    <h3>{{ v.nome }}</h3>
+    <div class="valor">{{ v.fechamento|moeda }}</div>
+    <small>Abertura {{ v.abertura|moeda }}</small>
+    <small>Receitas {{ v.receitas|moeda }} · Despesas {{ v.despesas|moeda }}</small>
+  </div>
+  {% endfor %}
+</div>
+
+<div class="cartao" style="margin-bottom:14px">
+  <div style="display:flex; gap:24px; flex-wrap:wrap">
+    <div><small>Saldo do dia anterior</small><div class="valor">{{ sal.abertura_total|moeda }}</div></div>
+    <div><small>Total de receitas</small><div class="valor">{{ sal.receitas|moeda }}</div></div>
+    <div><small>Total de despesas</small><div class="valor">{{ sal.despesas|moeda }}</div></div>
+    <div><small>Saldo Total</small><div class="valor">{{ sal.saldo_total|moeda }}</div></div>
+    <div><small>Retiradas retidas</small><div class="valor">{{ sal.total_retidas|moeda }}</div></div>
+    <div><small>Total (saldo − retidas)</small><div class="valor">{{ sal.total_final|moeda }}</div></div>
+  </div>
+</div>
+{% endif %}
+
+<div class="cxd-legenda">
+  {% for c, nome, cor in contas %}<span style="background: #{{ cor }}">{{ nome }}</span>{% endfor %}
+</div>
+
+<div class="cartao">
+  <h2 style="margin-top:0">Lançamentos de {{ br(dia) }}</h2>
+  {% if lancamentos %}
+  <div class="tabela-wrap">
+  <table class="tabela">
+    <thead><tr><th>Tipo</th><th>Descrição</th><th>NF</th><th>Conta</th><th class="num">Valor</th><th>Obs.</th><th></th></tr></thead>
+    <tbody>
+    {% for l in lancamentos %}
+      {% set cor = cores[l.conta] %}
+      <tr class="cxd-linha" style="--cor: #{{ cor }}">
+        <td>{{ tipos[l.tipo] }}</td>
+        <td>{{ l.descricao }}</td>
+        <td>{{ l.nf }}</td>
+        <td>{% for c, nome, _ in contas %}{% if c == l.conta %}{{ nome }}{% endif %}{% endfor %}</td>
+        <td class="num">{{ l.valor|moeda }}</td>
+        <td>{{ l.obs }}</td>
+        <td style="white-space:nowrap">
+          <a class="btn sec peq" href="{{ url_for('cxd.pagina', data=dia, editar=l.id) }}">Editar</a>
+          <form method="post" action="{{ url_for('cxd.excluir', lid=l.id) }}" style="display:inline" onsubmit="return confirm('Excluir este lançamento?')">
+            {{ csrf_input }}<input type="hidden" name="data" value="{{ dia }}">
+            <button class="btn perigo peq" type="submit">Excluir</button>
+          </form>
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  {% else %}
+  <p class="sub">Nenhum lançamento neste dia.</p>
+  {% endif %}
+</div>
+
+{% if ini %}
+<div class="cartao cxd-bloco">
+  <h2 style="margin-top:0">{% if editar %}Editar lançamento{% else %}Novo lançamento{% endif %}</h2>
+  {% set f = editar %}
+  <form method="post" action="{{ url_for('cxd.atualizar', lid=f.id) if f else url_for('cxd.lancar') }}" class="cxd-form">
+    {{ csrf_input }}
+    <input type="hidden" name="data" value="{{ f.data if f else dia }}">
+    <label>Tipo<br>
+      <select name="tipo" required>
+        {% for k, nome in tipos.items() %}<option value="{{ k }}" {% if f and f.tipo == k %}selected{% endif %}>{{ nome }}</option>{% endfor %}
+      </select></label>
+    <label>Descrição<br><input type="text" name="descricao" value="{{ f.descricao if f else '' }}" required></label>
+    <label>Valor (R$)<br><input type="text" name="valor" inputmode="decimal" value="{{ '%.2f' % f.valor if f else '' }}" placeholder="0,00" required></label>
+    <label>Conta<br>
+      <select name="conta" required>
+        <option value="">Escolha…</option>
+        {% for c, nome, cor in contas %}<option value="{{ c }}" {% if f and f.conta == c %}selected{% endif %}>{{ nome }}</option>{% endfor %}
+      </select></label>
+    <label>Nota fiscal<br><input type="text" name="nf" value="{{ f.nf if f else '' }}"></label>
+    <label class="obs">Observação<br><input type="text" name="obs" value="{{ f.obs if f else '' }}"></label>
+    <div><button class="btn" type="submit">{% if f %}Salvar alteração{% else %}Lançar{% endif %}</button>
+    {% if f %}<a class="btn sec" href="{{ url_for('cxd.pagina', data=dia) }}">Cancelar</a>{% endif %}</div>
+  </form>
+</div>
+
+<details class="cartao cxd-bloco">
+  <summary><strong>Retiradas retidas temporariamente</strong> (ficam fora das contas; o total final desconta)</summary>
+  <table class="tabela" style="margin-top:10px">
+    <thead><tr><th>Descrição</th><th class="num">Valor</th><th></th></tr></thead>
+    <tbody>
+    {% for r in sal.retidas %}
+      <tr><td>{{ r.descricao }}</td><td class="num">{{ r.valor|moeda }}</td>
+        <td><form method="post" action="{{ url_for('cxd.retida_excluir', rid=r.id) }}" onsubmit="return confirm('Excluir?')">
+          {{ csrf_input }}<input type="hidden" name="data" value="{{ dia }}"><button class="btn perigo peq" type="submit">Excluir</button></form></td></tr>
+    {% else %}
+      <tr><td colspan="3" class="sub">Nenhuma retirada retida.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  <form method="post" action="{{ url_for('cxd.retidas') }}" style="display:flex; gap:10px; margin-top:10px; flex-wrap:wrap">
+    {{ csrf_input }}<input type="hidden" name="data" value="{{ dia }}">
+    <input type="text" name="descricao" placeholder="Descrição" required>
+    <input type="text" name="valor" placeholder="Valor" inputmode="decimal" required>
+    <button class="btn sec" type="submit">Incluir</button>
+  </form>
+</details>
+
+<details class="cartao cxd-bloco">
+  <summary><strong>Saldos iniciais</strong> (saldo de cada conta antes da data-base)</summary>
+  <div style="margin-top:10px">{% include '_cxd_saldos.html' %}</div>
+</details>
+{% endif %}
+{% endif %}
+{% endblock %}

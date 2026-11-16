@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+{% block titulo %}{{ 'Editar blindagem' if atual else 'Novo cadastro de blindagem' }}{% endblock %}
+{% block conteudo %}
+<div class="cabecalho">
+  <div><h1>{{ 'Editar blindagem' if atual else 'Novo cadastro de blindagem' }}</h1>
+    <p class="sub">{% if atual %}Status atual: <span class="etiqueta {{ classe_status_blindagem(atual.status) }}">{{ atual.status }}</span>{% else %}Ao salvar, a blindagem é cadastrada com o status <strong>VÁLIDO</strong>.{% endif %}</p></div>
+</div>
+<form class="cartao" method="post" novalidate>
+  {{ csrf_input }}
+  <div class="grade">
+    <div class="c4"><label class="obrig" for="lote">Lote</label><input type="text" id="lote" name="lote" value="{{ f.lote }}" required maxlength="30" autofocus data-maiusculas data-somente-alfanum placeholder="Ex.: 633IP1637" autocomplete="off"><div class="ajuda">Somente letras e números.</div></div>
+    <div class="c4"><label class="obrig" for="nota_fiscal">Nota fiscal</label><input type="text" id="nota_fiscal" name="nota_fiscal" value="{{ f.nota_fiscal }}" required maxlength="20" inputmode="numeric"></div>
+    <div class="c4"><label class="obrig" for="serie">Série</label><input type="text" id="serie" name="serie" value="{{ f.serie }}" required maxlength="10" data-maiusculas></div>
+    <div class="c4"><label class="obrig" for="data_nota">Data da nota</label><input type="date" id="data_nota" name="data_nota" value="{{ f.data_nota }}" required></div>
+    <div class="c4"><label class="obrig" for="cfop">CFOP</label><input type="text" id="cfop" name="cfop" value="{{ f.cfop }}" required maxlength="5" inputmode="numeric" placeholder="Ex.: 5949"><div class="ajuda">4 dígitos.</div></div>
+    <div class="c4"><label class="obrig" for="validade">Validade</label><input type="date" id="validade" name="validade" value="{{ f.validade }}" required></div>
+  </div>
+  <div class="acoes">
+    <button class="btn" type="submit">Salvar</button>
+    {% if not atual %}<button class="btn sec" type="submit" name="continuar" value="1">Salvar e cadastrar outra</button>{% endif %}
+    <a class="btn sec" href="{{ url_for('blind.lista') }}">Voltar</a>
+  </div>
+</form>
+{% endblock %}
+{% block scripts %}
+<script>
+// lote: só letras e números (o servidor confere de novo)
+document.querySelectorAll('[data-somente-alfanum]').forEach(function (el) {
+  el.addEventListener('input', function () { el.value = el.value.replace(/[^A-Za-z0-9]/g, '').toUpperCase(); });
+});
+document.querySelectorAll('input[name=cfop]').forEach(function (el) {
+  el.addEventListener('input', function () { el.value = el.value.replace(/[^0-9.]/g, ''); });
+});
+</script>
+{% endblock %}

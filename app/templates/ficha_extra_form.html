@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+{% block titulo %}Ficha personalizada{% endblock %}
+{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/fichas.css') }}">
+<style>
+  .fx-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+  @media (max-width: 1100px) { .fx-layout { grid-template-columns: 1fr; } }
+  .fx-chips { display: flex; flex-wrap: wrap; gap: 5px; margin: 6px 0 10px; }
+  .fx-chips button { border: 1px solid var(--borda); background: #f4f6f5; border-radius: 99px; padding: 2px 9px; font-size: 12px; cursor: pointer; }
+  .fx-chips button:hover { background: var(--verde-claro); border-color: var(--verde-2); }
+  #conteudo { min-height: 380px; font-family: Consolas, 'Courier New', monospace; font-size: 13px; line-height: 1.5; }
+  .fx-previa { background: #fff; border: 1px solid var(--borda); border-radius: 8px; padding: 22px 26px; min-height: 380px; box-shadow: 0 4px 16px rgba(0,0,0,.06); }
+</style>{% endblock %}
+{% block conteudo %}
+<h1>{{ 'Editar ficha' if x.id else 'Nova ficha' }}</h1>
+<p class="sub">Escreva o texto da ficha. Os campos entre chaves, como <code>{nome}</code>, são trocados pelos dados do paciente na hora de imprimir.</p>
+<form method="post" id="form-ficha" autocomplete="off">
+  {{ csrf_input }}
+  <div class="cartao">
+    <div class="grade">
+      <div class="c6"><label class="obrig">Título da ficha</label><input type="text" name="titulo" value="{{ x.titulo }}" required maxlength="120" autofocus></div>
+      <div class="c6" style="align-self:end">
+        <label class="inline"><input type="checkbox" name="cabecalho" value="1" {% if x.cabecalho %}checked{% endif %}> Imprimir com o cabeçalho da clínica</label>
+        <label class="inline"><input type="checkbox" name="ativa" value="1" {% if x.ativa %}checked{% endif %}> Ativa</label></div>
+    </div>
+  </div>
+  <div class="fx-layout">
+    <div class="cartao">
+      <h3 style="margin-top:0">Texto</h3>
+      <div class="ajuda">Clique em um campo para inserir no texto:</div>
+      <div class="fx-chips">{% for k, nome in campos %}<button type="button" data-campo="{{ k }}" title="{{ nome }}">{{ '{' ~ k ~ '}' }}</button>{% endfor %}</div>
+      <textarea name="conteudo" id="conteudo" spellcheck="true">{{ x.conteudo }}</textarea>
+      <div class="ajuda" style="margin-top:6px">Formatação: <code># Título centralizado</code> · <code>## Subtítulo</code> · <code>**negrito**</code> · <code>---</code> linha · <code>[ ]</code> caixa de marcar · linha em branco = espaço.</div>
+    </div>
+    <div class="cartao">
+      <h3 style="margin-top:0">Prévia <small class="ajuda">(com um paciente de exemplo)</small></h3>
+      <div class="fx-previa ficha-extra" id="previa">{{ previa }}</div>
+    </div>
+  </div>
+  <div class="acoes"><button class="btn" type="submit">Salvar ficha</button><a class="btn sec" href="{{ url_for('cad.exame_fichas') }}">Voltar</a></div>
+</form>
+{% if x.id %}
+<form method="post" action="{{ url_for('cad.exame_ficha_excluir', xid=x.id) }}" data-confirmar="Excluir esta ficha definitivamente? Ela deixará de aparecer nos atendimentos e exames." style="margin-top:12px">{{ csrf_input }}<button class="btn perigo peq" type="submit">Excluir ficha</button></form>
+{% endif %}
+{% endblock %}
+{% block scripts %}
+<script>
+(function () {
+  const area = document.getElementById('conteudo'), previa = document.getElementById('previa');
+  let espera = null;
+  async function atualizar() {
+    try {
+      const r = await fetch('{{ url_for("cad.exame_ficha_previa") }}', {method: 'POST', headers: {'X-CSRF-Token': '{{ csrf_token }}', 'Content-Type': 'application/x-www-form-urlencoded'},
+        body: 'conteudo=' + encodeURIComponent(area.value)});
+      if (r.ok) previa.innerHTML = (await r.json()).html;
+    } catch (e) { /* mantém a prévia anterior */ }
+  }
+  area.addEventListener('input', () => { clearTimeout(espera); espera = setTimeout(atualizar, 300); });
+  document.querySelectorAll('[data-campo]').forEach((b) => b.addEventListener('click', () => {
+    const t = '{' + b.dataset.campo + '}', i = area.selectionStart, j = area.selectionEnd;
+    area.setRangeText(t, i, j, 'end'); area.focus(); atualizar();
+  }));
+})();
+</script>
+{% endblock %}

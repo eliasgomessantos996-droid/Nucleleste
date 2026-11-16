@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% from '_ic.html' import ic %}
+{% block titulo %}Pedidos de compra{% endblock %}
+{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/estoque.css') }}">{% endblock %}
+{% block conteudo %}
+<div class="cabecalho">
+  <div><h1>{{ ic('clipboard-check', 22) }} Pedidos de compra</h1><p class="sub">{{ pedidos|length }} pedido(s) na lista</p></div>
+  <div class="acoes">
+    <a class="btn sec" href="{{ url_for('est.itens') }}">Itens do estoque</a>
+    <a class="btn" href="{{ url_for('est.pedido_novo') }}">+ Novo pedido</a>
+  </div>
+</div>
+
+<form class="cartao filtros" method="get">
+  <div><label for="f-status">Situação</label><select id="f-status" name="status"><option value="">Todas</option>{% for s in status_lista %}<option value="{{ s }}" {% if status == s %}selected{% endif %}>{{ status_nomes[s] }}</option>{% endfor %}</select></div>
+  <div><button class="btn" type="submit">Filtrar</button></div>
+</form>
+
+<div class="tabela-wrap"><table class="tabela">
+  <thead><tr><th>Número</th><th>Data</th><th>Fornecedor</th><th>Situação</th><th class="num">Total (R$)</th><th></th></tr></thead>
+  <tbody>
+  {% for p in pedidos %}
+    <tr>
+      <td>{{ p.numero }}</td>
+      <td>{{ p.data|data_br }}</td>
+      <td>{{ p.fornecedor_nome or '' }}</td>
+      <td><span class="etiqueta {{ etiquetas[p.status] }}">{{ status_nomes[p.status] }}</span></td>
+      <td class="num">{{ p.total|moeda }}</td>
+      <td class="num"><a class="btn sec peq" href="{{ url_for('est.pedido', pid=p.id) }}">Abrir</a></td>
+    </tr>
+  {% else %}
+    <tr><td colspan="6" class="vazio">Nenhum pedido. Use "Novo pedido" para começar.</td></tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+{% endblock %}

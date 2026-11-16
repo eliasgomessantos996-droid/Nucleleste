@@ -1,0 +1,40 @@
+{% extends 'qualidade/_base.html' %}
+{% from 'qualidade/_modelos.html' import pdf_botoes with context %}
+{% block titulo %}Avaliação de fornecedores{% endblock %}
+{% block titulo_q %}Avaliação de fornecedores (ONA){% endblock %}
+{% block sub_q %}Fornecedores do cadastro do Contas a pagar, avaliados periodicamente por critérios com peso. Nota ≥ 80% aprovado; 60% a 79% aprovado com restrições; abaixo de 60% reprovado.{% endblock %}
+{% block acoes_q %}
+{{ pdf_botoes(url_for('qual.forn_relatorio', tipo='pdf') ~ '?de=' ~ de ~ '&ate=' ~ ate, 'Relatório PDF') }}
+<a class="btn sec" href="{{ url_for('qual.forn_relatorio', tipo='xlsx') }}?de={{ de }}&ate={{ ate }}">⬇ Excel</a>
+<a class="btn sec" href="{{ url_for('qual.forn_criterios') }}">Critérios</a>
+{% endblock %}
+{% block corpo_q %}
+<form class="cartao filtros q-nao-imprime" method="get">
+  <div><label for="situacao">Situação</label><select id="situacao" name="situacao" onchange="this.form.submit()">
+    <option value="">Todos</option>{% for s in ('SEM AVALIAÇÃO', 'VENCIDA', 'EM DIA') %}<option {{ 'selected' if s == filtro }}>{{ s }}</option>{% endfor %}</select></div>
+  <div><label for="de">Relatório de</label><input type="date" id="de" name="de" value="{{ de }}"></div>
+  <div><label for="ate">até</label><input type="date" id="ate" name="ate" value="{{ ate }}"></div>
+  <div><button class="btn sec" type="submit">Aplicar</button></div>
+</form>
+<div class="tabela-wrap"><table class="tabela">
+  <thead><tr><th>Fornecedor</th><th>CNPJ</th><th>Última avaliação</th><th class="num">Nota</th><th>Classificação</th><th>Próxima</th><th>Situação</th><th class="num">Contas (12 meses)</th><th class="q-nao-imprime"></th></tr></thead>
+  <tbody>{% for f in lista %}{% set u = f.ultima %}
+    <tr><td><strong>{{ f.nome }}</strong>{% if f.fantasia %}<br><small>{{ f.fantasia }}</small>{% endif %}</td><td>{{ f.cnpj or '' }}</td>
+      <td>{% if u %}{{ u.data|data_br }} <a class="q-nao-imprime" href="{{ url_for('qual.forn_avaliacao_pdf', aid=u.id) }}" title="PDF da avaliação">⬇</a>{% else %}—{% endif %}</td>
+      <td class="num">{{ ('%.1f'|format(u.percentual)) ~ '%' if u else '—' }}</td>
+      <td>{% if u %}<span class="q-chip {{ 'ok' if u.classificacao == 'APROVADO' else 'atencao' if 'RESTRI' in u.classificacao else 'critico' }}">{{ u.classificacao }}</span>{% if u.critico %} <span class="q-chip">crítico</span>{% endif %}{% else %}—{% endif %}</td>
+      <td>{{ u.proxima|data_br if u and u.proxima else '—' }}</td>
+      <td><span class="q-chip {{ 'ok' if f.situacao == 'EM DIA' else 'critico' if f.situacao == 'VENCIDA' else 'atencao' }}">{{ f.situacao }}</span></td>
+      <td class="num">{{ f.contas_12m }}</td>
+      <td class="q-nao-imprime"><a class="btn sec peq" href="{{ url_for('qual.forn_avaliar', fid=f.id) }}">Avaliar</a></td></tr>
+  {% else %}<tr><td colspan="9" class="sub">Nenhum fornecedor ativo. Cadastre em Financeiro › Contas a pagar › Fornecedores.</td></tr>{% endfor %}</tbody>
+</table></div>
+<h2>Avaliações de {{ de|data_br }} a {{ ate|data_br }}</h2>
+<div class="tabela-wrap"><table class="tabela">
+  <thead><tr><th>Data</th><th>Fornecedor</th><th>Avaliador</th><th class="num">Nota</th><th>Classificação</th><th>Ação / observação</th><th></th></tr></thead>
+  <tbody>{% for a in avaliacoes %}
+    <tr><td>{{ a.data|data_br }}</td><td>{{ a.fornecedor }}</td><td>{{ a.avaliador }}</td><td class="num">{{ '%.1f'|format(a.percentual) }}%</td><td>{{ a.classificacao }}</td><td>{{ a.acao or a.obs }}</td>
+      <td><a href="{{ url_for('qual.forn_avaliacao_pdf', aid=a.id) }}">PDF</a></td></tr>
+  {% else %}<tr><td colspan="7" class="sub">Nenhuma avaliação no período.</td></tr>{% endfor %}</tbody>
+</table></div>
+{% endblock %}

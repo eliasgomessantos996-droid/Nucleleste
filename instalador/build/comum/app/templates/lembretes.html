@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% block titulo %}Lembretes{% endblock %}
+{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/lembretes.css') }}">{% endblock %}
+{% block conteudo %}
+<div class="cabecalho">
+  <div><h1>Lembretes</h1><p class="sub">Listas de itens com caixinhas. Eles aparecem toda vez que você entra no sistema, até serem desativados.</p></div>
+  <div class="acoes"><a class="btn" href="{{ url_for('lem.novo') }}">Novo lembrete</a></div>
+</div>
+
+{% if not lista %}
+<div class="cartao"><p>Nenhum lembrete ainda. Clique em "Novo lembrete" para criar a sua lista.</p></div>
+{% else %}
+<div class="tabela-wrap">
+  <table class="tabela">
+    <thead><tr><th>Título</th><th>Para</th><th>Itens</th><th>Início</th><th>Reset diário</th><th>Situação</th><th>Ações</th></tr></thead>
+    <tbody>
+    {% for l in lista %}
+      <tr>
+        <td>{{ l.titulo }}</td>
+        <td>{% if l.para_todos %}Todos os usuários{% else %}{{ l.dono }}{% endif %}</td>
+        <td class="num">{{ l.itens }}</td>
+        <td>{{ l.data_inicio[8:10] }}/{{ l.data_inicio[5:7] }}/{{ l.data_inicio[0:4] }}</td>
+        <td>{{ 'Sim' if l.reset_diario else 'Não' }}</td>
+        <td>{% if l.ativo %}<span class="selo">Ativo</span>{% else %}<span class="selo">Desativado</span>{% endif %}</td>
+        <td class="acoes-linha">
+          {% if l.pode_editar %}
+            <a class="btn sec peq" href="{{ url_for('lem.editar', lid=l.id) }}">Editar</a>
+            {% if l.ativo %}
+            <form method="post" action="{{ url_for('lem.desativar', lid=l.id) }}" data-confirmar="Desativar este lembrete? Ele deixa de aparecer ao entrar no sistema.">{{ csrf_input }}<button class="btn sec peq" type="submit">Desativar</button></form>
+            {% else %}
+            <form method="post" action="{{ url_for('lem.ativar', lid=l.id) }}">{{ csrf_input }}<button class="btn sec peq" type="submit">Ativar</button></form>
+            {% endif %}
+            <form method="post" action="{{ url_for('lem.excluir', lid=l.id) }}" data-confirmar="Excluir este lembrete e as marcações de todos? Esta ação não pode ser desfeita.">{{ csrf_input }}<button class="btn perigo peq" type="submit">Excluir</button></form>
+          {% else %}
+            <span class="sub">Só a gestão altera</span>
+          {% endif %}
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+{% endblock %}

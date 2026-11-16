@@ -1,0 +1,93 @@
+{% extends 'qualidade/_base.html' %}
+{% from 'qualidade/_modelos.html' import pdf_botoes with context %}
+{% block titulo %}PDCA: {{ p.titulo }}{% endblock %}
+{% block titulo_q %}{{ p.titulo }}{% endblock %}
+{% block sub_q %}Origem: {{ p.origem }} · Situação: {{ p.status }} · GUT {{ p.gut }} · aberto por {{ p.criado_por }} em {{ p.criado_em[:10]|data_br }}{% endblock %}
+{% block acoes_q %}{{ pdf_botoes(url_for('qual.problema_pdf', pid=p.id), 'PDF completo') }}{% endblock %}
+{% block corpo_q %}
+{% set aqui = url_for('qual.problema_pagina', pid=p.id) %}
+{% if p.status == 'RASCUNHO' %}
+<div class="cartao q-alerta q-nao-imprime">Este plano foi montado pelo <b>Robô do PDCA</b>. Revise, ajuste e aceite.
+  <form method="post" action="{{ url_for('qual.robo_aceitar', pid=p.id) }}" style="display:inline">{{ csrf_input }}<button class="btn" type="submit">✔ Aceitar</button></form>
+  <form method="post" action="{{ url_for('qual.robo_descartar', pid=p.id) }}" style="display:inline">{{ csrf_input }}<button class="btn perigo" type="submit">Descartar</button></form>
+</div>
+{% endif %}
+{% if p.evidencia_lista %}
+<div class="cartao q-evid"><strong>Evidências (dados do sistema)</strong><ul>{% for e in p.evidencia_lista %}<li>{{ e }}</li>{% endfor %}</ul></div>
+{% endif %}
+
+<div class="q-pdca-roda pequena" aria-label="Fase atual do PDCA">
+  {% for f, nome in fases %}<div class="q-fase {{ f }} {{ 'atual' if p.fase == f }}"><b>{{ f }}</b><span>{{ nome }}</span></div>{% endfor %}
+</div>
+
+<form class="cartao q-form" method="post" action="{{ url_for('qual.problema_salvar', pid=p.id) }}">
+  {{ csrf_input }}<input type="hidden" name="voltar" value="{{ aqui }}">
+  <div class="q-linha3">
+    <label>Título<input type="text" name="titulo" value="{{ p.titulo }}" maxlength="200" required></label>
+    <label>Situação<select name="status">{% for s in statuses %}<option {{ 'selected' if s == p.status }}>{{ s }}</option>{% endfor %}</select></label>
+    <label>Fase do PDCA<select name="fase">{% for f, nome in fases %}<option value="{{ f }}" {{ 'selected' if f == p.fase }}>{{ f }} · {{ nome }}</option>{% endfor %}</select></label>
+  </div>
+  <label>Descrição<textarea name="descricao" rows="3">{{ p.descricao }}</textarea></label>
+  <div class="q-pdca-blocos">
+    <fieldset class="P"><legend>P · Planejar</legend>
+      <label>Meta<textarea name="plan_meta" rows="2">{{ p.plan_meta }}</textarea></label>
+      <label>Causa raiz / hipótese<textarea name="plan_causa" rows="2">{{ p.plan_causa }}</textarea></label>
+      <label>Indicador de acompanhamento<textarea name="plan_indicador" rows="2">{{ p.plan_indicador }}</textarea></label>
+    </fieldset>
+    <fieldset class="D"><legend>D · Fazer</legend>
+      <label>Execução (o que foi feito)<textarea name="do_execucao" rows="7">{{ p.do_execucao }}</textarea></label>
+    </fieldset>
+    <fieldset class="C"><legend>C · Checar</legend>
+      <label>Data da verificação<input type="date" name="check_data" value="{{ p.check_data or '' }}"></label>
+      <label>Resultado medido<textarea name="check_resultado" rows="5">{{ p.check_resultado }}</textarea></label>
+    </fieldset>
+    <fieldset class="A"><legend>A · Agir</legend>
+      <label>Padronizar ou corrigir<textarea name="act_padrao" rows="7">{{ p.act_padrao }}</textarea></label>
+    </fieldset>
+  </div>
+  <div class="q-linha3">
+    <label>Gravidade (1 a 5)<input type="number" name="gut_g" min="1" max="5" value="{{ p.gut_g }}"></label>
+    <label>Urgência (1 a 5)<input type="number" name="gut_u" min="1" max="5" value="{{ p.gut_u }}"></label>
+    <label>Tendência (1 a 5)<input type="number" name="gut_t" min="1" max="5" value="{{ p.gut_t }}"></label>
+  </div>
+  <div class="q-linha3"><label>Responsável<input type="text" name="responsavel" value="{{ p.responsavel }}"></label>
+    <label>Prazo<input type="date" name="prazo" value="{{ p.prazo or '' }}"></label><div></div></div>
+  <div class="q-nao-imprime"><button class="btn" type="submit">Salvar</button></div>
+</form>
+
+<h2>Diagrama de Ishikawa (6M)</h2>
+<div class="cartao"><div class="q-ishikawa" data-ishikawa='{{ isk|tojson }}'></div>
+  <form class="q-form-inline q-nao-imprime" method="post" action="{{ url_for('qual.causa_nova', pid=p.id) }}">
+    {{ csrf_input }}<input type="hidden" name="voltar" value="{{ aqui }}">
+    <select name="categoria" required>{% for m in seis_m %}<option>{{ m }}</option>{% endfor %}</select>
+    <input type="text" name="texto" maxlength="300" placeholder="Causa provável" required>
+    <label class="q-check"><input type="checkbox" name="principal" value="1"> principal</label>
+    <button class="btn sec" type="submit">Incluir causa</button>
+  </form>
+  {% if p.causas %}
+  <ul class="q-causas q-nao-imprime">{% for c in p.causas %}<li><span class="q-chip">{{ c.categoria }}</span> {{ '★ ' if c.principal }}{{ c.texto }}
+    <form method="post" action="{{ url_for('qual.causa_principal', cid=c.id) }}" style="display:inline">{{ csrf_input }}<input type="hidden" name="voltar" value="{{ aqui }}"><button class="link" type="submit">{{ 'desmarcar principal' if c.principal else 'marcar principal' }}</button></form>
+    <form method="post" action="{{ url_for('qual.causa_excluir', cid=c.id) }}" style="display:inline">{{ csrf_input }}<input type="hidden" name="voltar" value="{{ aqui }}"><button class="link perigo" type="submit">excluir</button></form></li>{% endfor %}</ul>
+  {% endif %}
+</div>
+
+<h2>Cinco porquês</h2>
+<form class="cartao q-porques" method="post" action="{{ url_for('qual.porques_salvar', pid=p.id) }}">
+  {{ csrf_input }}<input type="hidden" name="voltar" value="{{ aqui }}">
+  {% for t in p.porques %}<label><span>{{ loop.index }}º por quê?</span><input type="text" name="porque_{{ loop.index }}" value="{{ t }}" maxlength="500"></label>{% endfor %}
+  <label><span>Causa raiz</span><input type="text" name="causa_raiz" value="{{ p.plan_causa }}" maxlength="500" placeholder="Conclusão (vai para o campo Causa do PDCA)"></label>
+  <div class="q-nao-imprime"><button class="btn sec" type="submit">Salvar os porquês</button></div>
+</form>
+
+<h2>Plano de ação 5W2H</h2>
+{% include 'qualidade/_acoes.html' %}
+<form class="cartao q-form q-nao-imprime" method="post" action="{{ url_for('qual.acao_nova') }}">
+  {{ csrf_input }}<input type="hidden" name="voltar" value="{{ aqui }}"><input type="hidden" name="problema_id" value="{{ p.id }}">
+  {% include 'qualidade/_acao_campos.html' %}
+  <button class="btn" type="submit">Incluir ação</button>
+</form>
+
+<form class="q-nao-imprime" method="post" action="{{ url_for('qual.problema_excluir', pid=p.id) }}" onsubmit="return confirm('Excluir o problema com causas, porquês e ações?')">
+  {{ csrf_input }}<button class="btn perigo" type="submit">Excluir este problema</button>
+</form>
+{% endblock %}

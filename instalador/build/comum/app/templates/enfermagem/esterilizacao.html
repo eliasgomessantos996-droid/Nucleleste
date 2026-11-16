@@ -1,0 +1,30 @@
+{% extends 'enfermagem/_base.html' %}
+{% from '_ic.html' import ic %}
+{% block titulo %}Esterilização{% endblock %}
+{% block titulo_e %}Esterilização{% endblock %}
+{% block sub_e %}Cada pacote ou lote de autoclave: data, validade, indicadores químico e biológico e quem operou, com etiqueta com QR para colar no pacote e aviso quando estiver perto de vencer.{% endblock %}
+{% block corpo_e %}
+<div class="tabela-wrap"><table class="tabela">
+  <thead><tr><th>Código</th><th>Pacote</th><th>Esterilizado</th><th>Validade</th><th>Químico</th><th>Biológico</th><th>Operador</th><th></th></tr></thead>
+  <tbody>{% for p in lista %}
+    <tr class="{{ 'enf-linha-vermelha' if p.vermelho }}"><td><b>{{ p.codigo }}</b></td><td>{{ p.descricao }}<br><small>{{ p.autoclave }} {{ p.ciclo }}</small></td><td>{{ p.data_esteril|data_br }}</td>
+      <td>{{ p.validade|data_br }} <span class="enf-chip {{ 'vermelho' if p.situacao == 'vencido' else 'amarelo' if p.situacao == 'vence' else 'verde' }}">{{ 'vencido' if p.situacao == 'vencido' else (p.dias ~ ' d') }}</span></td>
+      <td><span class="enf-chip {{ 'verde' if p.quimico == 'CONFORME' else 'vermelho' }}">{{ p.quimico|lower }}</span></td>
+      <td>{% if p.biologico == 'AGUARDANDO' %}<form method="post" action="{{ url_for('enf.pacote_biologico', pid=p.id) }}" class="enf-form-inline">{{ csrf_input }}<span class="enf-chip amarelo">aguardando</span><button class="btn peq" name="resultado" value="CONFORME" type="submit">Conforme</button><button class="btn peq perigo" name="resultado" value="NÃO CONFORME" type="submit">Não conforme</button></form>
+        {% else %}<span class="enf-chip {{ 'verde' if p.biologico == 'CONFORME' else 'vermelho' }}">{{ p.biologico|lower }}</span>{% endif %}</td>
+      <td>{{ p.operador }}</td>
+      <td class="enf-nao-imprime" style="white-space:nowrap"><a class="btn sec peq" href="{{ url_for('enf.pacote_etiqueta', pid=p.id) }}" target="_blank">Etiqueta</a>
+        <form method="post" action="{{ url_for('enf.pacote_usado', pid=p.id) }}" style="display:inline">{{ csrf_input }}<button class="btn sec peq" type="submit">Usado</button></form></td></tr>
+  {% else %}<tr><td colspan="8" class="sub">Nenhum pacote em estoque.</td></tr>{% endfor %}</tbody>
+</table></div>
+<form class="cartao enf-form enf-nao-imprime" method="post" action="{{ url_for('enf.esterilizacao_novo') }}">
+  {{ csrf_input }}<h2>{{ ic('flask-conical', 18) }} Registrar pacote ou lote de autoclave</h2>
+  <div class="q-linha3"><label>Descrição<input type="text" name="descricao" required maxlength="120" placeholder="Ex.: Kit de punção venosa (10 un.)"></label>
+    <label>Data da esterilização<input type="date" name="data_esteril"></label><label>Validade (padrão {{ dias }} dias)<input type="date" name="validade"></label></div>
+  <div class="q-linha3"><label>Autoclave<input type="text" name="autoclave" maxlength="60"></label><label>Ciclo / lote<input type="text" name="ciclo" maxlength="40"></label>
+    <label>Indicador químico<select name="quimico"><option>CONFORME</option><option>NÃO CONFORME</option></select></label></div>
+  <label style="max-width:260px">Indicador biológico<select name="biologico"><option>AGUARDANDO</option><option>CONFORME</option><option>NÃO CONFORME</option></select></label>
+  <p class="ajuda">O operador é quem está logado. A etiqueta abre logo depois de registrar.</p>
+  <button class="btn" type="submit">Registrar e abrir a etiqueta</button>
+</form>
+{% endblock %}

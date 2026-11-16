@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+{% from '_ic.html' import ic %}
+{% from '_suporte_icones.html' import arte %}
+{% from '_suporte_macros.html' import quando, pilula_tipo, pilula_grav, pilula_status, pilula_tema, corpo %}
+{% set eh_bug = tipo == 'BUG' %}
+{% block titulo %}{{ 'Correção de bug' if eh_bug else 'Sugestão' }}{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='js/suporte.js') }}"></script>{% endblock %}
+{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/suporte.css') }}">{% endblock %}
+{% block conteudo %}
+<div class="cabecalho">
+  <div><h1>{{ 'Correção de bug' if eh_bug else 'Sugestão' }}</h1>
+    <p class="sub">{% if eh_bug %}Encontrou um erro, uma tela que não funciona ou algo que ficou estranho? Conte aqui. As correções de bugs têm prioridade: o desenvolvedor vê primeiro.{% else %}Tem uma ideia para melhorar o sistema? Escreva aqui. O desenvolvedor lê todas as sugestões e escolhe quais entram na próxima atualização.{% endif %}</p></div>
+</div>
+
+<section class="cartao sp-faixa {{ 'bug' if eh_bug else 'sugestao' }}">
+  <div class="sp-arte">{{ arte('bug' if eh_bug else 'sugestao') }}</div>
+  <div>
+    <h2>{{ 'Relatar um problema' if eh_bug else 'Enviar uma sugestão' }}</h2>
+    {% if eh_bug %}<p class="sp-urgente">{{ ic('triangle-alert', 16) }} Correções de bugs ficam acima das sugestões e são vistas primeiro.</p>{% endif %}
+    <p class="ajuda" style="margin:6px 0 0">{% if eh_bug %}Diga em qual tela aconteceu, o que você viu e o que estava fazendo. Quanto mais detalhes, mais rápido a correção.{% else %}Diga o que você gostaria que o sistema fizesse e, se puder, em qual tela. Pode ser um botão novo, um relatório, um atalho...{% endif %}</p>
+  </div>
+</section>
+
+{% if sou_dev %}<div class="msg aviso">Você está no perfil do desenvolvedor. Para ver o que foi enviado e decidir, use a aba “Formulários recebidos”.</div>{% endif %}
+
+<form method="post" action="{{ url_for('sup.bug_enviar' if eh_bug else 'sup.sugestao_enviar') }}" class="cartao sp-form {{ 'bug' if eh_bug else 'sugestao' }}" autocomplete="off">
+  {{ csrf_input }}
+  <div class="grade">
+    <div class="c7"><label class="obrig" for="sp-titulo">Título (resumo em poucas palavras)</label>
+      <input type="text" id="sp-titulo" name="titulo" value="{{ f.titulo or '' }}" maxlength="{{ limites.titulo }}" required placeholder="{{ 'Ex.: o botão Receber não abre na tela do caixa' if eh_bug else 'Ex.: relatório de exames por médico' }}"></div>
+    <div class="c5"><label for="sp-tela">Em qual tela?</label>
+      <input type="text" id="sp-tela" name="tela" list="sp-telas" value="{{ f.tela or '' }}" maxlength="{{ limites.tela }}" placeholder="Escolha ou digite">
+      <datalist id="sp-telas">{% for t in telas %}<option value="{{ t }}">{% endfor %}</datalist></div>
+    <div class="c12"><span class="sp-rotulo">Tema</span>
+      <div class="sp-temas">{% for t in temas %}<label class="sp-tema"><input type="radio" name="tema" value="{{ t }}" {% if (f.tema or 'Outro') == t %}checked{% endif %}><span>{{ t }}</span></label>{% endfor %}</div></div>
+    <div class="c12"><label class="obrig" for="sp-descricao">{{ 'O que aconteceu?' if eh_bug else 'Descreva a sua sugestão' }}</label>
+      <textarea id="sp-descricao" name="descricao" rows="5" maxlength="{{ limites.descricao }}" required placeholder="{{ 'Conte o que você viu na tela e o que esperava que acontecesse.' if eh_bug else 'Explique com as suas palavras o que o sistema deveria fazer e por que ajudaria.' }}">{{ f.descricao or '' }}</textarea></div>
+    {% if eh_bug %}
+    <div class="c12"><label for="sp-passos">Como acontece? (o passo a passo, se souber)</label>
+      <textarea id="sp-passos" name="passos" rows="3" maxlength="{{ limites.passos }}" placeholder="1. Abri a tela... 2. Cliquei em... 3. Apareceu...">{{ f.passos or '' }}</textarea></div>
+    <div class="c12"><span class="sp-rotulo">O quanto isso atrapalha?</span>
+      <div class="sp-gravidades">
+        {% for cod, rotulo in gravidades %}<label class="sp-grav grav-{{ cod|lower }}"><input type="radio" name="gravidade" value="{{ cod }}" {% if (f.gravidade or 'ATRAPALHA') == cod %}checked{% endif %}><span><i></i>{{ rotulo }}</span></label>{% endfor %}
+      </div></div>
+    {% endif %}
+  </div>
+  <div id="sp-cliente" hidden></div>
+  <div class="acoes"><button class="btn sp-enviar" type="submit">{{ ic('send', 16) }} {{ 'Enviar correção de bug' if eh_bug else 'Enviar sugestão' }}</button></div>
+</form>
+
+<h2>Seus envios</h2>
+{% if meus %}
+<div class="sp-lista">
+  {% for i in meus %}
+  <article class="cartao sp-item {{ 'bug' if i.tipo == 'BUG' else 'sugestao' }}" style="--i: {{ loop.index0 }}">
+    <header>{{ pilula_tipo(i) }}{{ pilula_grav(i) }}{{ pilula_tema(i) }}<span class="sp-quando">{{ quando(i.criado_em) }}</span><span class="sp-espaco"></span>{{ pilula_status(i) }}</header>
+    <h3>{{ i.titulo }}</h3>
+    {{ corpo(i) }}
+    {% if i.status == 'APLICADA' and i.versao %}<p class="sp-versao">{{ ic('badge-check', 15) }} Entrou na versão {{ i.versao }}.</p>{% endif %}
+  </article>
+  {% endfor %}
+</div>
+{% else %}
+<div class="cartao"><p class="vazio" style="margin:0">Você ainda não enviou {{ 'nenhuma correção de bug' if eh_bug else 'nenhuma sugestão' }}.</p></div>
+{% endif %}
+{% endblock %}

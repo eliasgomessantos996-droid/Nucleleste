@@ -1,0 +1,86 @@
+/* Campanhas de saúde do mês: laço animado, faixa no topo e selos. As cores do sistema não mudam. */
+
+/* faixa fina (3px) no topo da barra da página, na cor da campanha */
+.com-campanha .barra-pagina { border-top: 3px solid var(--camp-cor, transparent); }
+
+/* laço em SVG: balanço leve e brilho que pulsa */
+.camp-laco { display: block; flex: 0 0 auto; overflow: visible; }
+.camp-laco-mov { transform-origin: 32px 32px; animation: camp-balanco 4.5s ease-in-out infinite; }
+.camp-laco-forma, .camp-laco-cauda {
+  fill: var(--camp-laco, #888);
+  stroke: #6b7280;            /* contorno cinza: o laço branco continua visível no tema claro e no escuro */
+  stroke-width: 1.4;
+  stroke-linejoin: round;
+}
+.camp-laco-cauda { fill: color-mix(in srgb, var(--camp-laco, #888) 80%, #000); }
+.camp-laco-brilho { fill: none; stroke: #fff; stroke-width: 2.4; stroke-linecap: round; opacity: .55; animation: camp-brilho 3s ease-in-out infinite; }
+@keyframes camp-balanco {
+  0%, 100% { transform: rotate(-3deg); }
+  50% { transform: rotate(3deg); }
+}
+@keyframes camp-brilho {
+  0%, 100% { opacity: .25; }
+  50% { opacity: .8; }
+}
+
+/* selo: laço pequeno + nome */
+.camp-selo {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 2px 9px 2px 4px; border-radius: 999px;
+  font-size: .8rem; font-weight: 600; line-height: 1.3;
+  color: color-mix(in srgb, var(--camp-cor) 70%, #1f2937);
+  background: color-mix(in srgb, var(--camp-cor) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--camp-cor) 45%, transparent);
+}
+.camp-selo .camp-laco { width: 18px; height: 18px; }
+
+/* no menu lateral o selo ocupa a largura da marca */
+.marca .camp-selo { margin-top: 8px; max-width: 100%; }
+/* o menu lateral é verde-escuro nos dois temas: selo claro para ter contraste */
+.marca .camp-selo, html[data-brilho="escuro"] .marca .camp-selo { color: #fff; background: rgba(255, 255, 255, .14); border-color: rgba(255, 255, 255, .4); }
+
+/* cartão "Campanha do mês" no Início */
+.camp-cartao {
+  display: flex; gap: 18px; align-items: center; flex-wrap: wrap;
+  margin: 0 0 18px; padding: 16px 18px; border-radius: 12px;
+  background: color-mix(in srgb, var(--camp-cor) 9%, var(--fundo-cartao, #fff));
+  border: 1.5px solid color-mix(in srgb, var(--camp-cor) 55%, transparent);
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--camp-cor) 16%, transparent);
+  color: var(--texto, #1f2937);
+}
+.camp-cartao-txt { flex: 1 1 280px; min-width: 0; }
+.camp-cartao small { color: color-mix(in srgb, var(--camp-cor) 75%, var(--texto, #1f2937)); font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
+.camp-cartao h2 { margin: 2px 0 4px; font-size: 1.35rem; color: color-mix(in srgb, var(--camp-cor) 70%, var(--texto, #1f2937)); }
+.camp-cartao p { margin: 4px 0; }
+.camp-tema { font-weight: 600; }
+.camp-clinica { font-size: .92rem; opacity: .9; }
+.camp-outras { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+.camp-outra { display: inline-flex; align-items: center; gap: 6px; font-size: .85rem; }
+
+/* tela de entrada: bloco pequeno abaixo do formulário */
+.camp-entrada {
+  display: flex; gap: 12px; align-items: center; margin-top: 16px; padding: 10px 12px;
+  border-radius: 10px; font-size: .9rem;
+  background: color-mix(in srgb, var(--camp-cor) 10%, #fff);   /* fica sobre o fundo verde da entrada: bloco claro */
+  border: 1px solid color-mix(in srgb, var(--camp-cor) 45%, transparent);
+  color: #1f2937;
+}
+html[data-brilho="escuro"] .camp-entrada { background: color-mix(in srgb, var(--camp-cor) 18%, #1f2937); color: #e5e7eb; }
+.camp-entrada p { margin: 2px 0; }
+
+/* tabela dos 12 meses (Painéis do Início) */
+.camp-tabela td .camp-selo { margin: 1px 4px 1px 0; }
+
+/* escuro: textos e fundos com mais contraste sobre o fundo escuro */
+html[data-brilho="escuro"] .camp-selo {
+  color: color-mix(in srgb, var(--camp-cor) 35%, #f3f4f6);
+  background: color-mix(in srgb, var(--camp-cor) 22%, transparent);
+}
+html[data-brilho="escuro"] .camp-cartao h2 { color: color-mix(in srgb, var(--camp-cor) 45%, #f3f4f6); }
+html[data-brilho="escuro"] .camp-cartao small { color: color-mix(in srgb, var(--camp-cor) 40%, #e5e7eb); }
+html[data-brilho="escuro"] .camp-cartao { color: #e5e7eb; background: color-mix(in srgb, var(--camp-cor) 16%, #18221e); }
+
+/* sem animação para quem prefere menos movimento */
+@media (prefers-reduced-motion: reduce) {
+  .camp-laco-mov, .camp-laco-brilho { animation: none; }
+}

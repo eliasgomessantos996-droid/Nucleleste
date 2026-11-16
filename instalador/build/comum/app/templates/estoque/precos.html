@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+{% from '_ic.html' import ic %}
+{% block titulo %}Preços · Estoque{% endblock %}
+{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/estoque.css') }}">{% endblock %}
+{% block conteudo %}
+<div class="cabecalho">
+  <div><h1>{{ ic('calculator', 22) }} Estudo de preços</h1>
+    <p class="sub">Último valor pago, menor, média e maior valor de cada item, com o fornecedor mais barato. {{ estudo|length }} item(ns) com entrada valorada.</p></div>
+  <div class="acoes">
+    <a class="btn sec" href="{{ url_for('est.precos_xlsx', de=de, ate=ate, item=item_id, fornecedor=fornecedor) }}">Excel</a>
+    <a class="btn" href="{{ url_for('est.precos_pdf', de=de, ate=ate, item=item_id, fornecedor=fornecedor) }}" target="_blank">PDF</a>
+  </div>
+</div>
+
+<form class="cartao filtros" method="get">
+  <div><label for="p-de">De</label><input id="p-de" type="date" name="de" value="{{ de }}"></div>
+  <div><label for="p-ate">Até</label><input id="p-ate" type="date" name="ate" value="{{ ate }}"></div>
+  <div class="largo"><label for="p-item">Item</label><select id="p-item" name="item"><option value="">Todos os itens</option>
+    {% for i in itens %}<option value="{{ i.id }}" {% if item_id == i.id %}selected{% endif %}>{{ i.nome }}{% if not i.ativo %} (desativado){% endif %}</option>{% endfor %}</select></div>
+  <div class="largo"><label for="p-forn">Fornecedor</label><select id="p-forn" name="fornecedor"><option value="">Todos os fornecedores</option>
+    {% if cadastrados %}<optgroup label="Cadastrados">{% for f in cadastrados %}<option value="f:{{ f.id }}" {% if fornecedor == 'f:' ~ f.id %}selected{% endif %}>{{ f.nome }}</option>{% endfor %}</optgroup>{% endif %}
+    {% if avulsos %}<optgroup label="Digitados nas entradas">{% for n in avulsos %}<option value="n:{{ n }}" {% if fornecedor == 'n:' ~ n %}selected{% endif %}>{{ n }}</option>{% endfor %}</optgroup>{% endif %}</select></div>
+  <div><button class="btn" type="submit">Filtrar</button></div>
+</form>
+
+<h2 class="est-secao">Resumo por item</h2>
+<div class="tabela-wrap"><table class="tabela">
+  <thead><tr><th>Item</th><th class="num">Último valor (R$)</th><th>Data da última</th><th>Fornecedor do último</th><th class="num">Menor (R$)</th><th class="num">Média (R$)</th><th class="num">Maior (R$)</th><th class="num">Variação últimas duas</th><th class="num">Entradas</th><th>Fornecedor mais barato</th></tr></thead>
+  <tbody>
+  {% for a in estudo %}
+    <tr>
+      <td><a href="{{ url_for('est.precos', item=a.iid, de=de, ate=ate, fornecedor=fornecedor) }}">{{ a.nome }}</a> <small>{{ a.unidade }}</small></td>
+      <td class="num">{{ a.ultimo|moeda }}</td>
+      <td>{{ a.ultimo_data|est_dh }}</td>
+      <td>{% if a.ultimo_fid %}<a href="{{ url_for('fin.conta_fornecedor_editar', fid=a.ultimo_fid) }}">{{ a.ultimo_fornecedor }}</a>{% else %}{{ a.ultimo_fornecedor }}{% endif %}</td>
+      <td class="num">{{ a.menor|moeda }}</td>
+      <td class="num">{{ a.media|moeda }}</td>
+      <td class="num">{{ a.maior|moeda }}</td>
+      <td class="num">{% if a.variacao is not none %}{{ '+' if a.variacao > 0 }}{{ a.variacao|moeda }}%{% else %}-{% endif %}</td>
+      <td class="num">{{ a.compras }}</td>
+      <td>{% set mb = a.mais_barato %}{% if mb.fid %}<a href="{{ url_for('fin.conta_fornecedor_editar', fid=mb.fid) }}">{{ mb.nome }}</a>{% else %}{{ mb.nome }}{% endif %} · R$ {{ mb.ultimo|moeda }}</td>
+    </tr>
+  {% else %}
+    <tr><td colspan="10" class="vazio">Nenhuma entrada com valor pago no filtro.</td></tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+
+{% if ao_abrir and not detalhe %}
+<div class="cartao vazio">Este item não tem entrada com valor pago no filtro.</div>
+{% endif %}
+
+{% if detalhe %}
+<h2 class="est-secao">{{ detalhe.nome }} <small>{{ detalhe.tipo|capitalize }} · {{ detalhe.unidade }}</small></h2>
+<p class="sub">Último valor: R$ {{ detalhe.ultimo|moeda }} em {{ detalhe.ultimo_data|est_dh }} ({{ detalhe.ultimo_fornecedor }}) · Média: R$ {{ detalhe.media|moeda }} · Menor: R$ {{ detalhe.menor|moeda }} · Maior: R$ {{ detalhe.maior|moeda }} · Compras: {{ detalhe.compras }}</p>
+
+<h3 class="est-secao">Comparativo por fornecedor (última entrada de cada um)</h3>
+<div class="tabela-wrap"><table class="tabela">
+  <thead><tr><th>Fornecedor</th><th class="num">Último valor (R$)</th><th>Data da última</th><th class="num">Qtd. da última</th><th class="num">Média (R$)</th><th class="num">Entradas</th></tr></thead>
+  <tbody>
+  {% for c in detalhe.comparativo %}
+    <tr><td>{% if c.fid %}<a href="{{ url_for('fin.conta_fornecedor_editar', fid=c.fid) }}">{{ c.nome }}</a>{% else %}{{ c.nome }}{% endif %}
+      {% if loop.first and detalhe.comparativo|length > 1 %}<span class="etiqueta pago">mais barato</span>{% endif %}</td>
+      <td class="num">{{ c.ultimo|moeda }}</td><td>{{ c.data|est_dh }}</td><td class="num">{{ c.qtd|est_qtd }}</td><td class="num">{{ c.media|moeda }}</td><td class="num">{{ c.compras }}</td></tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+
+<h3 class="est-secao">Valor pago ao longo do tempo</h3>
+{% if grafico %}
+<svg class="est-grafico" viewBox="0 0 {{ grafico.w }} {{ grafico.h }}" role="img" aria-label="Gráfico do valor pago por entrada">
+  <line x1="{{ grafico.margem }}" y1="{{ grafico.h - grafico.margem }}" x2="{{ grafico.w - grafico.margem }}" y2="{{ grafico.h - grafico.margem }}" class="est-eixo"/>
+  <polyline points="{{ grafico.linha }}" class="est-linha"/>
+  {% for p in grafico.pontos %}<circle cx="{{ p.x }}" cy="{{ p.y }}" r="4" class="est-ponto"><title>{{ p.data|data_br }} · {{ p.nome }} · R$ {{ p.valor|moeda }}</title></circle>{% endfor %}
+  <text x="4" y="{{ grafico.margem + 4 }}" class="est-eixo-txt">R$ {{ grafico.hi|moeda }}</text>
+  <text x="4" y="{{ grafico.h - grafico.margem }}" class="est-eixo-txt">R$ {{ grafico.lo|moeda }}</text>
+</svg>
+{% endif %}
+
+<h3 class="est-secao">Histórico de preços (ordem cronológica)</h3>
+<div class="tabela-wrap"><table class="tabela">
+  <thead><tr><th>Data e hora</th><th>Fornecedor</th><th>Nota fiscal</th><th class="num">Qtd.</th><th class="num">Valor unit. (R$)</th></tr></thead>
+  <tbody>
+  {% for h in detalhe.historico %}
+    <tr><td>{{ h.data_hora|est_dh }}</td><td>{% if h.fid %}<a href="{{ url_for('fin.conta_fornecedor_editar', fid=h.fid) }}">{{ h.nome }}</a>{% else %}{{ h.nome }}{% endif %}</td>
+      <td>{{ h.nota }}</td><td class="num">{{ h.qtd|est_qtd }}</td><td class="num">{{ h.valor|moeda }}</td></tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+{% endif %}
+{% endblock %}

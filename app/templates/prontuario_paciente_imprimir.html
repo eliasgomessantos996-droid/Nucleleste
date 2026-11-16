@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prontuário {{ h.prontuario.numero }} - {{ cliente.nome }}</title>
+<link rel="icon" href="{{ url_for('static', filename='img/icone.svg') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/fichas.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/prontuario.css') }}">
+</head>
+<body class="pagina-impressao">
+<div class="barra-impressao">
+  <div class="barra-topo">
+    <div><strong>Histórico do prontuário nº {{ h.prontuario.numero }}</strong></div>
+    <div class="acoes" style="margin:0">
+      <button class="btn" type="button" onclick="window.print()">Imprimir</button>
+      <a class="btn sec" href="{{ url_for('pront.paciente', cid=cliente.id) }}">Voltar</a>
+    </div>
+  </div>
+  <p class="ajuda" style="margin:6px 0 0">Para salvar em PDF, clique em Imprimir e escolha “Salvar como PDF”. Margens: “Nenhuma” ou “Padrão”; escala 100%.</p>
+</div>
+
+<div class="folhas">
+<section class="folha retrato pr-folha" style="--ml:0.75in;--mr:0.75in;--mt:0.5in;--mb:0.6in">
+  <header class="pr-cab">
+    <img class="pr-logo" src="{{ url_for('static', filename='fichas/image1.jpeg') }}" alt="Logo da clínica">
+    <div class="pr-cab-texto">
+      <div class="pr-clinica">{{ clinica }}</div>
+      <div class="pr-titulo-doc">Histórico do prontuário</div>
+      <div class="pr-meta">Prontuário nº {{ h.prontuario.numero }} · Impresso em {{ hoje }}</div>
+    </div>
+  </header>
+
+  <table class="pr-ident">
+    <tr><th>Paciente</th><td colspan="3">{{ cliente.nome }}</td></tr>
+    <tr><th>Nome da mãe</th><td>{{ cliente.nome_mae or 'não informado' }}</td>
+        <th>Idade</th><td>{{ cliente.data_nasc|idade if cliente.data_nasc else 'não informada' }}</td></tr>
+    <tr><th>Nascimento</th><td>{{ cliente.data_nasc|data_br if cliente.data_nasc else 'não informado' }}</td>
+        <th>CPF</th><td>{{ cliente.cpf or 'não informado' }}</td></tr>
+    <tr><th>Convênio</th><td colspan="3">{{ cliente.convenio or '' }}</td></tr>
+  </table>
+
+  <div class="pr-bloco">
+    <div class="pr-faixa">Atendimentos</div>
+    <table class="pr-tab">
+      <thead><tr><th>Data</th><th>Exame</th><th>Convênio</th><th>Médico</th><th>Origem</th></tr></thead>
+      <tbody>
+      {% for a in h.atendimentos %}
+        <tr><td>{{ a.data|data_br }}</td><td>{{ a.exame or '' }}</td><td>{{ a.convenio or '' }}</td><td>{{ a.medico or '' }}</td>
+            <td>{% if a.interno %}Interno{% if a.interno_local %}: {{ a.interno_local }}{% endif %}{% endif %}</td></tr>
+      {% else %}
+        <tr><td colspan="5">Nenhum atendimento.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="pr-bloco">
+    <div class="pr-faixa">Documentos clínicos</div>
+    <table class="pr-tab">
+      <thead><tr><th>Documento</th><th>Atendimento</th><th>Situação</th><th>Concluído em</th></tr></thead>
+      <tbody>
+      {% set todos = [] %}
+      {% for a in h.atendimentos %}{% for d in a.docs %}
+        <tr><td>{{ d.titulo or d.tipo }}</td><td>{{ a.data|data_br }} · {{ a.exame or '' }}</td><td>{{ situacoes[d.situacao] }}</td><td>{{ d.concluido_em[:10]|data_br if d.concluido_em else '' }}</td></tr>
+      {% endfor %}{% endfor %}
+      {% for d in h.docs_avulsos %}
+        <tr><td>{{ d.titulo or d.tipo }}</td><td>Sem atendimento</td><td>{{ situacoes[d.situacao] }}</td><td>{{ d.concluido_em[:10]|data_br if d.concluido_em else '' }}</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+</div>
+</body>
+</html>

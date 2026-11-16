@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% block titulo %}Médicos{% endblock %}
+{% block conteudo %}
+<div class="cabecalho">
+  <div><h1>Médicos solicitantes</h1><p class="sub">{{ rows|length }} médico(s). Médicos digitados no lançamento de atendimento entram aqui automaticamente.</p></div>
+  <div class="acoes"><button class="btn" type="button" data-dialogo="dlg-med" data-id="" data-nome="" data-crm="">+ Novo médico</button></div>
+</div>
+<form class="cartao filtros" method="get">
+  <div class="largo"><label>Pesquisar</label><input type="search" name="q" value="{{ q }}" autofocus></div>
+  <div><button class="btn" type="submit">Pesquisar</button></div>
+</form>
+<div class="tabela-wrap"><table class="tabela">
+  <thead><tr><th>Cód.</th><th>Nome</th><th>CRM</th><th></th></tr></thead>
+  <tbody>
+  {% for m in rows %}
+    <tr><td>{{ m.id }}</td><td>{{ m.nome }}{% if m.dup > 1 %} <span class="etiqueta aberto" title="Há cadastros com o mesmo nome">duplicado</span>{% endif %}</td><td>{{ m.crm or '' }}</td>
+      <td class="num" style="white-space:nowrap">
+        <button class="btn sec peq" type="button" data-dialogo="dlg-med" data-id="{{ m.id }}" data-nome="{{ m.nome }}" data-crm="{{ m.crm or '' }}">Editar</button>
+        <form method="post" action="{{ url_for('cad.medico_excluir', mid=m.id) }}" style="display:inline" data-confirmar="Excluir o médico {{ m.nome }}?">
+          {{ csrf_input }}<button class="btn perigo peq" type="submit">Excluir</button></form>
+      </td></tr>
+  {% else %}<tr><td colspan="4" class="vazio">Nenhum médico encontrado.</td></tr>{% endfor %}
+  </tbody>
+</table></div>
+<dialog id="dlg-med">
+  <form method="post">
+    {{ csrf_input }}<input type="hidden" name="id" data-campo="id">
+    <h2 style="margin-top:0">Médico</h2>
+    <div class="grade">
+      <div class="c8"><label class="obrig">Nome</label><input type="text" name="nome" data-campo="nome" required data-maiusculas></div>
+      <div class="c4"><label>CRM</label><input type="text" name="crm" data-campo="crm" data-maiusculas></div>
+    </div>
+    <div class="acoes"><button class="btn" type="submit">Salvar</button><button class="btn sec" type="button" data-fechar>Cancelar</button></div>
+  </form>
+</dialog>
+{% endblock %}

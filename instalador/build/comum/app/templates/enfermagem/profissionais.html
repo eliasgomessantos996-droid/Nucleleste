@@ -1,0 +1,16 @@
+{% extends 'enfermagem/_base.html' %}
+{% from '_ic.html' import ic %}
+{% block titulo %}Profissionais e assinaturas{% endblock %}
+{% block titulo_e %}Profissionais e assinaturas{% endblock %}
+{% block sub_e %}Os profissionais são os mesmos funcionários e usuários do sistema (cadastrados no módulo de ponto). A assinatura é importada pela administração ao liberar o módulo.{% endblock %}
+{% block corpo_e %}
+<div class="tabela-wrap"><table class="tabela">
+  <thead><tr><th>Profissional</th><th>Cargo</th><th>Conselho</th><th>Assinatura</th><th>Importada por</th>{% if gestao %}<th></th>{% endif %}</tr></thead>
+  <tbody>{% for p in lista %}
+    <tr><td><b>{{ p.nome }}</b><br><small>{{ p.usuario }}</small></td><td>{{ p.cargo }}</td><td>{{ p.conselho }}-{{ p.uf }} {{ p.numero }}</td>
+      <td>{% if p.assinatura_id %}<img class="enf-ass-mini" src="{{ url_for('enf.assinatura_png', uid=p.usuario_id) }}" alt="Assinatura de {{ p.nome }}">{% else %}<span class="enf-chip vermelho">sem assinatura</span>{% endif %}</td>
+      <td>{{ p.assinatura_por or '' }} {{ (p.assinatura_em or '')[:10]|data_br if p.assinatura_em else '' }}</td>
+      {% if gestao %}<td><a class="btn sec peq" href="{{ url_for('enf.assinatura', uid=p.usuario_id) }}">Trocar</a></td>{% endif %}</tr>
+  {% else %}<tr><td colspan="6" class="sub">Nenhum profissional cadastrado ainda. Em Administração › Usuários, marque o módulo Enfermagem e Segurança para o profissional e importe a assinatura.</td></tr>{% endfor %}</tbody>
+</table></div>
+{% endblock %}

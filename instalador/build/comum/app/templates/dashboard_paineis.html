@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+{% from '_ic.html' import ic %}
+{% from '_campanha.html' import laco, selo %}
+{% block titulo %}Painéis do Início{% endblock %}
+{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/paineis.css') }}">{% endblock %}
+
+{% block conteudo %}
+<div class="cabecalho">
+  <div><h1>{{ ic('layout-dashboard', 22) }} Painéis do Início</h1></div>
+</div>
+
+<section class="cartao pn-cartao">
+  <div class="pn-arte" aria-hidden="true">
+    <svg viewBox="0 0 96 96" class="pn-svg">
+      <rect x="8" y="8" width="38" height="38"/><rect x="50" y="8" width="38" height="38" class="pn-painel-piscante"/>
+      <rect x="8" y="50" width="38" height="38"/><rect x="50" y="50" width="38" height="38"/>
+    </svg>
+  </div>
+  <div>
+  <p>Escolha o que os usuários veem no Início. Administrador e gerência sempre veem todos os painéis.</p>
+  <form method="post" action="{{ url_for('dash.paineis') }}">
+    {{ csrf_input }}
+    <fieldset class="lista-checks">
+      <legend>Painéis visíveis para os usuários</legend>
+      {% for chave, rotulo in paineis %}
+      <label class="check-linha">
+        <input type="checkbox" name="mostrar" value="{{ chave }}" {{ 'checked' if chave in visiveis }}>
+        <span>{{ rotulo }}</span>
+      </label>
+      {% endfor %}
+    </fieldset>
+    <div class="acoes">
+      <button class="btn" type="submit">Salvar</button>
+      <a class="link-peq" href="{{ url_for('dash.dashboard') }}">voltar ao Início</a>
+    </div>
+  </form>
+  </div>
+</section>
+
+<section class="cartao pn-cartao">
+  <div class="pn-arte" aria-hidden="true">
+    {{ laco(meses[9][2][0], 96) }}
+  </div>
+  <div>
+  <p>Personaliza o sistema com a campanha de saúde do mês (Outubro Rosa, Novembro Azul e outras): laço no menu, na tela de entrada e no Início. As cores do sistema não mudam.</p>
+  <form method="post" action="{{ url_for('dash.paineis') }}">
+    {{ csrf_input }}
+    <input type="hidden" name="acao" value="campanhas">
+    <label class="check-linha">
+      <input type="checkbox" name="campanhas" value="1" {{ 'checked' if ligado }}>
+      <span>Campanhas de saúde do mês ligadas</span>
+    </label>
+    <div class="acoes">
+      <button class="btn" type="submit">Salvar</button>
+    </div>
+  </form>
+  <div class="tabela-wrap camp-tabela"><table class="tabela">
+    <thead><tr><th>Mês</th><th>Campanha principal</th><th>Demais campanhas</th></tr></thead>
+    <tbody>
+    {% for n, mes, lista in meses %}
+      <tr><td>{{ mes }}</td><td>{{ selo(lista[0]) }}</td><td>{% for c in lista[1:] %}{{ selo(c) }} {% else %}-{% endfor %}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+  </div>
+</section>
+{% endblock %}

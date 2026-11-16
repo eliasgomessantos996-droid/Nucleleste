@@ -1,0 +1,52 @@
+{% extends 'qualidade/_base.html' %}
+{% block titulo %}Central da qualidade{% endblock %}
+{% block titulo_q %}Central da qualidade{% endblock %}
+{% block sub_q %}Ferramentas de gestão que usam os dados do próprio sistema: do indicador ao problema, da causa ao plano de ação.{% endblock %}
+{% block corpo_q %}
+<div class="q-cartoes-resumo">
+  <a class="q-num {{ 'critico' if criticos }}" href="{{ url_for('qual.kpi') }}"><strong>{{ criticos|length }}</strong><span>indicador(es) críticos nos últimos 30 dias</span></a>
+  <a class="q-num {{ 'atencao' if rascunhos }}" href="{{ url_for('qual.robo_pagina') }}"><strong>{{ rascunhos }}</strong><span>sugestão(ões) do robô para revisar</span></a>
+  <a class="q-num" href="{{ url_for('qual.pdca') }}"><strong>{{ abertos }}</strong><span>problema(s) em tratamento no PDCA</span></a>
+  <a class="q-num {{ 'critico' if acoes_atrasadas }}" href="{{ url_for('qual.plano') }}?atrasadas=1"><strong>{{ acoes_atrasadas }}</strong><span>ação(ões) do 5W2H atrasadas</span></a>
+</div>
+{% if criticos %}
+<div class="cartao q-alerta"><strong>Fora da meta agora:</strong>
+  {% for c in criticos %}<span class="q-chip critico">{{ c[1] }}</span>{% endfor %}
+</div>
+{% endif %}
+<div class="cartao q-dica-modelos">
+  <svg class="ic" width="22" height="22" aria-hidden="true"><use href="{{ url_for('static', filename='img/icones.svg') }}#i-clipboard-check"/></svg>
+  <div><strong>Modelos prontos para medicina nuclear em todas as ferramentas.</strong>
+    Cada aba traz uma galeria de modelos (problemas com Ishikawa e cinco porquês, riscos, SWOT, fluxogramas, organogramas, protocolos, critérios de fornecedores e perguntas de satisfação):
+    aplique com um clique e altere só os dados importantes. Todo PDF sai com a análise e os campos de assinatura e validação, para apresentar a auditorias e órgãos.</div>
+</div>
+<h2>Ferramentas</h2>
+<div class="q-ferramentas">
+  {% for ep, nome, texto, ico in [
+    ('qual.kpi', 'Indicadores (KPI)', 'Metas, situação e série mensal de cada indicador calculado pelo sistema.', 'gauge'),
+    ('qual.robo_pagina', 'Robô do PDCA', 'Analisa os dados, encontra os problemas, prioriza e monta o plano para você revisar.', 'bot'),
+    ('qual.pdca', 'Ciclo PDCA', 'Planejar, Fazer, Checar e Agir para cada problema, com meta e indicador.', 'refresh-cw'),
+    ('qual.pareto', 'Gráfico de Pareto', 'Mostra os poucos itens que concentram a maior parte do problema (regra 80/20).', 'chart-column'),
+    ('qual.ishikawa', 'Diagrama de Ishikawa', 'Causas organizadas nos 6M: método, máquina, mão de obra, material, meio ambiente e medição.', 'git-branch'),
+    ('qual.porques', 'Cinco porquês', 'Pergunta "por quê?" até chegar à causa raiz.', 'circle-help'),
+    ('qual.gut', 'Matriz GUT', 'Prioriza por Gravidade × Urgência × Tendência.', 'calculator'),
+    ('qual.riscos', 'Matriz de risco', 'Probabilidade × impacto, com resposta e responsável.', 'triangle-alert'),
+    ('qual.plano', 'Plano de ação 5W2H', 'O quê, por quê, onde, quando, quem, como e quanto.', 'list-checks'),
+    ('qual.swot', 'Matriz SWOT', 'Forças, fraquezas, oportunidades e ameaças, com estratégias cruzadas.', 'grid-2x2'),
+    ('qual.fluxos', 'Fluxograma de processos', 'Desenhe os processos com raias, cores e situação de implantação.', 'workflow'),
+    ('qual.protocolos', 'Protocolos (POPs)', 'Protocolos prontos de medicina nuclear, com versão, aprovação e PDF para assinatura.', 'scroll-text'),
+    ('qual.organograma', 'Organograma', 'Estrutura da empresa por cargo, setor e pessoa.', 'network'),
+    ('qual.ocorrencias', 'Ocorrências e satisfação', 'Não conformidades, eventos, reclamações e pesquisa de satisfação.', 'clipboard-list'),
+    ('qual.forn', 'Avaliação de fornecedores', 'Avaliação periódica com critérios e relatório para a ONA.', 'handshake')] %}
+  {% if pode('qualidade_fornecedores' if ep == 'qual.forn' else 'qualidade_gestao') %}
+  <a class="q-ferramenta" href="{{ url_for(ep) }}">
+    <svg class="ic" width="26" height="26" aria-hidden="true"><use href="{{ url_for('static', filename='img/icones.svg') }}#i-{{ ico }}"/></svg>
+    <strong>{{ nome }}</strong><span>{{ texto }}</span>
+  </a>
+  {% endif %}
+  {% endfor %}
+</div>
+{% if ultima %}
+<p class="ajuda">Última análise do robô: {{ ultima.executado_em[8:10] }}/{{ ultima.executado_em[5:7]}} às {{ ultima.executado_em[11:16] }} ({{ ultima.achados }} problema(s) encontrado(s)).</p>
+{% endif %}
+{% endblock %}

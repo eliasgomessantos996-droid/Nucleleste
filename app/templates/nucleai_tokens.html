@@ -1,0 +1,145 @@
+{% extends 'base.html' %}
+{% block titulo %}Gasto de tokens: NucleAI{% endblock %}
+{% macro ic(nome, tam=16) %}<svg class="ic" width="{{ tam }}" height="{{ tam }}" aria-hidden="true"><use href="{{ url_for('static', filename='img/icones.svg') }}#i-{{ nome }}"></use></svg>{% endmacro %}
+{% block conteudo %}
+<div class="cabecalho">
+  <div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+      <a class="btn sec" href="{{ url_for('nucleaiia.pagina') }}" style="padding:3px 8px;font-size:12px">{{ ic('arrow-left', 14) }} Voltar à IA online</a>
+      <span class="ajuda">· Gerência e Administração</span>
+    </div>
+    <h1>{{ ic('chart-column', 24) }} Gasto de tokens da NucleAI</h1>
+    <p class="sub">Acompanhamento de consumo de tokens do OpenRouter por modelo, dia, horário, pedido e usuário.</p>
+  </div>
+</div>
+
+<div class="cartao" style="margin-bottom:16px;padding:12px 16px">
+  <form method="get" action="{{ url_for('nucleaiia.tokens') }}" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+    <div>
+      <label class="ajuda" style="display:block;font-size:11px;margin-bottom:2px">Filtrar período</label>
+      <select name="periodo" style="padding:5px 10px;min-width:160px" onchange="this.form.submit()">
+        <option value="hoje" {{ 'selected' if periodo == 'hoje' }}>Hoje</option>
+        <option value="7d" {{ 'selected' if periodo == '7d' }}>Últimos 7 dias</option>
+        <option value="30d" {{ 'selected' if periodo == '30d' }}>Últimos 30 dias</option>
+        <option value="todos" {{ 'selected' if periodo in ('todos', 'tudo', '') }}>Todo o histórico</option>
+      </select>
+    </div>
+    <div style="align-self:flex-end">
+      <button class="btn sec" type="submit">{{ ic('list-checks', 14) }} Atualizar</button>
+      {% if periodo != '30d' %}
+      <a class="btn sec" href="{{ url_for('nucleaiia.tokens') }}">Padrão (30d)</a>
+      {% endif %}
+    </div>
+  </form>
+</div>
+
+<div class="nia-kpis" style="margin-bottom:18px">
+  <div class="nia-kpi">
+    <small>{{ ic('gauge', 13) }} Total de tokens</small>
+    <b>{{ '{:,}'.format(geral.tokens_total).replace(',', '.') }}</b>
+    <span class="ajuda">{{ geral.pedidos }} pedido(s) atendido(s)</span>
+  </div>
+  <div class="nia-kpi">
+    <small>{{ ic('arrow-down-left', 13) }} Tokens de entrada (prompt)</small>
+    <b>{{ '{:,}'.format(geral.tokens_entrada).replace(',', '.') }}</b>
+    <span class="ajuda">{{ '%.0f'|format(100 * geral.tokens_entrada / (geral.tokens_total or 1)) }}% do volume total</span>
+  </div>
+  <div class="nia-kpi">
+    <small>{{ ic('arrow-up-right', 13) }} Tokens de saída (resposta)</small>
+    <b>{{ '{:,}'.format(geral.tokens_saida).replace(',', '.') }}</b>
+    <span class="ajuda">{{ '%.0f'|format(100 * geral.tokens_saida / (geral.tokens_total or 1)) }}% do volume total</span>
+  </div>
+  <div class="nia-kpi">
+    <small>{{ ic('timer', 13) }} Tempo médio por resposta</small>
+    <b>{{ geral.tempo_medio_ms }} ms</b>
+    <span class="ajuda">{{ geral.usuarios }} usuário(s) distinto(s)</span>
+  </div>
+</div>
+
+<div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(460px, 1fr));gap:16px;margin-bottom:16px">
+  <div class="cartao" style="margin:0">
+    <h2 style="margin-top:0">{{ ic('layers', 16) }} Gasto por modelo</h2>
+    <p class="ajuda">Tokens totais consumidos por cada modelo do OpenRouter no período.</p>
+    <div style="margin-top:12px;overflow-x:auto">
+      {{ svg_modelo|safe }}
+    </div>
+  </div>
+
+  <div class="cartao" style="margin:0">
+    <h2 style="margin-top:0">{{ ic('trending-up', 16) }} Gasto por dia</h2>
+    <p class="ajuda">Evolução diária de consumo de tokens.</p>
+    <div style="margin-top:12px;overflow-x:auto">
+      {{ svg_dia|safe }}
+    </div>
+  </div>
+</div>
+
+<div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(460px, 1fr));gap:16px;margin-bottom:16px">
+  <div class="cartao" style="margin:0">
+    <h2 style="margin-top:0">{{ ic('clock', 16) }} Gasto por hora do dia (0h às 23h)</h2>
+    <p class="ajuda">Distribuição dos pedidos e tokens ao longo dos horários de expediente.</p>
+    <div style="margin-top:12px;overflow-x:auto">
+      {{ svg_hora|safe }}
+    </div>
+  </div>
+
+  <div class="cartao" style="margin:0">
+    <h2 style="margin-top:0">{{ ic('chart-bar', 16) }} Histograma por tamanho de pedido</h2>
+    <p class="ajuda">Quantidade de pedidos distribuída por faixas de tokens consumidos.</p>
+    <div style="margin-top:12px;overflow-x:auto">
+      {{ svg_hist|safe }}
+    </div>
+  </div>
+</div>
+
+<div class="cartao" style="margin-bottom:16px">
+  <h2 style="margin-top:0">{{ ic('users', 16) }} Gasto por usuário</h2>
+  <p class="ajuda">Consumo total de tokens agrupado por usuário no período selecionado.</p>
+  <div style="margin-top:12px;overflow-x:auto">
+    {{ svg_usuario|safe }}
+  </div>
+</div>
+
+<div class="cartao">
+  <h2 style="margin-top:0">{{ ic('list-ordered', 16) }} Maiores pedidos no período</h2>
+  <p class="ajuda">Pedidos individuais que mais consumiram tokens (top 20).</p>
+  <div class="tabela-wrap">
+    <table class="tabela">
+      <thead>
+        <tr>
+          <th>Quando</th>
+          <th>Usuário</th>
+          <th>Modelo</th>
+          <th>Tipo</th>
+          <th style="text-align:right">Entrada</th>
+          <th style="text-align:right">Saída</th>
+          <th style="text-align:right">Total</th>
+          <th style="text-align:right">Tempo</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in pedidos %}
+        <tr>
+          <td style="white-space:nowrap">{{ p.criado_em }}</td>
+          <td><b>{{ p.usuario }}</b></td>
+          <td><code>{{ p.modelo }}</code></td>
+          <td>
+            {% if p.teste %}
+            <span class="nia-estado TREINO" style="font-size:11px;padding:2px 6px">Chat de teste</span>
+            {% else %}
+            <span class="nia-estado LIBERADA" style="font-size:11px;padding:2px 6px">Time</span>
+            {% endif %}
+          </td>
+          <td style="text-align:right">{{ '{:,}'.format(p.tokens_entrada).replace(',', '.') }}</td>
+          <td style="text-align:right">{{ '{:,}'.format(p.tokens_saida).replace(',', '.') }}</td>
+          <td style="text-align:right"><b>{{ '{:,}'.format(p.tokens_total).replace(',', '.') }}</b></td>
+          <td style="text-align:right">{{ p.tempo_ms }} ms</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="8" class="ajuda">Nenhum pedido de tokens registrado no período selecionado.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

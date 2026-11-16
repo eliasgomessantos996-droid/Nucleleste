@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+{% from '_ic.html' import ic %}
+{% from '_suporte_icones.html' import arte %}
+{% from '_suporte_macros.html' import quando, pilula_tipo, pilula_grav, pilula_status, pilula_tema, dados_envio, corpo %}
+{% block titulo %}Pasta de aceitos{% endblock %}
+{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/suporte.css') }}">{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='js/suporte.js') }}"></script>{% endblock %}
+
+{% macro cartao(i, n, aplicado) %}
+<article class="cartao sp-item {{ 'bug' if i.tipo == 'BUG' else 'sugestao' }}" id="item-{{ i.id }}" style="--i: {{ n }}">
+  <header>{{ pilula_tipo(i) }}{{ pilula_grav(i) }}{{ pilula_tema(i) }}<span class="sp-quando">{{ quando(i.criado_em) }}</span><span class="sp-espaco"></span>
+    {% if aplicado %}<span class="sp-pilula st-aplicada">{{ ic('badge-check', 14) }} Versão {{ i.versao or '—' }}</span>{% else %}{{ pilula_status(i) }}{% endif %}</header>
+  <h3>{{ i.titulo }}</h3>
+  <p class="sp-autor">Enviado por <b>{{ i.usuario }}</b>{% if i.tela %} · tela <b>{{ i.tela }}</b>{% endif %}</p>
+  <details class="sp-original"><summary>Ver o texto original</summary>{{ corpo(i) }}</details>
+  {{ dados_envio(i) }}
+  <form method="post" action="{{ url_for('sup.texto_salvar', iid=i.id) }}" class="sp-texto">
+    {{ csrf_input }}
+    <label for="texto-{{ i.id }}">Texto para a atualização <small>(escreva de forma didática; é o que vai para o relatório)</small></label>
+    <textarea id="texto-{{ i.id }}" name="texto" rows="3" maxlength="{{ limites.texto_atualizacao }}" data-padrao="{{ i.descricao }}" placeholder="{{ i.descricao[:120] }}…">{{ i.texto_atualizacao or i.descricao }}</textarea>
+    <div class="sp-acoes">
+      <button class="btn sec peq com-icone" type="submit">{{ ic('check', 15) }} Salvar texto</button>
+    </div>
+  </form>
+  <div class="sp-acoes">
+    {% if aplicado %}
+    <form method="post" action="{{ url_for('sup.situacao', iid=i.id) }}">{{ csrf_input }}<button class="btn sec peq com-icone" type="submit" name="acao" value="desfazer">{{ ic('rotate-ccw', 15) }} Desfazer “aplicado”</button></form>
+    {% else %}
+    <form method="post" action="{{ url_for('sup.situacao', iid=i.id) }}" class="sp-aplicar">{{ csrf_input }}
+      <input type="text" name="versao" value="{{ versao_atual }}" maxlength="20" aria-label="Versão" title="Versão em que entrou">
+      <button class="btn peq com-icone" type="submit" name="acao" value="aplicada">{{ ic('badge-check', 15) }} Marcar como aplicado</button></form>
+    <form method="post" action="{{ url_for('sup.situacao', iid=i.id) }}">{{ csrf_input }}<button class="btn perigo peq com-icone" type="submit" name="acao" value="voltar">{{ ic('rotate-ccw', 15) }} Voltar para análise</button></form>
+    {% endif %}
+  </div>
+</article>
+{% endmacro %}
+
+{% block conteudo %}
+<div class="cabecalho">
+  <div><h1>Pasta de aceitos</h1>
+    <p class="sub">As sugestões e correções que você aceitou. Reescreva o texto de cada uma de forma mais didática para as atualizações e gere o relatório do que precisa entrar na próxima versão.</p></div>
+  <div class="acoes">
+    <a class="btn" href="{{ url_for('sup.relatorio') }}" target="_blank" rel="noopener">{{ ic('file-text', 16) }} Abrir relatório (PDF)</a>
+    <a class="btn sec" href="{{ url_for('sup.relatorio', baixar=1) }}">{{ ic('file-down', 16) }} Baixar</a>
+    <a class="btn sec" href="{{ url_for('sup.recebidos') }}">{{ ic('inbox', 16) }} Formulários recebidos{% if novos %} ({{ novos }}){% endif %}</a>
+  </div>
+</div>
+
+<section class="cartao sp-faixa pasta">
+  <div class="sp-arte">{{ arte('pasta') }}</div>
+  <div>
+    <h2>Para a próxima atualização</h2>
+    <div class="sp-contagens">
+      <span class="sp-contagem bug"><b>{{ bugs|length }}</b> correção(ões) de bug</span>
+      <span class="sp-contagem sugestao"><b>{{ sugestoes|length }}</b> sugestão(ões)</span>
+      <span class="sp-contagem ok"><b>{{ pasta.aplicados|length }}</b> já aplicado(s)</span>
+    </div>
+    {% if pasta.pendentes %}
+    <form method="post" action="{{ url_for('sup.aplicar_todas') }}" class="sp-aplicar-todas" data-confirmar="Marcar todos os itens aceitos como aplicados na versão informada?">
+      {{ csrf_input }}
+      <label for="versao-todas">Depois de lançar a atualização, marque tudo de uma vez:</label>
+      <input type="text" id="versao-todas" name="versao" value="{{ versao_atual }}" maxlength="20" style="width:90px" title="Versão">
+      <button class="btn sec peq com-icone" type="submit">{{ ic('badge-check', 15) }} Marcar todos como aplicados</button>
+      <button class="btn sec peq com-icone" type="button" data-copiar="#sp-resumo">{{ ic('clipboard-check', 15) }} Copiar os textos</button>
+    </form>
+    <textarea id="sp-resumo" hidden>{% for i in pasta.pendentes %}• {{ i.titulo }}: {{ i.texto_atualizacao or i.descricao }}
+{% endfor %}</textarea>
+    {% endif %}
+  </div>
+</section>
+
+{% if bugs %}
+<h2 class="sp-secao bug">{{ ic('bug', 20) }} Correções de bugs <span class="sp-urgente-selo">prioridade</span></h2>
+<div class="sp-lista">{% for i in bugs %}{{ cartao(i, loop.index0, False) }}{% endfor %}</div>
+{% endif %}
+{% if sugestoes %}
+<h2 class="sp-secao sugestao">{{ ic('lightbulb', 20) }} Sugestões</h2>
+<div class="sp-lista">{% for i in sugestoes %}{{ cartao(i, loop.index0, False) }}{% endfor %}</div>
+{% endif %}
+{% if not pasta.pendentes %}
+<div class="cartao"><p class="vazio" style="margin:0">A pasta está vazia. Aceite formulários em “Formulários recebidos” e eles aparecem aqui.</p></div>
+{% endif %}
+
+<details class="sp-recusados">
+  <summary>{{ ic('badge-check', 16) }} Já aplicados em atualizações ({{ pasta.aplicados|length }})</summary>
+  {% if pasta.aplicados %}<div class="sp-lista">{% for i in pasta.aplicados %}{{ cartao(i, loop.index0, True) }}{% endfor %}</div>
+  {% else %}<p class="ajuda">Nada foi marcado como aplicado ainda.</p>{% endif %}
+</details>
+{% endblock %}

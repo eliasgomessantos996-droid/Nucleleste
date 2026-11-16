@@ -1,0 +1,74 @@
+{% extends 'qualidade/_base.html' %}
+{% from 'qualidade/_modelos.html' import pdf_botoes with context %}
+{% macro barras(itens, cor) -%}
+{% set mx = (itens|map(attribute='n')|list + [1])|max %}
+<div class="ep-barras">{% for i in itens %}<div class="ep-linha"><span class="ep-rot" title="{{ i.rotulo }}">{{ i.rotulo }}</span><span class="ep-trilho"><i style="--v: {{ (100 * i.n / mx)|round(1) }}%; --c: {{ cor }}"></i></span><b>{{ i.n }}{% if i.pct is not none %} <small>({{ ('%.1f'|format(i.pct))|replace('.', ',') }}%)</small>{% endif %}</b></div>
+{% else %}<p class="sub">Sem dados no período.</p>{% endfor %}</div>
+{%- endmacro %}
+{% macro colunas(itens, cor) -%}
+{% set mx = (itens|map(attribute='n')|list + [1])|max %}
+<div class="ep-colunas">{% for i in itens %}<div class="ep-col"><b>{{ i.n }}</b><i style="--v: {{ (100 * i.n / mx)|round(1) }}%; --c: {{ cor }}"></i><span>{{ i.rotulo }}</span></div>{% else %}<p class="sub">Sem dados no período.</p>{% endfor %}</div>
+{%- endmacro %}
+{% block titulo %}Perfil epidemiológico{% endblock %}
+{% block titulo_q %}Perfil epidemiológico{% endblock %}
+{% block sub_q %}Quem são os pacientes atendidos na clínica (sexo, idade, procedência, exames, convênios, médicos e diagnósticos), calculado com os exames realizados e o cadastro dos clientes, no formato pedido pela ONA.{% endblock %}
+{% block acoes_q %}{{ pdf_botoes(url_for('qual.epidemio_pdf') ~ '?de=' ~ de ~ '&ate=' ~ ate) }}{% endblock %}
+{% block corpo_q %}
+<form class="cartao filtros q-nao-imprime" method="get">
+  <div><label for="de">De</label><input type="date" id="de" name="de" value="{{ de }}"></div>
+  <div><label for="ate">Até</label><input type="date" id="ate" name="ate" value="{{ ate }}"></div>
+  <div><button class="btn" type="submit">Atualizar</button></div>
+</form>
+<div class="q-cartoes-resumo">
+  <div class="q-num"><strong>{{ pf.pacientes }}</strong><span>pacientes atendidos</span></div>
+  <div class="q-num"><strong>{{ pf.total_exames }}</strong><span>exames realizados</span></div>
+  <div class="q-num"><strong>{{ ('%.1f'|format(pf.pct_retorno))|replace('.', ',') ~ '%' if pf.pct_retorno is not none else '—' }}</strong><span>com mais de um exame no período</span></div>
+  <div class="q-num"><strong>{{ ('%.1f'|format(pf.idade.media))|replace('.', ',') if pf.idade.media is not none else '—' }}</strong><span>idade média (mediana {{ pf.idade.mediana|string|replace('.0', '') if pf.idade.mediana is not none else '—' }}; de {{ pf.idade.minima if pf.idade.minima is not none else '—' }} a {{ pf.idade.maxima if pf.idade.maxima is not none else '—' }} anos)</span></div>
+</div>
+<div class="q-duas">
+  <section class="cartao"><h2>Pirâmide etária</h2>
+    <div class="ep-piramide"><div class="ep-leg"><span class="m">Masculino</span><span class="f">Feminino</span></div>
+      {% for f in pf.piramide|reverse %}<div class="ep-pl"><b class="ep-n m">{{ f.M }}</b><span class="ep-lado m"><i style="--v: {{ (100 * f.M / pf.max_faixa)|round(1) }}%"></i></span><span class="ep-faixa">{{ f.faixa }}</span><span class="ep-lado f"><i style="--v: {{ (100 * f.F / pf.max_faixa)|round(1) }}%"></i></span><b class="ep-n f">{{ f.F }}</b></div>{% endfor %}</div>
+    <p class="ajuda">Pacientes por faixa de idade na data do exame. Sem sexo informado: {{ pf.sexo|selectattr('rotulo', 'equalto', 'Não informado')|map(attribute='n')|first|default(0) }}.</p></section>
+  <section class="cartao"><h2>Sexo e faixa etária</h2>{{ barras(pf.sexo, '#7b1fa2') }}<h3 class="ep-sub">Faixa etária</h3>{{ barras(pf.faixas, '#2f7a49') }}</section>
+</div>
+<div class="q-duas">
+  <section class="cartao"><h2>Procedência: cidade</h2>{{ barras(pf.cidades, '#ef6c00') }}</section>
+  <section class="cartao"><h2>Procedência: bairro</h2>{{ barras(pf.bairros, '#ef6c00') }}</section>
+</div>
+<div class="q-duas">
+  <section class="cartao"><h2>Exames realizados</h2>{{ barras(pf.exames, '#1565c0') }}</section>
+  <section class="cartao"><h2>Convênios</h2>{{ barras(pf.convenios, '#00838f') }}</section>
+</div>
+<div class="q-duas">
+  <section class="cartao"><h2>Médicos solicitantes</h2>{{ barras(pf.medicos, '#5d4037') }}</section>
+  <section class="cartao"><h2>Diagnósticos (CID)</h2>{{ barras(pf.cids, '#c62828') }}</section>
+</div>
+<div class="q-duas">
+  <section class="cartao"><h2>Evolução mensal de exames</h2>{{ colunas(pf.meses, '#1565c0') }}</section>
+  <section class="cartao"><h2>Exames por dia da semana</h2>{{ colunas(pf.dias, '#2f7a49') }}</section>
+</div>
+<div class="q-duas">
+  <section class="cartao"><h2>Diagnósticos por capítulo da CID-10</h2>{{ barras(pf.cid_capitulos, '#c62828') }}
+    <p class="ajuda">Agrupa os códigos de diagnóstico em grandes grupos de doenças. "Sem CID" são pedidos sem diagnóstico informado.</p></section>
+  <section class="cartao"><h2>IMC dos pacientes adultos</h2>{{ barras(pf.imc, '#2f7a49') }}
+    <p class="sub">IMC médio: <b>{{ ('%.1f'|format(pf.imc_media))|replace('.', ',') if pf.imc_media is not none else '—' }}</b></p>
+    <p class="ajuda">IMC é o peso dividido pelo quadrado da altura. Considera só exames de pessoas com 18 anos ou mais que têm peso e altura válidos.</p></section>
+</div>
+<div class="q-duas">
+  <section class="cartao"><h2>Idade média por exame</h2>
+    <table class="tabela"><thead><tr><th>Exame</th><th class="num">Exames</th><th class="num">Idade média</th></tr></thead><tbody>
+    {% for i in pf.idade_por_exame %}<tr><td>{{ i.rotulo }}</td><td class="num">{{ i.n }}</td><td class="num">{{ ('%.1f'|format(i.media))|replace('.', ',') ~ ' anos' if i.media is not none else '—' }}</td></tr>{% endfor %}</tbody></table>
+    <p class="ajuda">Mostra a idade média das pessoas que fizeram cada exame. Ajuda a ver para qual público cada exame é mais usado.</p></section>
+  <section class="cartao"><h2>Procedência: mesma cidade × outras cidades</h2>{{ barras(pf.procedencia_local, '#ef6c00') }}
+    <p class="ajuda">Compara os pacientes que moram na mesma cidade da clínica com os que vêm de outras cidades.</p></section>
+</div>
+<section class="cartao"><h2>Exames por sexo</h2>
+  <table class="tabela"><thead><tr><th>Exame</th><th class="num">Feminino</th><th class="num">Masculino</th><th class="num">Não informado</th></tr></thead><tbody>
+  {% for i in pf.exames_por_sexo %}<tr><td>{{ i.rotulo }}</td><td class="num">{{ i.F }}</td><td class="num">{{ i.M }}</td><td class="num">{{ i.N }}</td></tr>{% endfor %}</tbody></table>
+  <p class="ajuda">Quantos exames de cada tipo foram feitos em mulheres, homens e pessoas sem sexo informado.</p></section>
+<section class="cartao"><h2>Qualidade dos dados usados</h2>
+  <table class="tabela"><thead><tr><th>Informação</th><th class="num">Preenchidos</th><th class="num">Total</th><th class="num">%</th></tr></thead><tbody>
+  {% for q in pf.qualidade_dado %}<tr><td>{{ q.rotulo }}</td><td class="num">{{ q.n }}</td><td class="num">{{ q.de }}</td><td class="num">{{ ('%.1f'|format(100 * q.n / q.de))|replace('.', ',') ~ '%' if q.de else '—' }}</td></tr>{% endfor %}</tbody></table>
+  <p class="ajuda">Quanto mais completo o cadastro (sexo, nascimento, cidade, CID), mais fiel o perfil.</p></section>
+{% endblock %}

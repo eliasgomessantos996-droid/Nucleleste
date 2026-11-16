@@ -1,0 +1,105 @@
+{% extends 'qualidade/_base.html' %}
+{% from 'qualidade/_modelos.html' import galeria_perguntas with context %}
+{% block titulo %}Pesquisa de satisfação{% endblock %}
+{% block titulo_q %}Pesquisa de satisfação (QR Code){% endblock %}
+{% block sub_q %}O cliente lê o QR Code com o celular, conectado ao Wi-Fi da clínica, e responde até {{ maximo }} perguntas, com elogio e sugestão. Quem não usa o celular pode responder no questionário impresso, que depois é lançado aqui. Cada resposta fica guardada para a gerência avaliar e alimenta os indicadores e o relatório da ONA.{% endblock %}
+{% block acoes_q %}
+<a class="btn sec" href="{{ url_for('qual.satisf_respostas') }}">Respostas e indicadores</a>
+<a class="btn sec" href="{{ url_for('qual.satisf_impresso') }}" target="_blank" rel="noopener"><svg class="ic" width="18" height="18" aria-hidden="true"><use href="{{ url_for('static', filename='img/icones.svg') }}#i-file-down"/></svg> Imprimir questionário</a>
+<a class="btn sec" href="{{ url_for('qual.satisf_lancar') }}"><svg class="ic" width="18" height="18" aria-hidden="true"><use href="{{ url_for('static', filename='img/icones.svg') }}#i-clipboard-check"/></svg> Lançar questionário impresso</a>
+{% endblock %}
+{% block corpo_q %}
+{{ galeria_perguntas(modelos, false) }}
+<style>.q-linha-pergunta { flex-wrap: wrap; } .q-linha-pergunta input[name=pergunta] { flex: 1 1 60% !important; min-width: 12em; } .q-linha-pergunta select[name=tipo] { flex: 1 1 11em; width: auto; min-width: 0; }</style>
+<template id="tpl-tipo"><select name="tipo" aria-label="Tipo da resposta">{% for chave, rotulo in tipos.items() %}<option value="{{ chave }}">{{ rotulo }}</option>{% endfor %}</select></template>
+<div class="q-duas">
+  <section class="cartao q-form">
+    <h2>QR Code para divulgar</h2>
+    <div style="display:flex;gap:18px;flex-wrap:wrap;align-items:flex-start">
+      <img src="{{ url_for('qual.satisf_qr') }}" alt="QR Code da pesquisa de satisfação" width="220" height="220" style="border:1px solid var(--borda,#ccc);border-radius:8px;background:#fff">
+      <div style="flex:1;min-width:230px">
+        <p class="sub" style="margin-top:0">Endereço da pesquisa (só abre dentro da rede da clínica):</p>
+        <p><input type="text" id="link-pesquisa" value="{{ link }}" readonly style="width:100%"></p>
+        <div class="acoes q-nao-imprime">
+          <a class="btn" href="{{ url_for('qual.satisf_cartaz') }}" target="_blank" rel="noopener"><svg class="ic" width="18" height="18" aria-hidden="true"><use href="{{ url_for('static', filename='img/icones.svg') }}#i-file-down"/></svg> Imprimir cartaz</a>
+          <button class="btn sec" type="button" id="copiar-link">Copiar link</button>
+        </div>
+        <h3 style="margin:16px 0 4px">Enviar pelo WhatsApp</h3>
+        <p class="sub" style="margin:0 0 6px">Para um cliente que está na clínica, conectado ao Wi-Fi. Digite o telefone (com DDD) ou deixe em branco para escolher o contato no WhatsApp.</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <input type="tel" id="wa-tel" placeholder="(33) 99999-9999" inputmode="tel" style="flex:1;min-width:150px">
+          <a class="btn sec" id="wa-enviar" href="https://wa.me/?text={{ wa_texto }}" target="_blank" rel="noopener">Enviar pelo WhatsApp</a>
+        </div>
+      </div>
+    </div>
+    <form method="post" action="{{ url_for('qual.satisf_config') }}" class="q-nao-imprime" style="margin-top:16px">
+      {{ csrf_input }}
+      <label>Endereço usado no QR Code <span class="sub">(deixe em branco para usar o IP desta máquina: {{ ip }}:{{ porta }})</span>
+        <input type="text" name="endereco" value="{{ endereco }}" placeholder="http://{{ ip }}:{{ porta }}"></label>
+      <label class="inline"><input type="checkbox" name="ativa" value="1" {% if ativa %}checked{% endif %}> Pesquisa aberta (desmarque para parar de receber respostas)</label>
+      <div><button class="btn" type="submit">Salvar</button></div>
+      <p class="sub">Se o IP da máquina mudar, o QR Code impresso deixa de funcionar. Prefira fixar o IP no roteador ou informe aqui o nome da máquina.</p>
+    </form>
+  </section>
+
+  <form class="cartao q-form q-nao-imprime" method="post" action="{{ url_for('qual.satisf_perguntas') }}" id="form-perguntas">
+    {{ csrf_input }}
+    <h2>Perguntas ({{ maximo }} no máximo)</h2>
+    <p class="sub">Cada pergunta pode ser de <strong>escala</strong> (Ótimo, Bom, Ruim e Péssimo), <strong>Sim ou Não</strong> (segurança do paciente, como a confirmação do nome e da data de nascimento) ou <strong>nota de 0 a 10</strong> (recomendação). Edite o texto, o tipo, exclua ou inclua perguntas. O formulário tem ainda os campos de elogio, sugestão, nome e telefone (opcionais).</p>
+    <div id="lista-perguntas">
+      {% for p in perguntas %}
+      <div class="q-linha-pergunta" style="display:flex;gap:6px;margin-bottom:6px"><span style="min-width:22px;padding-top:9px" data-num>{{ loop.index }}.</span>
+        <input type="text" name="pergunta" value="{{ p.texto }}" maxlength="200" style="flex:1" aria-label="Pergunta {{ loop.index }}">
+        <select name="tipo" aria-label="Tipo da resposta">{% for chave, rotulo in tipos.items() %}<option value="{{ chave }}" {% if p.tipo == chave %}selected{% endif %}>{{ rotulo }}</option>{% endfor %}</select>
+        <button class="btn perigo peq" type="button" data-excluir title="Excluir esta pergunta">Excluir</button></div>
+      {% endfor %}
+    </div>
+    <div class="acoes">
+      <button class="btn sec" type="button" id="nova-pergunta">+ Incluir pergunta</button>
+      <button class="btn" type="submit">Salvar perguntas</button>
+    </div>
+    <p class="sub" id="contagem"></p>
+  </form>
+</div>
+<form method="post" action="{{ url_for('qual.satisf_perguntas') }}" class="q-nao-imprime" onsubmit="return confirm('Voltar às perguntas sugeridas? As perguntas atuais serão substituídas (as respostas já recebidas continuam guardadas).')">
+  {{ csrf_input }}<input type="hidden" name="restaurar" value="1"><button class="btn sec peq" type="submit">Voltar às perguntas sugeridas</button>
+</form>
+{% endblock %}
+{% block scripts_q %}
+<script>
+(function () {
+  const MAX = {{ maximo }};
+  const lista = document.getElementById('lista-perguntas');
+  const contagem = document.getElementById('contagem');
+  const novo = document.getElementById('nova-pergunta');
+  function renumerar() {
+    const linhas = lista.querySelectorAll('.q-linha-pergunta');
+    linhas.forEach((l, i) => { l.querySelector('[data-num]').textContent = (i + 1) + '.'; });
+    contagem.textContent = linhas.length + ' de ' + MAX + ' perguntas';
+    novo.disabled = linhas.length >= MAX;
+  }
+  function ligar(l) { l.querySelector('[data-excluir]').addEventListener('click', () => { l.remove(); renumerar(); }); }
+  lista.querySelectorAll('.q-linha-pergunta').forEach(ligar);
+  novo.addEventListener('click', () => {
+    if (lista.querySelectorAll('.q-linha-pergunta').length >= MAX) return;
+    const l = document.createElement('div'); l.className = 'q-linha-pergunta'; l.style.cssText = 'display:flex;gap:6px;margin-bottom:6px';
+    l.innerHTML = '<span style="min-width:22px;padding-top:9px" data-num></span><input type="text" name="pergunta" maxlength="200" style="flex:1" aria-label="Nova pergunta"><button class="btn perigo peq" type="button" data-excluir>Excluir</button>';
+    l.insertBefore(document.getElementById('tpl-tipo').content.firstElementChild.cloneNode(true), l.querySelector('[data-excluir]'));
+    lista.appendChild(l); ligar(l); renumerar(); l.querySelector('input').focus();
+  });
+  renumerar();
+  document.getElementById('copiar-link').addEventListener('click', () => {
+    const campo = document.getElementById('link-pesquisa'); campo.select();
+    try { navigator.clipboard.writeText(campo.value); } catch (e) { document.execCommand('copy'); }
+    document.getElementById('copiar-link').textContent = 'Link copiado!';
+  });
+  const tel = document.getElementById('wa-tel'), wa = document.getElementById('wa-enviar');
+  const texto = {{ wa_texto|tojson }};
+  tel.addEventListener('input', () => {
+    let d = tel.value.replace(/\D/g, '');
+    if (d && d.length <= 11) d = '55' + d;
+    wa.href = 'https://wa.me/' + d + '?text=' + texto;
+  });
+})();
+</script>
+{% endblock %}

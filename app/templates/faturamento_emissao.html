@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+{% from '_ic.html' import ic %}
+{% from '_fat_macros.html' import pilula, protocolo_acoes, visualizador %}
+{% block titulo %}Emissão da nota fiscal{% endblock %}
+{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/fat.css') }}">{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='js/fat.js') }}"></script>{% endblock %}
+{% block conteudo %}
+<div class="cabecalho">
+  <div><h1>Emissão da nota fiscal</h1><p class="sub">Faturas cadastradas que ainda estão sem nota fiscal. Informe o número e a data da nota: a fatura passa para “Nota fiscal emitida” e fica pronta para o recebimento em “Recebidas”.</p></div>
+  <div class="acoes"><a class="btn sec com-icone" href="{{ url_for('fat.recebidas') }}">{{ ic('badge-dollar-sign', 16) }} Ir para Recebidas</a></div>
+</div>
+
+<form class="cartao filtros" method="get">
+  <div><label>Convênio / particular</label><select name="convenio"><option value="">Todos</option>{% for c in convenios %}<option {% if c == f.convenio %}selected{% endif %}>{{ c }}</option>{% endfor %}</select></div>
+  <div class="largo"><label>Protocolo ou convênio</label><input type="search" name="q" value="{{ f.q }}"></div>
+  <div><button class="btn" type="submit">Filtrar</button></div>
+</form>
+
+<section class="cartao fat-faixa faturado">
+  <div class="fat-arte" aria-hidden="true">
+    <svg viewBox="0 0 80 80" class="fat-svg">
+      <rect class="fat-folha" x="16" y="8" width="44" height="58" rx="6"/><path class="fat-linhas" d="M25 24h26M25 34h26M25 44h14"/>
+      <g class="fat-carimbo"><circle cx="56" cy="56" r="14"/><path d="m49 56 5 5 9-10"/></g>
+    </svg>
+  </div>
+  <div><h2>{{ pendentes|length }} fatura(s) aguardando a nota fiscal</h2>
+    <p class="ajuda" style="margin:0">Soma faturada: <b>R$ {{ tot.faturado|moeda }}</b> · {{ tot.guias }} guia(s).</p></div>
+</section>
+
+<h2 class="fat-secao">{{ ic('file-text', 20) }} Para emitir a nota</h2>
+<div class="tabela-wrap"><table class="tabela fat-tabela">
+  <thead><tr><th>Convênio</th><th>Referência</th><th>Protocolo</th><th class="num">Guias</th><th class="num">Faturado</th><th>Protocolo (PDF)</th><th>Número e data da nota</th></tr></thead>
+  <tbody>
+  {% for r in pendentes %}
+    <tr>
+      <td><strong>{{ r.convenio }}</strong>{% if r.atrasada %} <span class="fat-pilula atrasada">{{ ic('triangle-alert', 14) }} atrasada</span>{% endif %}</td><td>{{ r.referencia|data_br }}</td><td>{{ r.protocolo or '—' }}</td>
+      <td class="num">{{ r.qtd_guias if r.qtd_guias is not none else '—' }}</td><td class="num"><strong>{{ r.valor_bruto|moeda }}</strong></td>
+      <td>{{ protocolo_acoes(r, request.full_path) }}</td>
+      <td><form method="post" action="{{ url_for('fat.emitir', fid=r.id) }}" class="fat-emitir">
+        {{ csrf_input }}<input type="hidden" name="voltar" value="{{ request.full_path }}">
+        <input type="text" name="nota_fiscal" placeholder="Nº da nota" maxlength="30" required aria-label="Número da nota fiscal">
+        <input type="date" name="data_emissao" value="{{ hoje }}" aria-label="Data de emissão">
+        <button class="btn peq com-icone" type="submit">{{ ic('check', 15) }} Emitir</button></form></td>
+    </tr>
+  {% else %}<tr><td colspan="7" class="vazio">Nenhuma fatura esperando nota fiscal. Cadastre em “Faturamento”.</td></tr>{% endfor %}
+  </tbody>
+</table></div>
+
+<h2 class="fat-secao">{{ ic('badge-check', 20) }} Notas emitidas e ainda não recebidas</h2>
+<div class="tabela-wrap"><table class="tabela fat-tabela">
+  <thead><tr><th>Convênio</th><th>Protocolo</th><th class="num">Faturado</th><th>Nota fiscal</th><th>Emitida em</th><th>Situação</th><th></th></tr></thead>
+  <tbody>
+  {% for r in emitidas %}
+    <tr>
+      <td><strong>{{ r.convenio }}</strong></td><td>{{ r.protocolo or '—' }}</td><td class="num">{{ r.valor_bruto|moeda }}</td>
+      <td><form method="post" action="{{ url_for('fat.emitir', fid=r.id) }}" class="fat-emitir">
+        {{ csrf_input }}<input type="hidden" name="voltar" value="{{ request.full_path }}"><input type="hidden" name="data_emissao" value="{{ r.nf_emitida_em or hoje }}">
+        <input type="text" name="nota_fiscal" value="{{ r.nota_fiscal }}" maxlength="30" required aria-label="Número da nota fiscal">
+        <button class="btn sec peq" type="submit" title="Corrigir o número da nota">Salvar nº</button></form></td>
+      <td>{{ r.nf_emitida_em|data_br if r.nf_emitida_em else '—' }}{% if r.nf_emitida_por %}<br><small>{{ r.nf_emitida_por }}</small>{% endif %}</td>
+      <td>{{ pilula(r) }}</td>
+      <td class="num" style="white-space:nowrap">
+        <a class="btn sec peq com-icone" href="{{ url_for('fat.recebidas', q=r.protocolo) }}">{{ ic('badge-dollar-sign', 15) }} Receber</a>
+        <form method="post" action="{{ url_for('fat.desfazer_emissao', fid=r.id) }}" style="display:inline" data-confirmar="Desfazer a emissão desta nota? A fatura volta para “Faturado (sem nota)”.">
+          {{ csrf_input }}<input type="hidden" name="voltar" value="{{ request.full_path }}"><button class="btn perigo peq" type="submit">Desfazer</button></form></td>
+    </tr>
+  {% else %}<tr><td colspan="7" class="vazio">Nenhuma nota emitida aguardando recebimento.</td></tr>{% endfor %}
+  </tbody>
+</table></div>
+{{ visualizador() }}
+{% endblock %}

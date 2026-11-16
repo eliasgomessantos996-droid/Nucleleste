@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+{% block titulo %}Faltas e reagendamento{% endblock %}
+{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/agenda.css') }}">{% endblock %}
+{% block conteudo %}
+<div class="cabecalho">
+  <div><h1>Faltas e reagendamento</h1><p class="sub">Quem faltou no período, por exame. Chame cada pessoa pelo WhatsApp com uma mensagem acolhedora convidando a remarcar.</p></div>
+  <div class="acoes"><a class="btn sec" href="{{ url_for('agenda.pagina') }}">Voltar para a agenda</a></div>
+</div>
+
+<form class="cartao filtros" method="get">
+  <div><label for="de">De</label><input type="date" id="de" name="de" value="{{ de }}"></div>
+  <div><label for="ate">Até</label><input type="date" id="ate" name="ate" value="{{ ate }}"></div>
+  <div class="largo"><label for="exame">Exame</label><select id="exame" name="exame">
+    <option value="">Todos os exames</option>
+    {% for e in exames %}<option value="{{ e }}" {{ 'selected' if e|lower == exame|lower }}>{{ e }}</option>{% endfor %}
+  </select></div>
+  <div><button class="btn" type="submit">Atualizar</button></div>
+</form>
+
+<div class="indicadores">
+  <div class="indicador" style="border-left-color:#b5473a"><div class="n" style="color:#b5473a" data-total>{{ rel.total }}</div><div class="t">pacientes que faltaram</div></div>
+  <div class="indicador"><div class="n" data-com-contato>0</div><div class="t">com telefone para contato</div></div>
+  <div class="indicador"><div class="n" data-sem-contato>0</div><div class="t">sem telefone</div></div>
+</div>
+
+<div class="cartao filtros af-controles" style="display:grid;grid-template-columns:1fr 2fr;gap:12px;align-items:end;margin-bottom:16px">
+  <div>
+    <label for="af-mensagem">Mensagem para contato</label>
+    <select id="af-mensagem">
+      <option value="0">Reagendamento (texto da gerência)</option>
+      <option value="1">Carinhosa: cuidamos de você</option>
+      <option value="2">Calorosa: horários disponíveis</option>
+    </select>
+  </div>
+  <div>
+    <label for="af-busca">Buscar paciente</label>
+    <input type="search" id="af-busca" placeholder="Digite o nome" autocomplete="off">
+  </div>
+  <div class="ajuda" style="grid-column:1 / -1;margin:0">A mensagem é preenchida com o nome, o exame e a data. Você revisa no WhatsApp antes de enviar.</div>
+</div>
+
+{% for g in rel.grupos %}
+<section class="ag-bloco af-grupo" data-grupo>
+  <div class="ag-bloco-topo">
+    <div class="ag-bloco-tit"><h3>{{ g.exame }}</h3><small>{{ g.total }} falta(s) no período</small></div>
+    <div class="ag-bloco-acoes"><button type="button" class="btn sec peq" data-recolher>Recolher</button></div>
+  </div>
+  <div class="tabela-wrap" data-corpo-grupo>
+    <table class="tabela">
+      <thead><tr><th>Data</th><th>Horário</th><th>Paciente</th><th>Convênio</th><th>Contato</th><th>Chamar</th><th>Situação</th></tr></thead>
+      <tbody>
+      {% for i in g.itens %}
+        <tr data-linha data-nome="{{ i.paciente }}" data-exame="{{ i.exame }}" data-data="{{ i.data }}" data-wa="{{ i.wa }}">
+          <td>{{ i.data|data_br }}</td>
+          <td>{{ i.hora }}</td>
+          <td><strong>{{ i.paciente }}</strong></td>
+          <td>{{ i.convenio }}</td>
+          <td>{{ i.contato or '—' }}</td>
+          <td>
+            {% if i.wa %}<a class="btn peq af-zap" href="#" target="_blank" rel="noopener">💬 WhatsApp</a>
+            {% else %}<span class="ajuda">sem telefone cadastrado</span>{% endif %}
+          </td>
+          <td>
+            <select class="af-situacao" data-situacao="{{ i.id }}" aria-label="Situação de {{ i.paciente }}">
+              <option value="">Marcar…</option>
+              <option value="RESGATADO">Reagendado</option>
+              <option value="DESISTIU">Desistiu</option>
+            </select>
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% else %}
+<div class="ag-vazio-dia">Nenhum paciente faltou no período{{ ' para este exame' if exame }}.</div>
+{% endfor %}
+<dialog id="af-dlg" class="ag-dialogo">
+  <form id="af-form" method="dialog" autocomplete="off">
+    <h2 style="margin-top:0" data-titulo>Reagendar</h2>
+    <p class="ajuda" style="margin-top:0">O paciente é copiado, com todas as informações, para o horário escolhido. Na falta, ele fica como “Reagendado”, registrado no histórico da linha como reagendado por quem fez.</p>
+    <div class="ag-campos">
+      <div><label for="af-dia">Dia do reagendamento</label><input type="date" id="af-dia" required></div>
+      <div class="largo"><label for="af-horario">Horário livre</label><select id="af-horario" required></select></div>
+    </div>
+    <p class="ag-erro" data-erro hidden></p>
+    <div class="acoes"><button class="btn" type="button" data-confirmar>Reagendar para este horário</button>
+      <button class="btn sec" type="button" data-cancelar>Cancelar</button></div>
+  </form>
+</dialog>
+
+<div class="ag-vazio-dia af-tudo-certo" hidden>Nenhuma falta pendente no período.</div>
+<p class="af-semresultado" hidden>Nenhum paciente com este nome no período.</p>
+
+{% endblock %}
+{% block scripts %}<script type="application/json" id="af-mensagens">{{ mensagens|tojson }}</script>
+<script src="{{ url_for('static', filename='js/agenda_faltas.js') }}"></script>{% endblock %}

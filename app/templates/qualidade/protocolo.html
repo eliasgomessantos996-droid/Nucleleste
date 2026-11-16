@@ -1,0 +1,48 @@
+{% extends 'qualidade/_base.html' %}
+{% from 'qualidade/_modelos.html' import pdf_botoes with context %}
+{% from '_ic.html' import ic %}
+{% block titulo %}{{ p.codigo }} · {{ p.titulo }}{% endblock %}
+{% block titulo_q %}{{ p.codigo }} · {{ p.titulo }}{% endblock %}
+{% block sub_q %}Versão {{ p.versao }} · {{ p.status }}{% if p.aprovado_por %} (aprovado por {{ p.aprovado_por }} em {{ p.aprovado_em[:10]|data_br }}){% endif %}{% if p.proxima_revisao %} · revisão até {{ p.proxima_revisao|data_br }}{% endif %}{% endblock %}
+{% block acoes_q %}{{ pdf_botoes(url_for('qual.protocolo_pdf', pid=p.id), 'PDF para assinatura') }}<a class="btn sec" href="{{ url_for('qual.protocolos') }}">Todos os protocolos</a>{% endblock %}
+{% block corpo_q %}
+{% if p.status == 'APROVADO' %}<div class="cartao q-alerta q-nao-imprime">Este protocolo está <b>aprovado</b>. Ao salvar uma alteração, ele vira a versão {{ p.versao + 1 }} em rascunho e precisa ser aprovado de novo.</div>{% endif %}
+<form class="cartao q-form" method="post" action="{{ url_for('qual.protocolo_salvar', pid=p.id) }}">
+  {{ csrf_input }}
+  <div class="q-linha3"><label>Código<input type="text" name="codigo" value="{{ p.codigo }}" maxlength="30"></label>
+    <label>Título<input type="text" name="titulo" value="{{ p.titulo }}" required maxlength="200"></label>
+    <label>Setor ou área<input type="text" name="setor" value="{{ p.setor }}" maxlength="120"></label></div>
+  <label>1. Objetivo<textarea name="objetivo" rows="2">{{ p.objetivo }}</textarea></label>
+  <div class="q-duas"><label>2. Abrangência (a quem se aplica)<textarea name="abrangencia" rows="2">{{ p.abrangencia }}</textarea></label>
+    <label>3. Responsabilidades<textarea name="responsaveis" rows="2">{{ p.responsaveis }}</textarea></label></div>
+  <div class="q-duas"><label>4. Definições (uma por linha)<textarea name="definicoes" rows="3">{{ p.definicoes }}</textarea></label>
+    <label>5. Materiais e recursos (um por linha)<textarea name="materiais" rows="3">{{ p.materiais }}</textarea></label></div>
+  <label>6. Procedimento: passo a passo (um passo por linha)<textarea name="passos" rows="10">{{ p.passos }}</textarea></label>
+  <label>7. Pontos de atenção (um por linha)<textarea name="cuidados" rows="2">{{ p.cuidados }}</textarea></label>
+  <div class="q-duas"><label>8. Registros gerados (um por linha)<textarea name="registros" rows="3">{{ p.registros }}</textarea></label>
+    <label>9. Referências (uma por linha)<textarea name="referencias" rows="3">{{ p.referencias }}</textarea></label></div>
+  <div class="q-linha3">
+    <label>10. Fluxograma do processo (já desenhado)<select name="fluxo_id"><option value="">(nenhum)</option>
+      {% for f in fluxos %}<option value="{{ f.id }}" {{ 'selected' if p.fluxo_id == f.id }}>{{ f.nome }} (v{{ f.versao }})</option>{% endfor %}</select></label>
+    <label>ou modelo de fluxograma<select name="fluxo_modelo"><option value="">(nenhum)</option>
+      {% for k, nome in modelos_fluxo %}<option value="{{ k }}" {{ 'selected' if p.fluxo_modelo == k }}>{{ nome }}</option>{% endfor %}</select></label>
+    <label>Próxima revisão<input type="date" name="proxima_revisao" value="{{ p.proxima_revisao or '' }}"></label>
+  </div>
+  <div class="q-duas"><label>Elaborado por<input type="text" name="elaborado_por" value="{{ p.elaborado_por }}" maxlength="120"></label>
+    <label>Revisado por (responsável técnico / supervisor de proteção radiológica)<input type="text" name="revisado_por" value="{{ p.revisado_por }}" maxlength="120"></label></div>
+  <button class="btn" type="submit">{{ ic('check', 16) }} Salvar</button>
+</form>
+<div class="q-duas q-nao-imprime">
+  <form class="cartao q-form" method="post" action="{{ url_for('qual.protocolo_aprovar', pid=p.id) }}" onsubmit="return confirm('Aprovar esta versão do protocolo? Depois baixe o PDF e colete as assinaturas.')">
+    {{ csrf_input }}<h2>{{ ic('circle-check', 18) }} Aprovar esta versão</h2>
+    <p class="sub">Registra quem aprovou e a data. A validade padrão é de 1 ano; o PDF sai com os campos de assinatura e validação.</p>
+    <div class="q-duas"><label>Aprovado por<input type="text" name="aprovado_por" value="{{ p.aprovado_por or '' }}" maxlength="120" placeholder="nome de quem aprova"></label>
+      <label>Válido até / próxima revisão<input type="date" name="proxima_revisao" value="{{ p.proxima_revisao or '' }}"></label></div>
+    <button class="btn" type="submit">Aprovar</button>
+  </form>
+  <form class="cartao q-form" method="post" action="{{ url_for('qual.protocolo_excluir', pid=p.id) }}" onsubmit="return confirm('Excluir este protocolo?')">
+    {{ csrf_input }}<h2>Excluir</h2><p class="sub">Apaga este protocolo. Os modelos prontos continuam disponíveis para criar de novo.</p>
+    <button class="btn perigo" type="submit">Excluir protocolo</button>
+  </form>
+</div>
+{% endblock %}

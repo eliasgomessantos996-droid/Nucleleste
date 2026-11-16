@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% block titulo %}Restaurar backup{% endblock %}
+{% block conteudo %}
+<div class="cabecalho">
+  <div><h1>Restaurar backup</h1><p class="sub">Confirme para trocar os dados atuais pelos deste backup.</p></div>
+  <div class="acoes"><a class="btn sec" href="{{ url_for('admin.backup_pasta' if pasta else 'admin.backup') }}">Cancelar</a></div>
+</div>
+<div class="msg erro"><strong>Atenção:</strong> tudo o que foi lançado depois de {{ b.data }} deixará de aparecer. Antes de restaurar, o sistema guarda uma cópia dos dados de agora (backup “ANTES-DE-RESTAURAR”), mas só restaure se tiver certeza.</div>
+<div class="cartao">
+  <p>Backup escolhido: <strong>{{ b.nome }}</strong>{% if e_ultimo %} <small>(é o backup mais recente)</small>{% else %} <small>(não é o mais recente)</small>{% endif %}<br>
+    {% if pasta %}Pasta: <code>{{ pasta }}</code><br>{% endif %}
+    Feito em: <strong>{{ b.data }}</strong> · Tamanho: {{ '%.1f'|format(b.tamanho / 1048576) }} MB<br>
+    Conteúdo: {% if b.com_anexos %}<strong>sistema + anexos</strong> (os dois bancos são restaurados juntos){% else %}<strong>só o sistema</strong> (formato antigo, sem anexos: os anexos atuais serão mantidos){% endif %}<br>
+    Banco que será substituído: <code>{{ banco }}</code></p>
+  <form method="post" action="{{ url_for('admin.backup_restaurar') }}" autocomplete="off"
+        style="display:flex;gap:12px;align-items:end;flex-wrap:wrap">
+    {{ csrf_input }}
+    <input type="hidden" name="nome" value="{{ b.nome }}">
+    <div><label for="codigo">Digite o código de verificação: <strong style="font-size:1.4em;letter-spacing:.2em">{{ codigo }}</strong></label>
+      <input type="text" id="codigo" name="codigo" inputmode="numeric" maxlength="6" pattern="[0-9]{6}" required autofocus style="width:140px"></div>
+    <button class="btn perigo" type="submit">Restaurar agora</button>
+  </form>
+  <small>O código vale por 5 minutos e só para este backup.</small>
+</div>
+{% endblock %}

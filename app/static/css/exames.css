@@ -1,0 +1,23 @@
+/* Exames realizados: linhas pintadas pela cor do tipo do exame, como na planilha EXAMES.xlsx */
+.ex-tipos { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 12px; }
+.ex-tipo { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 99px; border: 2px solid transparent; font-size: 12.5px; font-weight: 600; text-decoration: none; background: var(--c, #eef1ef); color: var(--t, var(--texto)); box-shadow: inset 0 0 0 1px rgba(0,0,0,.12); transition: transform .15s, box-shadow .15s; }
+.ex-tipo:hover { transform: translateY(-1px); box-shadow: inset 0 0 0 1px rgba(0,0,0,.2), 0 3px 8px rgba(0,0,0,.15); }
+.ex-tipo.ativo { border-color: var(--texto); }
+.ex-tipo b { background: rgba(255,255,255,.35); border-radius: 99px; padding: 0 7px; font-variant-numeric: tabular-nums; }
+.ex-tabela { font-size: 12.5px; }
+.ex-tabela th, .ex-tabela td { padding: 5px 7px; white-space: nowrap; }
+.ex-tabela td.quebra { white-space: normal; min-width: 150px; }
+.ex-tabela .ex-linha td { background: var(--c, transparent); color: var(--t, inherit); border-bottom: 1px solid rgba(0,0,0,.12); }
+.ex-tabela .ex-linha:hover td { filter: brightness(.94); background: var(--c, #fafcfb); }
+.ex-tabela .ex-linha a { color: inherit; font-weight: 700; }
+.ex-tabela .ex-linha .btn { background: rgba(255,255,255,.85); color: var(--verde); border-color: rgba(0,0,0,.2); }
+/* modo "só marcador": a cor aparece apenas numa faixa à esquerda */
+.ex-marcador .ex-linha td { background: transparent !important; color: inherit !important; }
+.ex-marcador .ex-linha td:first-child { box-shadow: inset 8px 0 0 var(--c, transparent); padding-left: 16px; }
+.ex-linha .ex-obs { display: block; font-size: 11px; opacity: .85; }
+.ex-chip-cor { display: inline-block; width: 14px; height: 14px; border-radius: 4px; vertical-align: -2px; border: 1px solid rgba(0,0,0,.25); background: var(--c, #fff); }
+.ex-previa-cor { display: inline-flex; align-items: center; gap: 6px; padding: 2px 10px; border-radius: 99px; font-weight: 700; font-size: 12.5px; background: var(--c, #eef1ef); color: var(--t, var(--suave)); box-shadow: inset 0 0 0 1px rgba(0,0,0,.15); }
+.ex-cores td input[type=text] { min-width: 120px; }
+.ex-cores input[type=color] { width: 46px; height: 32px; padding: 0; border: 1px solid var(--borda); border-radius: 6px; background: #fff; cursor: pointer; }
+.ex-form-previa { transition: background .25s, color .25s; }
+@media print { .ex-tabela .ex-linha td { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }

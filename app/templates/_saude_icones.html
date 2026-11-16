@@ -1,0 +1,68 @@
+{# Desenhos da tela Saúde do sistema (SVG próprio). As cores vêm das variáveis --nv (cor do nível) e --nv-bg do cartão. #}
+{% macro icone(nome) -%}
+{%- if nome == 'disco' -%}
+<svg viewBox="0 0 80 80" class="sd-svg" aria-hidden="true">
+  <rect class="i-base" x="8" y="14" width="64" height="52" rx="9"/>
+  <g class="sd-gira"><circle class="i-papel" cx="34" cy="38" r="17"/><circle class="i-cheio" cx="34" cy="38" r="5"/><path class="i-linha" d="M34 21v9"/><path class="i-linha" d="M17 38h9" /></g>
+  <path class="i-linha" d="M62 22 51 41"/><circle class="i-cheio" cx="62" cy="22" r="3.4"/>
+  <circle class="i-cheio sd-pisca" cx="16" cy="58" r="2.6"/>
+  <rect class="i-cheio" x="52" y="57" width="14" height="3.6" rx="1.8" opacity=".35"/>
+</svg>
+{%- elif nome == 'backup' -%}
+<svg viewBox="0 0 80 80" class="sd-svg" aria-hidden="true">
+  <path class="i-base" d="M22 56h34a11 11 0 0 0 2-21.8A16 16 0 0 0 27 31a13 13 0 0 0-5 25z"/>
+  <g class="sd-sobe"><path class="i-linha" d="M40 52V34"/><path class="i-linha" d="m32 41 8-8 8 8"/></g>
+  <circle class="i-cheio" cx="59" cy="59" r="10"/><path d="m54 59 4 4 7-8" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
+{%- elif nome == 'banco' -%}
+<svg viewBox="0 0 80 80" class="sd-svg" aria-hidden="true">
+  <path class="i-base" d="M16 20v40c0 4.4 10.7 8 24 8s24-3.6 24-8V20"/>
+  <ellipse class="i-base" cx="40" cy="20" rx="24" ry="8"/>
+  <path class="i-linha" d="M16 33c0 4.4 10.7 8 24 8s24-3.6 24-8"/><path class="i-linha" d="M16 47c0 4.4 10.7 8 24 8s24-3.6 24-8"/>
+  <circle class="i-cheio sd-dado d1" cx="28" cy="27" r="2.2"/><circle class="i-cheio sd-dado d2" cx="40" cy="41" r="2.2"/><circle class="i-cheio sd-dado d3" cx="52" cy="55" r="2.2"/>
+</svg>
+{%- elif nome == 'caixa' -%}
+<svg viewBox="0 0 80 80" class="sd-svg" aria-hidden="true">
+  <rect class="i-papel" x="20" y="12" width="40" height="19" rx="4"/><text x="40" y="26" text-anchor="middle" class="i-texto">R$</text>
+  <rect class="i-base" x="10" y="30" width="60" height="30" rx="7"/>
+  <g class="i-cheio" opacity=".55"><rect x="18" y="37" width="9" height="6" rx="2"/><rect x="31" y="37" width="9" height="6" rx="2"/><rect x="44" y="37" width="9" height="6" rx="2"/><rect x="18" y="48" width="9" height="6" rx="2"/><rect x="31" y="48" width="9" height="6" rx="2"/></g>
+  <rect class="i-cheio" x="46" y="47" width="16" height="8" rx="2.5"/>
+  <g class="sd-gaveta"><rect class="i-papel" x="14" y="62" width="52" height="9" rx="3"/></g>
+  <circle class="sd-moeda" cx="66" cy="22" r="7" fill="#f2c14e" stroke="#c9961b" stroke-width="1.6"/>
+</svg>
+{%- elif nome == 'docs' -%}
+<svg viewBox="0 0 80 80" class="sd-svg" aria-hidden="true">
+  <rect class="i-base" x="16" y="12" width="46" height="58" rx="6"/>
+  <rect class="i-cheio" x="29" y="7" width="20" height="10" rx="4"/>
+  <path class="i-linha" d="M25 30h28M25 39h28M25 48h16"/>
+  <g class="sd-carimbo"><circle class="i-papel" cx="54" cy="58" r="12"/><circle class="i-contorno" cx="54" cy="58" r="12"/><path d="m48.5 58 4 4 7.5-8.5" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="i-contorno"/></g>
+</svg>
+{%- elif nome == 'erros' -%}
+<svg viewBox="0 0 80 80" class="sd-svg" aria-hidden="true">
+  <g class="sd-inseto">
+    <path class="i-linha" d="M26 36 12 31M26 47H10M27 58 15 64M54 36l14-5M54 47h16M53 58l12 6M35 19l-6-9M45 19l6-9"/>
+    <ellipse class="i-base" cx="40" cy="47" rx="14" ry="19"/>
+    <circle class="i-papel" cx="40" cy="25" r="8.5"/>
+    <path class="i-linha" d="M40 30v34"/>
+    <circle class="i-cheio" cx="37" cy="24" r="1.5"/><circle class="i-cheio" cx="43" cy="24" r="1.5"/>
+  </g>
+</svg>
+{%- elif nome == 'foguete' -%}
+<svg viewBox="0 0 80 80" class="sd-svg" aria-hidden="true">
+  <path class="sd-chama" d="M33 52c1 10 4 16 7 22 3-6 6-12 7-22z" fill="#f59e0b"/>
+  <path class="i-base" d="M40 6c11 8 15 21 13 38H27C25 27 29 14 40 6z"/>
+  <circle class="i-papel" cx="40" cy="27" r="5.5"/>
+  <path class="i-cheio" d="M27 44 16 58l13-3zM53 44l11 14-13-3z"/>
+</svg>
+{%- endif -%}
+{%- endmacro %}
+
+{% macro selo(nivel) -%}
+<svg viewBox="0 0 28 28" class="sd-selo-svg" aria-hidden="true">
+  <circle cx="14" cy="14" r="13" fill="var(--nv)"/>
+  {%- if nivel == 'otimo' %}<path d="m14 6.5 2.2 4.6 5 .7-3.6 3.5.9 5-4.5-2.4-4.5 2.4.9-5-3.6-3.5 5-.7z" fill="#fff"/>
+  {%- elif nivel == 'bom' %}<path d="m8.5 14.5 3.8 3.8 7.2-8" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+  {%- elif nivel == 'medio' %}<path d="M14 7.5v8" stroke="#fff" stroke-width="2.8" stroke-linecap="round"/><circle cx="14" cy="20" r="1.8" fill="#fff"/>
+  {%- else %}<path d="m9 9 10 10M19 9 9 19" stroke="#fff" stroke-width="2.8" stroke-linecap="round"/>{%- endif %}
+</svg>
+{%- endmacro %}

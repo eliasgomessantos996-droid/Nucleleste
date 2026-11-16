@@ -1,0 +1,62 @@
+{% extends 'bh/layout.html' %}
+{% set employee = report.employee %}
+{% block titulo %}Extrato · {{ employee.name }}{% endblock %}
+{% block conteudo %}
+<div class="cabecalho">
+  <div><a href="{{ url_for('bh.funcionarios') }}">← Funcionários</a><h1>{{ employee.name }}</h1><p class="sub">Número I: {{ employee.clock_id }} · Extrato do banco de horas</p></div>
+  <div class="acoes">{% if pode('bh_gestao') %}<a class="btn sec" href="{{ url_for('bh.funcionario_editar', employee_id=employee.id) }}">Editar cadastro</a>{% endif %}
+    <a class="btn" href="{{ url_for('bh.relatorio', employee_id=employee.id, month=report.month) }}">Ver relatório</a></div>
+</div>
+<div class="bh-periodo"><form method="get"><div><label for="month">Período de referência</label><input type="month" id="month" name="month" value="{{ report.month }}" required></div><button class="btn sec" type="submit">Consultar</button></form>
+  <span class="etiqueta {{ 'pago' if report.complete else 'aberto' }}">{{ 'Pronto para emitir relatório' if report.complete else 'Conferência pendente' }}</span></div>
+<div class="bh-cartoes">
+  <div class="bh-cartao"><div class="r">Saldo anterior</div><div class="v {{ 'bh-neg' if report.previous_balance < 0 }}">{{ report.previous_balance|bh_smin }}</div><div class="d">Acumulado antes deste mês</div></div>
+  <div class="bh-cartao"><div class="r">Movimento do mês</div><div class="v {{ 'bh-neg' if report.movement < 0 else 'bh-pos' }}">{{ report.movement|bh_smin }}</div><div class="d">Créditos, débitos e ajustes</div></div>
+  <div class="bh-cartao"><div class="r">Saldo acumulado</div><div class="v {{ 'bh-neg' if report.final_balance < 0 else 'bh-pos' }}">{{ report.final_balance|bh_smin }}</div><div class="d">Saldo confirmado até o período</div></div>
+  <div class="bh-cartao"><div class="r">Dias pendentes</div><div class="v" {% if report.pending_count %}style="color:var(--aviso)"{% endif %}>{{ report.pending_count }}</div><div class="d">Aguardando correção ou configuração</div></div>
+</div>
+{% if not report.complete %}<div class="bh-aviso"><h2>Resolva as pendências antes de emitir o PDF</h2><p>Confira as linhas destacadas. Dias sem importação, sem jornada definida, com batidas incompletas ou ocorrências pendentes precisam de tratamento. Os saldos exibidos consideram somente valores confirmados.</p></div>{% endif %}
+{% include 'bh/_ocorrencias.html' %}
+<div class="cartao">
+  <div class="cabecalho" style="margin-bottom:8px"><div><h2 style="margin:0">Lançamentos do mês</h2><p class="sub" style="margin:0">Altere batidas e classificações com uma justificativa. O saldo é recalculado automaticamente.</p></div>
+    <a href="{{ url_for('bh.historico') }}">Ver histórico →</a></div>
+  <div class="tabela-wrap"><table class="tabela">
+    <thead><tr><th>Data</th><th>Batidas</th><th>Tipo</th><th class="num">Jornada</th><th class="num">Trabalhado</th><th class="num">Saldo do dia</th><th>Situação</th><th></th></tr></thead>
+    <tbody>
+    {% for row in report.rows %}
+      <tr class="{{ 'bh-pendente' if row.pending }}">
+        <td class="bh-nowrap"><strong>{{ row.date|bh_data }}</strong><small class="bh-bloco">{{ row.weekday_label }}</small></td>
+        <td><div class="bh-batidas">{% for p in row.punches %}<span>{{ p }}</span>{% else %}<span class="bh-muted">Sem batidas</span>{% endfor %}</div>{% if row.reason %}<small class="bh-nota" title="{{ row.reason }}">{{ row.reason }}</small>{% endif %}</td>
+        <td><span class="etiqueta">{{ {'normal': 'Normal', 'falta': 'Falta', 'abono': 'Abono', 'folga': 'Folga', 'feriado': 'Feriado'}.get(row.kind, row.kind or '—') }}</span></td>
+        <td class="num">{{ row.expected_minutes|bh_min }}</td><td class="num">{{ row.worked_minutes|bh_min }}</td>
+        <td class="num bh-forte {{ 'bh-neg' if row.delta_minutes is not none and row.delta_minutes < 0 else 'bh-pos' if row.delta_minutes is not none and row.delta_minutes > 0 }}">{{ row.delta_minutes|bh_smin }}</td>
+        <td><span class="etiqueta {{ 'aberto' if row.pending else 'pago' if row.status not in ['not_employed', 'before_balance'] }}">{{ row.status_label }}</span>{% if row.status_detail %}<small class="bh-nota">{{ row.status_detail }}</small>{% endif %}</td>
+        <td class="num">{% if pode('bh_gestao') and row.status not in ['not_employed', 'before_balance'] %}<a class="btn sec peq" href="{{ url_for('bh.correcao', employee_id=employee.id, data=row.date) }}">Corrigir</a>{% endif %}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+</div>
+<div class="bh-duas-colunas">
+  {% if pode('bh_gestao') %}
+  <form class="cartao" method="post" action="{{ url_for('bh.ajuste', employee_id=employee.id) }}">
+    {{ csrf_input }}
+    <h2>Ajuste de saldo</h2><p class="sub">Registre compensações e acertos que não são batidas de ponto.</p>
+    <div class="grade">
+      <div class="c6"><label class="obrig" for="adjustment_date">Data</label><input type="date" id="adjustment_date" name="date" required value="{{ bh_form.get('date', report.month ~ '-01') }}"></div>
+      <div class="c6"><label class="obrig" for="minutes">Horas do ajuste</label><input type="text" id="minutes" name="minutes" required placeholder="Ex.: +02:00 ou -03:30" value="{{ bh_form.get('minutes', '') }}"><div class="ajuda">Use + para crédito ou − para débito.</div></div>
+      <div class="c12"><label class="obrig" for="adjustment_reason">Justificativa</label><textarea id="adjustment_reason" name="reason" rows="2" required placeholder="Descreva o motivo do ajuste.">{{ bh_form.get('reason', '') }}</textarea></div>
+    </div>
+    <div class="acoes"><button class="btn" type="submit">Registrar ajuste</button></div>
+  </form>
+  {% endif %}
+  <div class="cartao">
+    <h2>Relatórios emitidos</h2><p class="sub">Cópias preservadas de cada versão do relatório mensal.</p>
+    {% if issued_reports %}<div class="bh-versoes">{% for i in issued_reports %}<a href="{{ url_for('bh.relatorio_baixar', snapshot_id=i.id) }}"><span><strong>Relatório · versão {{ i.version }}</strong><small>Emitido em {{ i.issued_at|bh_datahora }}</small></span><span>Baixar PDF ↓</span></a>{% endfor %}</div>
+    {% else %}<p class="bh-muted">Nenhum relatório emitido. Após conferir os lançamentos, abra o relatório e emita o PDF para assinatura.</p><a class="btn sec" href="{{ url_for('bh.relatorio', employee_id=employee.id, month=report.month) }}">Ver relatório</a>{% endif %}
+  </div>
+</div>
+{% if report.adjustments %}
+<div class="cartao"><h2>Ajustes registrados</h2><div class="tabela-wrap"><table class="tabela"><thead><tr><th>Data</th><th class="num">Horas</th><th>Justificativa</th></tr></thead><tbody>{% for a in report.adjustments %}<tr><td>{{ a.date|bh_data }}</td><td class="num">{{ a.minutes|bh_smin }}</td><td>{{ a.reason }}</td></tr>{% endfor %}</tbody></table></div></div>
+{% endif %}
+{% endblock %}

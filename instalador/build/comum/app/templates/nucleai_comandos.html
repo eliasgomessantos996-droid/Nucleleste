@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+{% block titulo %}Comandos da NucleAI{% endblock %}
+{% block conteudo %}
+<div class="cabecalho">
+  <div><h1>Comandos da NucleAI</h1>
+    <p class="sub">Pedidos que a NucleAI cumpre pelo chat (por exemplo, “imprimir a agenda do dia”). Antes de fazer qualquer coisa ela pergunta <strong>Sim ou Não</strong> à pessoa.
+      Aqui a gerência decide quem pode usar cada comando. Quem não tem o módulo da tela correspondente não consegue usar o comando de qualquer forma.</p></div>
+</div>
+<div class="cartao">
+  <ul style="margin:0;padding-left:18px">
+    <li><strong>Baixo risco:</strong> consultas e abrir ou imprimir telas comuns. Por padrão, todos podem; a gerência pode restringir.</li>
+    <li><strong>Médio risco:</strong> dados financeiros e da qualidade, ou mudanças simples. Por padrão ninguém, só a gerência e as pessoas que você marcar.</li>
+    <li><strong>Alto risco:</strong> backup, reabrir caixa, desfazer ações e telas de administração. <strong>Só a gerência</strong> (administração ou módulo Gerência); não dá para liberar para outras pessoas.</li>
+  </ul>
+</div>
+<form method="post" id="form-comandos">
+  {{ csrf_input }}
+  {% for g in grupos %}
+  <h2 style="margin-top:18px">{{ g.rotulo }} <small style="font-weight:400">({{ g.itens|length }} comandos)</small></h2>
+  <div class="tabela-wrap"><table class="tabela">
+    <thead><tr><th>Comando</th><th>Exemplo de pedido</th><th>Tela exigida</th><th>Quem pode usar</th></tr></thead>
+    <tbody>
+    {% for it in g.itens %}{% set c = it.c %}
+      <tr data-cmd="{{ c.chave }}">
+        <td><strong>{{ c.nome }}</strong>{% if not c.confirmar %}<br><small>consulta: responde direto</small>{% endif %}</td>
+        <td><em>“{{ c.exemplo }}”</em></td>
+        <td>{% if c.modulo is none %}<small>livre</small>{% elif c.modulo == '__admin__' %}<small>só administração</small>{% elif c.modulo is string %}<small>{{ nomes_modulos.get(c.modulo, c.modulo) }}</small>{% else %}<small>{% for m in c.modulo %}{{ nomes_modulos.get(m, m) }}{{ ' ou ' if not loop.last }}{% endfor %}</small>{% endif %}</td>
+        <td>
+          {% if g.risco == 'alto' %}
+          <select name="modo_{{ c.chave }}" aria-label="Quem pode usar {{ c.nome }}">
+            <option value="gerencia" {{ 'selected' if it.modo == 'gerencia' }}>Só a gerência</option>
+            <option value="ninguem" {{ 'selected' if it.modo == 'ninguem' }}>Desligado (ninguém)</option>
+          </select>
+          {% else %}
+          <select name="modo_{{ c.chave }}" data-modo aria-label="Quem pode usar {{ c.nome }}">
+            <option value="todos" {{ 'selected' if it.modo == 'todos' }}>Todos (com o módulo da tela)</option>
+            <option value="escolhidos" {{ 'selected' if it.modo == 'escolhidos' }}>Só a gerência e os escolhidos</option>
+            <option value="ninguem" {{ 'selected' if it.modo == 'ninguem' }}>Desligado (ninguém)</option>
+          </select>
+          <details data-lista {% if it.modo != 'escolhidos' %}hidden{% endif %} style="margin-top:6px"><summary>Escolher pessoas ({{ it.escolhidos|length }})</summary>
+            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:2px 10px;margin-top:4px">
+              {% for u in usuarios %}<label class="inline"><input type="checkbox" name="usuarios_{{ c.chave }}" value="{{ u.id }}" {{ 'checked' if u.id in it.escolhidos }}> {{ u.usuario }}</label>{% endfor %}
+            </div></details>
+          {% endif %}
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+  {% endfor %}
+  <div class="acoes" style="margin-top:12px"><button class="btn" type="submit">Salvar permissões</button></div>
+</form>
+{% endblock %}
+{% block scripts %}
+<script>
+document.querySelectorAll('[data-modo]').forEach((s) => {
+  const lista = s.closest('td').querySelector('[data-lista]');
+  const atualizar = () => { lista.hidden = s.value !== 'escolhidos'; if (!lista.hidden) lista.open = true; };
+  s.addEventListener('change', atualizar);
+});
+</script>
+{% endblock %}

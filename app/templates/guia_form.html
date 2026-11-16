@@ -1,0 +1,214 @@
+{% extends 'base.html' %}
+{% block titulo %}{{ m.titulo }}{% endblock %}
+{% block conteudo %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/guias.css') }}">
+{% macro campo(c, v) -%}
+  <div class="gc" style="width:{{ c.w }}%">
+    <label>{{ c.r }}</label>
+    {%- if c.t == 'vazio' %}
+    <div class="gc-caixa"></div>
+    {%- elif c.t == 'escolha' %}
+    <div class="gc-op">{% for val, rot in c.op %}<label class="inline"><input type="radio" name="{{ c.k }}" value="{{ val }}" {% if v[c.k] == val %}checked{% endif %}> {{ rot }}</label>{% endfor %}</div>
+    {%- elif c.t == 'area' %}
+    <textarea name="{{ c.k }}" rows="{{ c.n }}">{{ v[c.k] }}</textarea>
+    {%- elif c.t == 'data' %}
+    <input type="date" name="{{ c.k }}" value="{{ v[c.k] }}">
+    {%- elif c.t in ('moeda', 'calc') %}
+    <input type="text" class="moeda" name="{{ c.k }}" value="{{ v[c.k] }}" {% if c.t == 'calc' %}readonly data-calc{% endif %}>
+    {%- elif c.t == 'num' %}
+    <input type="text" inputmode="decimal" name="{{ c.k }}" value="{{ v[c.k] }}">
+    {%- else %}
+    <input type="text" name="{{ c.k }}" value="{{ v[c.k] }}">
+    {%- endif %}
+  </div>
+{%- endmacro %}
+<h1>{{ m.titulo }}</h1>
+<p class="sub">Os números são os do impresso. Escolha o cliente para preencher o paciente e a carteira; a clínica e o prestador ficam guardados para as próximas guias.</p>
+<form class="cartao guia-form" id="form-guia" method="post" autocomplete="off"
+      action="{{ url_for('doc.guia_editar', gid=gid) if gid else url_for('doc.guia_editar', modelo=modelo) }}">
+  {{ csrf_input }}
+  <input type="hidden" name="atendimento_id" value="{{ atendimento_id }}">
+  <div class="seletor" id="seletor-cliente" style="margin-bottom:14px">
+    <label>Buscar cliente</label>
+    <input type="search" placeholder="Nome, código ou CPF..." value="{{ cliente.nome if cliente else '' }}">
+    <input type="hidden" name="cliente_id" value="{{ cliente_id }}">
+    <div class="resultados"></div>
+  </div>
+
+  {% for b in m.blocos %}
+    {% if b.t == 'topo' %}
+      <div class="gf-topo">
+        {% if modelo == 'unimed_sadt' %}
+        <div class="gf-logo-unimed">Unimed</div>
+        <div class="gf-titulo-guia">GUIA DE SERVIÇO PROFISSIONAL / SERVIÇO AUXILIAR DE DIAGNÓSTICO E TERAPIA - SP/SADT</div>
+        <label class="gf-n2">2 - Nº Guia no Prestador<input type="text" name="2" value="{{ v['2'] }}"></label>
+        {% else %}
+        <div class="gf-logo-ipsemg">ipsemg</div>
+        <div class="gf-titulo-guia">PEDIDO PARA DIAGNÓSTICO E TRATAMENTO</div>
+        {% endif %}
+      </div>
+    {% elif b.t == 'faixa' %}
+      <div class="gf-faixa">{{ b.titulo }}</div>
+    {% elif b.t == 'linha' %}
+      <div class="gf-linha">{% for c in b.cels %}{{ campo(c, v) }}{% endfor %}</div>
+    {% elif b.t == 'tabela' %}
+      <div class="gf-busca-tab">
+        <input type="search" placeholder="Buscar procedimento na tabela de preços para a próxima linha livre..." data-busca="{{ b.chave }}">
+        <div class="gf-res" id="res-{{ b.chave }}"></div>
+      </div>
+      <table class="gf-tab" id="tab-{{ b.chave }}" data-cod="{{ b.proc.cod if b.proc }}" data-desc="{{ b.proc.desc if b.proc }}"
+             data-qtd="{{ b.proc.qtd if b.proc }}" data-valor="{{ b.proc.valor if b.proc and b.proc.valor }}">
+        <thead><tr>{% for c in b.cols %}<th style="width:{{ c.w }}%">{{ c.r }}</th>{% endfor %}</tr></thead>
+        <tbody>
+        {% for i in range(1, b.linhas + 1) %}
+          <tr>{% for c in b.cols %}
+            <td>{% set nome = c.k ~ '_' ~ i %}
+              {% if c.t == 'data' %}<input type="date" name="{{ nome }}" value="{{ v[nome] }}">
+              {% elif c.t in ('moeda', 'calc') %}<input type="text" class="moeda" name="{{ nome }}" value="{{ v[nome] }}" {% if c.t == 'calc' %}readonly data-calc{% endif %}>
+              {% else %}<input type="text" {% if c.t == 'num' %}inputmode="decimal" {% endif %}name="{{ nome }}" value="{{ v[nome] }}">{% endif %}
+            </td>{% endfor %}
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    {% elif b.t == 'serie' %}
+      <div class="gf-faixa">{{ b.titulo }}</div>
+      <div class="gf-linha gf-serie">
+        {% for i in range(1, b.n + 1) %}
+        <div class="gc" style="width:20%"><label>{{ i }}- Data</label><input type="date" name="{{ b.chave }}_{{ i }}" value="{{ v[b.chave ~ '_' ~ i] }}"><div class="gc-caixa"></div></div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endfor %}
+
+  <div class="acoes" style="margin-top:16px">
+    <button class="btn" type="submit" name="acao" value="salvar">Salvar</button>
+    <button class="btn" type="button" id="btn-imprimir">Salvar e imprimir</button>
+    {% if gid %}<a class="btn sec" href="{{ url_for('doc.guia_imprimir', gid=gid) }}" target="_blank">Imprimir</a>{% endif %}
+    <a class="btn sec" href="{{ url_for('doc.guias') }}">Voltar às guias</a>
+  </div>
+</form>
+{% endblock %}
+{% block scripts %}
+<script>
+const NOME_PACIENTE = '{{ m.campo_nome }}';
+const CARTAO_PACIENTE = '{{ m.campo_cartao }}';
+const form = document.getElementById('form-guia');
+// querySelector (e não form.elements) porque os campos se chamam "1", "2"... e form.elements trata número como índice
+const campo = (n) => form.querySelector('[name="' + n + '"]');
+
+function numero(s) {
+  s = (s || '').trim();
+  if (!s) return NaN;
+  if (s.includes(',')) s = s.replace(/\./g, '').replace(',', '.');
+  return parseFloat(s);
+}
+function fmt(n) { return n.toFixed(2).replace('.', ','); }
+
+// 47 = 42 x 46 de cada linha; 59 = soma dos 47; 65 = 59 + 60 a 64
+function recalcula() {
+  if (!campo('47_1')) return;
+  let soma = 0, tem = false;
+  for (let i = 1; i <= 5; i++) {
+    const qtd = numero(campo('42_' + i) && campo('42_' + i).value);
+    const unit = numero(campo('46_' + i) && campo('46_' + i).value);
+    const total = campo('47_' + i);
+    if (!isNaN(qtd) && !isNaN(unit)) total.value = fmt(qtd * unit);
+    const t = numero(total.value);
+    if (!isNaN(t)) { soma += t; tem = true; }
+  }
+  campo('59').value = tem ? fmt(soma) : '';
+  let total65 = 0, tem65 = false;
+  if (tem) { total65 += soma; tem65 = true; }
+  ['60', '61', '62', '63', '64'].forEach((k) => {
+    const x = numero(campo(k).value);
+    if (!isNaN(x)) { total65 += x; tem65 = true; }
+  });
+  campo('65').value = tem65 ? fmt(total65) : '';
+}
+form.addEventListener('input', recalcula);
+form.addEventListener('change', (e) => {
+  if (!e.target.classList.contains('moeda')) return;
+  const n = numero(e.target.value);
+  if (!isNaN(n)) e.target.value = fmt(n);
+  recalcula();
+});
+recalcula();
+
+SeletorCliente(document.getElementById('seletor-cliente'), (c) => {
+  if (!c) return;
+  const nome = campo(NOME_PACIENTE);
+  if (nome) nome.value = (c.nome || '').toUpperCase();
+  const cartao = campo(CARTAO_PACIENTE);
+  if (cartao && !cartao.value) cartao.value = c.cartao_convenio || '';
+});
+
+// busca na tabela de preços (/precos/itens.json?q=); se a rota não responder, a busca fica sem resultados
+function preencher(chave, item) {
+  const tab = document.getElementById('tab-' + chave);
+  const cod = tab.dataset.cod, desc = tab.dataset.desc, qtd = tab.dataset.qtd, valor = tab.dataset.valor;
+  for (const linha of tab.querySelectorAll('tbody tr')) {
+    const ci = linha.querySelector('[name^="' + cod + '_"]');
+    if (!ci || ci.value.trim() !== '') continue;
+    ci.value = item.codigo || '';
+    linha.querySelector('[name^="' + desc + '_"]').value = item.descricao || item.nome || '';
+    const qi = linha.querySelector('[name^="' + qtd + '_"]');
+    if (qi && !qi.value.trim()) qi.value = '1';
+    const vi = valor ? linha.querySelector('[name^="' + valor + '_"]') : null;
+    if (vi && item.valor != null) vi.value = fmt(Number(item.valor));
+    recalcula();
+    return true;
+  }
+  alert('Não há linha livre nesta tabela.');
+  return false;
+}
+document.querySelectorAll('[data-busca]').forEach((inp) => {
+  const chave = inp.dataset.busca;
+  const res = document.getElementById('res-' + chave);
+  let timer = null;
+  inp.addEventListener('input', () => {
+    clearTimeout(timer);
+    const q = inp.value.trim();
+    res.innerHTML = '';
+    if (q.length < 2) return;
+    timer = setTimeout(async () => {
+      let itens = [];
+      try {
+        const r = await fetch('/precos/itens.json?q=' + encodeURIComponent(q));
+        if (!r.ok) return;
+        const j = await r.json();
+        itens = Array.isArray(j) ? j : (j.itens || []);
+      } catch (e) { return; }
+      itens.slice(0, 12).forEach((it) => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'btn sec peq';
+        const preco = it.valor != null ? ' · R$ ' + Number(it.valor).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : '';
+        b.textContent = (it.codigo ? it.codigo + ' · ' : '') + (it.descricao || it.nome || '') + preco;
+        b.addEventListener('click', () => { if (preencher(chave, it)) { res.innerHTML = ''; inp.value = ''; } });
+        res.appendChild(b);
+      });
+      if (!itens.length) res.innerHTML = '<small>Nenhum item encontrado.</small>';
+    }, 250);
+  });
+});
+
+// "Salvar e imprimir": grava sem trocar de página e abre a impressão em outra aba
+const btnImp = document.getElementById('btn-imprimir');
+btnImp.addEventListener('click', async () => {
+  const janela = window.open('about:blank', '_blank');
+  try {
+    const r = await fetch(form.action, { method: 'POST', body: new FormData(form), credentials: 'same-origin',
+                                         headers: { 'X-Requisicao': 'json' } });
+    const j = await r.json();
+    if (!r.ok || !j.ok) throw new Error(j.erro || 'Não foi possível salvar a guia.');
+    form.action = j.editar;
+    history.replaceState(null, '', j.editar);
+    if (janela) janela.location = j.imprimir;
+  } catch (e) {
+    if (janela) janela.close();
+    alert(e.message);
+  }
+});
+</script>
+{% endblock %}

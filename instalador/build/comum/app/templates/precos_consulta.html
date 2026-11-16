@@ -1,0 +1,136 @@
+{% extends 'base.html' %}
+{% from '_ic.html' import ic %}
+{% block titulo %}Consulta rápida de preços{% endblock %}
+{% block conteudo %}
+<style>
+  .pc-cab { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+  .pc-desenho { width: 84px; height: auto; flex: 0 0 84px; color: var(--verde-2); overflow: visible; }
+  .pc-busca-card { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+  .pc-busca-wrap { flex: 1 1 320px; position: relative; display: flex; align-items: center; }
+  .pc-busca-wrap input[type="search"] { width: 100%; font-size: 1rem; padding: 10px 14px; }
+  .pc-resumo-tabs { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; font-size: .85rem; color: var(--suave); }
+  .pc-resumo-item { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; border: 1px solid var(--borda); background: var(--sup); color: var(--texto); }
+  .pc-resumo-item strong { color: var(--verde-2); }
+  .pc-valor { font-variant-numeric: tabular-nums; font-weight: 600; white-space: nowrap; }
+  .pc-sem-valor { color: var(--suave); font-weight: 400; }
+  .pc-cod { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: .88rem; color: var(--suave); white-space: nowrap; }
+</style>
+
+<div class="cabecalho">
+  <div class="pc-cab">
+    <svg class="pc-desenho" viewBox="0 0 96 96" aria-hidden="true" focusable="false">
+      <rect x="14" y="18" width="68" height="60" rx="10" fill="none" stroke="currentColor" stroke-width="2.4"/>
+      <path d="M14 36 H82 M38 36 V78 M60 36 V78" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      <circle cx="74" cy="22" r="9" fill="var(--acento)" stroke="currentColor" stroke-width="1.6"/>
+    </svg>
+    <div>
+      <h1>Consulta rápida de valores</h1>
+      <p class="sub">Digite parte do nome ou código do exame para consultar os valores vigentes em SMS, Particular e MAISMED.</p>
+    </div>
+  </div>
+  <div class="acoes">
+    <a class="btn sec" href="{{ url_for('preco.lista') }}">{{ ic('badge-dollar-sign', 16) }} Tabelas de preços</a>
+  </div>
+</div>
+
+<div class="cartao">
+  <form method="get" action="{{ url_for('preco.consulta') }}" class="pc-busca-card" id="pc-form" autocomplete="off">
+    <div class="pc-busca-wrap">
+      <input type="search" name="q" id="pc-busca" value="{{ q }}" placeholder="Buscar por nome do exame ou código (ex.: MIBI, ÓSSEA, 40801012)..." autofocus aria-label="Buscar exame por nome ou código">
+    </div>
+    <button type="button" class="btn sec peq" id="pc-limpar" {% if not q %}hidden{% endif %}>{{ ic('x', 14) }} Limpar</button>
+    <span class="etiqueta" id="pc-contador">{{ itens|length }} exame(s)</span>
+  </form>
+
+  <div class="pc-resumo-tabs" aria-label="Tabelas vigentes utilizadas">
+    {% for ch, rotulo in [('sms', 'SMS'), ('particular', 'Particular'), ('maismed', 'MAISMED')] %}
+      {% set tab = tabelas.get(ch) if tabelas else None %}
+      {% set conv = convenios.get(ch) if convenios else None %}
+      <span class="pc-resumo-item">
+        {{ ic('badge-dollar-sign', 14) }}
+        <strong>{{ rotulo }}:</strong>
+        {% if tab %}
+          {{ tab.nome }}{% if tab.vigencia %} ({{ tab.vigencia|data_br }}){% endif %}
+        {% elif conv %}
+          Cadastro do convênio ({{ conv.nome }})
+        {% else %}
+          <span>Sem tabela ativa</span>
+        {% endif %}
+      </span>
+    {% endfor %}
+  </div>
+
+  <div class="tabela-wrap">
+    <table class="tabela" id="pc-tabela">
+      <thead>
+        <tr>
+          <th style="width:140px">Código</th>
+          <th>Exame / procedimento</th>
+          <th class="num" style="width:150px">SMS</th>
+          <th class="num" style="width:150px">Particular</th>
+          <th class="num" style="width:150px">MAISMED</th>
+        </tr>
+      </thead>
+      <tbody id="pc-tbody">
+        {% for r in itens %}
+        <tr data-item data-busca="{{ (r.codigo ~ ' ' ~ r.descricao ~ ' ' ~ (r.exame_nome or ''))|upper }}">
+          <td class="pc-cod">{{ r.codigo if r.codigo else '—' }}</td>
+          <td><strong>{{ r.descricao }}</strong></td>
+          <td class="num pc-valor">{% if r.sms is not none %}R$ {{ r.sms|moeda }}{% else %}<span class="pc-sem-valor">—</span>{% endif %}</td>
+          <td class="num pc-valor">{% if r.particular is not none %}R$ {{ r.particular|moeda }}{% else %}<span class="pc-sem-valor">—</span>{% endif %}</td>
+          <td class="num pc-valor">{% if r.maismed is not none %}R$ {{ r.maismed|moeda }}{% else %}<span class="pc-sem-valor">—</span>{% endif %}</td>
+        </tr>
+        {% endfor %}
+        <tr id="pc-vazio" {% if itens %}hidden{% endif %}>
+          <td colspan="5" class="vazio">Nenhum exame encontrado.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+(function () {
+  const input = document.getElementById('pc-busca');
+  const limpar = document.getElementById('pc-limpar');
+  const contador = document.getElementById('pc-contador');
+  const vazio = document.getElementById('pc-vazio');
+  const linhas = Array.from(document.querySelectorAll('#pc-tbody tr[data-item]'));
+
+  function normalizar(txt) {
+    return (txt || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().trim();
+  }
+
+  const cacheBusca = linhas.map((tr) => ({
+    tr: tr,
+    texto: normalizar(tr.getAttribute('data-busca') || tr.textContent)
+  }));
+
+  function filtrar() {
+    const bruto = input.value || '';
+    const partes = normalizar(bruto).split(/\s+/).filter(Boolean);
+    let visiveis = 0;
+    cacheBusca.forEach((item) => {
+      const ok = partes.length === 0 || partes.every((p) => item.texto.indexOf(p) !== -1);
+      item.tr.hidden = !ok;
+      if (ok) visiveis += 1;
+    });
+    if (contador) contador.textContent = visiveis + ' exame(s)';
+    if (vazio) vazio.hidden = visiveis > 0;
+    if (limpar) limpar.hidden = bruto.trim().length === 0;
+  }
+
+  if (input) {
+    input.addEventListener('input', filtrar);
+  }
+  if (limpar) {
+    limpar.addEventListener('click', () => {
+      input.value = '';
+      filtrar();
+      input.focus();
+    });
+  }
+})();
+</script>
+{% endblock %}

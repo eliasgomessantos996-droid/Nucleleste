@@ -1,0 +1,13 @@
+/* Histórico do paciente: cartão do cabeçalho com linha do tempo animada (cores pelas variáveis do tema). */
+.hc-cabecalho { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; border-left: 5px solid var(--verde-2); }
+.hc-cabecalho > div:nth-child(2) { flex: 1; min-width: 260px; }
+.hc-cabecalho .acoes { margin-top: 0; }
+.hc-arte { width: 44px; flex: 0 0 auto; }
+.hc-svg { width: 100%; height: auto; overflow: visible; color: var(--verde-2); }
+.hc-linha { stroke: var(--borda); stroke-width: 3; stroke-linecap: round; }
+.hc-ponto { fill: var(--branco); stroke: var(--verde-2); stroke-width: 3; animation: hc-acende 3.6s ease-in-out infinite; }
+.hc-ponto.p2 { animation-delay: 1.2s; }
+.hc-ponto.p3 { animation-delay: 2.4s; }
+
+@keyframes hc-acende { 0%, 100% { fill: var(--branco); } 15%, 60% { fill: var(--verde-2); } }
+@media (prefers-reduced-motion: reduce) { .hc-ponto { animation: none; fill: var(--verde-2); } }

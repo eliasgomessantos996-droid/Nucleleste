@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Atualizando o sistema…</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/aguarde.css') }}">
+<style>
+  body { margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center; background: #f7fbf8; }
+  .caixa { padding: 24px 16px; text-align: center; font-family: 'Segoe UI', system-ui, sans-serif; color: #1f2d24; }
+  h1 { font-size: 24px; margin: 0 0 4px; color: #255f39; }
+  p.sub { margin: 0 0 18px; color: #5a6b60; }
+</style>
+</head>
+<body>
+<div class="caixa">
+  <h1>Estamos atualizando o sistema</h1>
+  <p class="sub">Aguarde um instante: a versão {{ versao }} está sendo preparada. Esta tela some sozinha quando terminar.</p>
+  <div id="palco"></div>
+</div>
+<script src="{{ url_for('static', filename='js/aguarde.js') }}"></script>
+<script>
+  Aguarde.montar(document.getElementById('palco'), {{ espera }});
+  // quando o sistema liberar, entra sozinho (sem precisar apertar nada)
+  const verificar = () => fetch('{{ url_for("atu.estado") }}', {cache: 'no-store'})
+    .then((r) => r.json()).then((d) => {
+      if (d.atualizando) return;
+      // o sistema voltou: a próxima página mostra a mensagem de boas-vindas da nova versão
+      try { localStorage.setItem('nucleleste.boasVindas', '{{ versao }}'); } catch (e) { /* navegador sem armazenamento */ }
+      location.reload();
+    }).catch(() => {});
+  setInterval(verificar, 3000);
+</script>
+</body>
+</html>

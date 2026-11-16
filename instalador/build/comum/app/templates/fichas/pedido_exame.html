@@ -1,0 +1,25 @@
+{# Pedido médico de exame, no modelo Word: A4 retrato, margens 2,5 cm (topo/base) e 3 cm (laterais), Times New Roman, preto. Sem logo (vai em papel timbrado). #}
+<section class="folha retrato" data-ficha="pedido_exame" style="--ml:1.18in;--mr:1.18in;--mt:0.98in;--mb:0.98in">
+<div style="font-family:'Times New Roman',Times,serif;color:#000;line-height:1.15">
+  <p style="margin:0">&nbsp;</p>
+  <p style="margin:0">&nbsp;</p>
+  <p style="margin:0;text-align:center;font-weight:bold;text-decoration:underline;font-size:22pt">PEDIDO MÉDICO</p>
+  <p style="margin:0">&nbsp;</p>
+  <p style="margin:0">&nbsp;</p>
+  <p style="margin:0">&nbsp;</p>
+  <p style="margin:0;text-align:left;font-size:14pt">Paciente: {{ f.paciente }}</p>
+  <p style="margin:0">&nbsp;</p>
+  {% for exame in f.exames %}<p style="margin:0;text-align:left;font-size:14pt">- {{ exame }}</p>
+  {% endfor %}
+  <p style="margin:0">&nbsp;</p>
+  <p style="margin:0">&nbsp;</p>
+  <p style="margin:0">&nbsp;</p>
+  <p style="margin:0;text-align:left;font-size:14pt">{{ f.data }}</p>
+  <p style="margin:0">&nbsp;</p>
+  <p style="margin:0">&nbsp;</p>
+  <div style="width:7cm;margin:0 auto 4px;border-top:1px solid #000"></div>
+  <p style="margin:0;text-align:center;font-weight:bold;font-size:13pt;line-height:1">{{ f.medico }}</p>
+  <p style="margin:0;text-align:center;font-weight:bold;font-size:13pt;line-height:1">{{ f.especialidade }}</p>
+  <p style="margin:0;text-align:center;font-weight:bold;font-size:13pt;line-height:1">{{ f.registro }}</p>
+</div>
+</section>

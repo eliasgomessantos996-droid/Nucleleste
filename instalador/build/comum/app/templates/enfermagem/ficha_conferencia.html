@@ -1,0 +1,15 @@
+{% from 'enfermagem/_ficha.html' import estilo, assinatura %}<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><title>Conferência {{ c.nome }}</title>{{ estilo() }}</head><body>
+<div class="barra"><button onclick="window.print()">Imprimir</button></div>
+<div class="folha">
+  <div class="cab"><b>{{ clinica }}</b><span>Enfermagem e Segurança</span></div>
+  <h1>Conferência {{ 'do kit de derramamento' if c.tipo == 'KIT' else 'do carrinho de emergência' }} — {{ conf.data_hora[8:10] }}/{{ conf.data_hora[5:7] }}/{{ conf.data_hora[:4] }} {{ conf.data_hora[11:16] }}</h1>
+  <p class="sub">{{ c.nome }} · {{ c.local or 'sem local' }} · tipo: {{ {'DIARIA': 'diária', 'SEMANAL': 'semanal', 'APOS_USO': 'após o uso'}[conf.tipo] }}{% if c.tipo != 'KIT' %} · lacre quebrado: <b>{{ conf.lacre_quebrado or '—' }}</b> · novo lacre: <b>{{ conf.lacre_novo or '—' }}</b>{% endif %}</p>
+  <table><thead><tr><th>Verificação</th><th style="width:60px">Situação</th></tr></thead><tbody>{% for k in conf.checklist %}<tr class="{{ '' if k.ok else 'ruim' }}"><td>{{ k.item }}</td><td>{{ 'OK' if k.ok else 'NÃO' }}</td></tr>{% endfor %}</tbody></table>
+  <table><thead><tr><th>Item</th><th class="num">Mínimo</th><th class="num">Encontrado</th><th>Lote</th><th>Validade</th><th>Situação</th></tr></thead><tbody>
+  {% for i in conf.itens %}<tr class="{{ '' if i.ok else 'ruim' }}"><td>{{ i.nome }}</td><td class="num">{{ i.qtd_min }}</td><td class="num">{{ i.qtd }}</td><td>{{ i.lote }}</td><td>{{ i.validade|data_br if i.validade else '—' }}</td><td>{{ 'OK' if i.ok else 'PROBLEMA' }}</td></tr>{% endfor %}</tbody></table>
+  {% if conf.obs %}<p><b>Observações:</b> {{ conf.obs }}</p>{% endif %}
+  <p><b>Resultado:</b> {{ 'sem problemas' if not conf.problemas else conf.problemas ~ ' problema(s) encontrado(s)' }}.</p>
+  {{ assinatura(ass) }}
+  <p class="sub" style="margin-top:20px">Conferido por {{ ass.nome }} em {{ conf.data_hora[8:10] }}/{{ conf.data_hora[5:7] }}/{{ conf.data_hora[:4] }} às {{ conf.data_hora[11:16] }}, registrado no sistema.</p>
+</div></body></html>

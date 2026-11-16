@@ -1,0 +1,86 @@
+{% extends 'base.html' %}
+{% from '_ic.html' import ic %}
+{% block titulo %}Lote de pagamento nº {{ d.lote.id }}{% endblock %}
+{% block conteudo %}
+<div class="cabecalho">
+  <div><h1>Lote de pagamento nº {{ d.lote.id }}</h1>
+    <p class="sub">Banco: {{ d.lote.banco }} · Criado em {{ d.lote.criado_em[:10]|data_br }} às {{ d.lote.criado_em[11:16] }}{% if d.lote.criado_por %} por {{ d.lote.criado_por }}{% endif %}
+      · {% if d.lote.status == 'CONCLUIDO' %}<span class="etiqueta pago">Concluído</span>{% else %}<span class="etiqueta aberto">Aberto</span>{% endif %}</p></div>
+  <div class="acoes">
+    <a class="btn sec com-icone" href="{{ url_for('fin.conta_lotes') }}">Lotes</a>
+    <a class="btn sec com-icone" href="{{ url_for('fin.conta_lote_imprimir', lote_id=d.lote.id) }}" target="_blank">{{ ic('file-text', 16) }} Imprimir lista</a>
+  </div>
+</div>
+
+{% if imprimir %}
+<div class="cartao"><p>A lista do lote abriu em outra aba para impressão. Se o navegador bloqueou, <a href="{{ url_for('fin.conta_lote_imprimir', lote_id=d.lote.id) }}" target="_blank">abra a lista aqui</a>.</p></div>
+{% endif %}
+
+<div class="indicadores">
+  <div class="indicador"><div class="n">R$ {{ d.total_pendente|moeda }}</div><div class="t">em pagamento ({{ d.qtd_pendentes }} conta(s))</div></div>
+  <div class="indicador"><div class="n">R$ {{ d.total_pago|moeda }}</div><div class="t">já pagas ({{ d.qtd_pagas }} conta(s))</div></div>
+  <div class="indicador"><div class="n">{{ d.qtd_devolvidas }}</div><div class="t">devolvida(s) para a lista</div></div>
+  <div class="indicador"><div class="n">R$ {{ d.total|moeda }}</div><div class="t">total do lote ({{ d.qtd }} conta(s))</div></div>
+</div>
+
+<form method="post" id="form-lote" action="{{ url_for('fin.conta_lote_acao', lote_id=d.lote.id) }}">
+  {{ csrf_input }}
+  {% if d.qtd_pendentes %}
+  <div class="cartao filtros">
+    <div><button class="btn com-icone" type="button" data-dialogo="dlg-quitar" data-acao="quitar_marcadas">{{ ic('circle-check', 16) }} Quitar marcadas</button></div>
+    <div><button class="btn com-icone" type="button" data-dialogo="dlg-quitar" data-acao="quitar_todas">{{ ic('check-check', 16) }} Quitar todas as pendentes</button></div>
+    <div><button class="btn sec com-icone" type="submit" name="acao" value="devolver" data-confirmar="Devolver as contas marcadas para a lista normal de contas a pagar?">{{ ic('undo-2', 16) }} Devolver marcadas para a lista</button></div>
+  </div>
+  {% endif %}
+  <div class="tabela-wrap"><table class="tabela">
+    <thead><tr><th><input type="checkbox" id="marcar-todas" title="Marcar todas as pendentes"></th><th>Descrição</th><th>Fornecedor</th><th>Vencimento</th><th class="num">Valor (R$)</th><th>Situação</th></tr></thead>
+    <tbody>
+    {% for i in d.itens %}
+      <tr>
+        <td>{% if i.situacao == 'EM PAGAMENTO' %}<input type="checkbox" name="ids" value="{{ i.conta_id }}">{% endif %}</td>
+        <td>{{ i.descricao }}{% if i.parcela_total %} <span class="etiqueta aberto" title="Parcela {{ i.parcela_n }} de {{ i.parcela_total }}">{{ i.parcela_n }}/{{ i.parcela_total }}</span>{% endif %}</td>
+        <td>{{ i.fornecedor or '' }}</td>
+        <td>{{ i.vencimento|data_br }}</td>
+        <td class="num">{{ i.valor|moeda }}</td>
+        <td>{% if i.situacao == 'EM PAGAMENTO' %}<span class="etiqueta aberto">Em pagamento</span>
+          {% elif i.situacao == 'PAGA' %}<span class="etiqueta pago">Paga</span> <small>{{ i.data_pagamento|data_br }} · {{ i.banco_pagamento or '' }}</small>
+          {% else %}<span class="etiqueta cancelado">Devolvida</span>{% endif %}</td>
+      </tr>
+    {% else %}<tr><td colspan="6" class="vazio">Nenhuma conta neste lote.</td></tr>{% endfor %}
+    </tbody>
+    {% if d.itens %}<tfoot><tr><td colspan="4">Total do lote</td><td class="num">{{ d.total|moeda }}</td><td></td></tr></tfoot>{% endif %}
+  </table></div>
+</form>
+
+<dialog id="dlg-quitar">
+  <form method="post" id="form-quitar" action="{{ url_for('fin.conta_lote_acao', lote_id=d.lote.id) }}">
+    {{ csrf_input }}<input type="hidden" name="acao" data-campo="acao" value="">
+    <h2 style="margin-top:0">Quitar contas do lote</h2>
+    <p>Em "Quitar marcadas", só as contas marcadas na tabela são quitadas. Em "Quitar todas as pendentes", todas as contas ainda em pagamento são quitadas.</p>
+    <div class="grade">
+      <div class="c6"><label class="obrig">Banco</label><select name="banco" required><option value=""></option>{% for b in bancos %}<option {% if b == d.lote.banco %}selected{% endif %}>{{ b }}</option>{% endfor %}</select></div>
+      <div class="c6"><label>Data do pagamento</label><input type="date" name="data_pagamento" value="{{ hoje }}"></div>
+      <div class="c12"><label>Forma de pagamento</label><input type="text" name="forma_pagamento" placeholder="Boleto, PIX, transferência..."></div>
+    </div>
+    <div class="acoes"><button class="btn" type="submit">Confirmar quitação</button><button class="btn sec" type="button" data-fechar>Cancelar</button></div>
+  </form>
+</dialog>
+{% endblock %}
+{% block scripts %}
+<script>
+document.getElementById('marcar-todas').addEventListener('change', function () {
+  document.querySelectorAll('#form-lote input[name=ids]').forEach(c => c.checked = this.checked);
+});
+// Ao quitar marcadas, copia as contas marcadas para o formulário do dialog
+document.getElementById('form-quitar').addEventListener('submit', function () {
+  this.querySelectorAll('input[data-ids]').forEach(h => h.remove());
+  if (this.querySelector('[name=acao]').value !== 'quitar_marcadas') return;
+  document.querySelectorAll('#form-lote input[name=ids]:checked').forEach(c => {
+    const h = document.createElement('input');
+    h.type = 'hidden'; h.name = 'ids'; h.value = c.value; h.setAttribute('data-ids', '');
+    this.appendChild(h);
+  });
+});
+{% if imprimir %}window.open("{{ url_for('fin.conta_lote_imprimir', lote_id=d.lote.id) }}", "_blank");{% endif %}
+</script>
+{% endblock %}

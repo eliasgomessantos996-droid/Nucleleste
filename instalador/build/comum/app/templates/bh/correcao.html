@@ -1,0 +1,28 @@
+{% extends 'bh/layout.html' %}
+{% block titulo %}Corrigir lançamento{% endblock %}
+{% block conteudo %}
+<div class="cabecalho"><div><a href="{{ url_for('bh.extrato', employee_id=employee.id, month=row.date[:7]) }}">← Extrato de {{ employee.name }}</a><h1>Corrigir lançamento</h1><p class="sub">{{ row.date|bh_data }} · {{ employee.name }} · Número I: {{ employee.clock_id }}</p></div></div>
+<div class="bh-form-layout">
+<form class="cartao" method="post">
+  {{ csrf_input }}
+  <h2>Dados do dia</h2><p class="sub">A correção atualiza o saldo deste dia e dos meses seguintes.</p>
+  {% if row.status_detail %}<div class="bh-aviso"><p>{{ row.status_detail }}</p></div>{% endif %}
+  <div class="bh-original"><span class="rot">Batidas originais</span>
+    <div class="bh-batidas" style="margin-top:4px">{% for p in row.original_punches %}<span>{{ p }}</span>{% else %}<span class="bh-muted">Sem batidas no arquivo original</span>{% endfor %}</div>
+    {% if row.original_raw_text %}<small class="bh-bloco" style="margin-top:6px">Texto original da célula: {{ row.original_raw_text }}</small>{% endif %}</div>
+  <div class="grade">
+    <div class="c12"><label for="punches">Batidas corrigidas</label><input type="text" id="punches" name="punches" value="{{ bh_form.get('punches', row.punches|join(' ')) }}" placeholder="08:00 12:00 13:00 17:00" autocomplete="off">
+      <div class="ajuda">Informe os horários na ordem em que ocorreram, separados por espaço ou vírgula. Para um dia sem batidas, deixe o campo vazio.</div></div>
+    <div class="c12"><label class="obrig" for="kind">Classificação do dia</label>
+      {% set escolhido = bh_form.get('kind', row.kind or 'normal') %}
+      <select id="kind" name="kind" required>{% for v, rot in [('normal','Normal — calcular pelas batidas'),('falta','Falta — debitar a jornada'),('abono','Abono — justificar a jornada'),('folga','Folga — sem débito de jornada'),('feriado','Feriado — sem débito de jornada')] %}<option value="{{ v }}" {{ 'selected' if escolhido == v }}>{{ rot }}</option>{% endfor %}</select></div>
+    <div class="c12"><label class="obrig" for="reason">Justificativa da correção</label><textarea id="reason" name="reason" rows="4" required maxlength="1000" placeholder="Explique a correção, incluindo a origem dos horários informados.">{{ bh_form.get('reason', '') }}</textarea></div>
+  </div>
+  <div class="acoes"><button class="btn" type="submit">Salvar correção</button><a class="btn sec" href="{{ url_for('bh.extrato', employee_id=employee.id, month=row.date[:7]) }}">Cancelar</a></div>
+</form>
+<aside class="bh-ajuda"><h3>Histórico preservado</h3>
+  <p>O arquivo original permanece guardado. Cada alteração registra os dados anteriores, os novos dados, a justificativa e o usuário responsável.</p>
+  <p>Dias sem batidas importados começam como folga. Confirme a classificação conforme o que ocorreu naquele dia.</p>
+  <p>Se um relatório já foi emitido, a cópia anterior continua disponível e uma nova emissão receberá outra versão.</p></aside>
+</div>
+{% endblock %}

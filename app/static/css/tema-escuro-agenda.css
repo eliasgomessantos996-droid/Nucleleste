@@ -1,0 +1,64 @@
+/* Parte ESCRITA À MÃO do tema escuro (a agenda). Não é gerada: ferramentas/gerar_tema_escuro.py copia este arquivo para o
+   fim de tema-escuro.css toda vez que roda. Edite aqui, não em tema-escuro.css. */
+/* ---------------------------------------------------------------- agenda no tema escuro: a grade fica com fundo BRANCO,
+   para as cores de status aparecerem como no claro (o calendário e o restante da tela continuam escuros) */
+html[data-brilho="escuro"] .ag-principal { --sup: #ffffff; --sup-2: #f4f7f5; --texto: #1d2522; --suave: #55635c; --borda: #cdd6d1;
+  background: #ffffff; color: #1d2522; border-radius: 12px; }
+html[data-brilho="escuro"] .ag-principal .ag-grade th { background-color: #e2e9e5; color: #3a4a41; border-color: #94a59c; }
+html[data-brilho="escuro"] .ag-principal .ag-grade td { border-color: #9aaaa1; }
+html[data-brilho="escuro"] .ag-principal .ag-linha td { background-color: #ffffff; }
+html[data-brilho="escuro"] .ag-principal .ag-linha.st-agendado td { background-color: #f1f4f2; }
+html[data-brilho="escuro"] .ag-principal .ag-linha.st-veio td { background-color: #bcd9f7; }
+html[data-brilho="escuro"] .ag-principal .ag-linha.st-retorno td { background-color: #bcd9f7; }
+html[data-brilho="escuro"] .ag-principal .ag-linha.st-faltou td { background-color: #ffab91; }
+html[data-brilho="escuro"] .ag-principal .ag-linha.st-resgatado td { background-color: #d4f1ea; }
+html[data-brilho="escuro"] .ag-principal .ag-linha.st-desistiu td { background-color: #e3e6ea; }
+html[data-brilho="escuro"] .ag-principal .ag-linha.protocolo td { background-color: #7ddf7d; }
+html[data-brilho="escuro"] .ag-principal .ag-linha.unacon td { background-color: #f4cccc; }
+html[data-brilho="escuro"] .ag-principal .ag-linha.unacon.livre td, html[data-brilho="escuro"] .ag-principal .ag-linha.unacon.st-agendado td { background-color: #f4cccc; }
+html[data-brilho="escuro"] .ag-principal .ag-status { background-color: #ffffff; border-color: #b9c4be; color: #1d2522; }
+html[data-brilho="escuro"] .ag-principal .ag-status.st-agendado { background-color: #f1f4f2; }
+html[data-brilho="escuro"] .ag-principal .ag-status.st-veio { background-color: #9cc8f0; border-color: #4f93d6; color: #0f3d6e; }
+html[data-brilho="escuro"] .ag-principal .ag-status.st-retorno { background-color: #9cc8f0; border-color: #4f93d6; color: #0f3d6e; }
+html[data-brilho="escuro"] .ag-principal .ag-status.st-faltou { background-color: #ff8a65; border-color: #e64a19; color: #4e1500; }
+html[data-brilho="escuro"] .ag-principal .ag-status.st-resgatado { background-color: #a9e6d2; border-color: #5cc2a2; color: #0f5a45; }
+html[data-brilho="escuro"] .ag-principal .ag-status.st-desistiu { background-color: #cfd5da; border-color: #97a3ab; color: #3d4a44; }
+html[data-brilho="escuro"] .ag-principal .ag-sel { background-color: #eef1ef; color: #44514a; }
+html[data-brilho="escuro"] .ag-principal .ag-sel.st-veio { background-color: #bcd9f7; color: #0f3d6e; }
+html[data-brilho="escuro"] .ag-principal .ag-sel.st-retorno { background-color: #bcd9f7; color: #0f3d6e; }
+html[data-brilho="escuro"] .ag-principal .ag-sel.st-faltou { background-color: #ffab91; color: #4e1500; }
+html[data-brilho="escuro"] .ag-principal .ag-sel.st-resgatado { background-color: #d4f1ea; color: #0f5a45; }
+html[data-brilho="escuro"] .ag-principal .ag-sel.st-desistiu { background-color: #e3e6ea; color: #3d4a44; }
+html[data-brilho="escuro"] .ag-principal .ag-sel.reservado { background-color: #f4cccc; color: #5c2b2b; }
+html[data-brilho="escuro"] .ag-principal .ag-sel.livre { background-color: #ffffff; }
+html[data-brilho="escuro"] .ag-principal .ag-cor.livre { background-color: #ffffff; }
+html[data-brilho="escuro"] .ag-principal .ag-cor.unacon { background-color: #f4cccc; }
+html[data-brilho="escuro"] .ag-principal .ag-cor.protocolo { background-color: #7ddf7d; }
+html[data-brilho="escuro"] .ag-principal .ag-ico { background-color: #ffffff; color: #255f39; border-color: #b9c4be; }
+html[data-brilho="escuro"] .ag-principal input[type=text] { background-color: #ffffff; color: #1d2522; }
+/* dentro da grade os campos são transparentes (como no claro): assim a linha inteira mostra a cor do status */
+html[data-brilho="escuro"] .ag-principal .ag-grade input[type=text], html[data-brilho="escuro"] .ag-principal .ag-grade select.ag-senha,
+html[data-brilho="escuro"] .ag-principal .ag-grade .ag-convsel { background-color: transparent; color: #1d2522; }
+html[data-brilho="escuro"] .ag-principal .ag-grade input[type=text]:focus, html[data-brilho="escuro"] .ag-principal .ag-grade select.ag-senha:focus,
+html[data-brilho="escuro"] .ag-principal .ag-grade .ag-convsel:focus { background-color: #ffffff; }
+html[data-brilho="escuro"] .ag-principal .ag-linha td, html[data-brilho="escuro"] .ag-principal .ag-hora, html[data-brilho="escuro"] .ag-principal .ag-texto { color: #1d2522; }
+
+/* Contraste dentro da grade branca. As regras GERADAS acima usam cores CLARAS (feitas para fundo escuro); dentro da grade, que é branca,
+   o horário, o lembrete, o título e o "→ novo dia" ficavam quase invisíveis (horário apagado nas linhas reservadas, por exemplo). */
+html[data-brilho="escuro"] .ag-principal .ag-linha .ag-hora { color: #1d2522; }
+html[data-brilho="escuro"] .ag-principal .ag-linha.livre .ag-hora { color: #6f7d75; }
+html[data-brilho="escuro"] .ag-principal .ag-linha.unacon.livre .ag-hora, html[data-brilho="escuro"] .ag-principal .ag-linha.unacon.st-agendado .ag-hora { color: #5c2b2b; }
+html[data-brilho="escuro"] .ag-principal .ag-senha.protocolo { color: #14501c; }
+html[data-brilho="escuro"] .ag-principal .ag-remarcado { color: #7a5200; }
+html[data-brilho="escuro"] .ag-principal .ag-lembrete { color: #fff; background-color: #c62828; border-color: #8e0000; }
+html[data-brilho="escuro"] .ag-principal .ag-bloco-tit h3 { color: #255f39; }
+html[data-brilho="escuro"] .ag-principal .ag-ico.ag-reserva-on { background-color: #f4cccc; border-color: #d99a9a; color: #7a2e2e; }
+/* seletor de exame do topo: fica no fundo branco da agenda, com o verde escuro do rótulo */
+html[data-brilho="escuro"] .ag-principal .ag-escolha-caixa { background: #eef6f1; border-color: #b9d3c4; }
+html[data-brilho="escuro"] .ag-principal .ag-escolha-rotulo { color: #255f39; }
+html[data-brilho="escuro"] .ag-principal .ag-escolha-dica { color: #55635c; }
+
+/* menu compacto de áreas, fora da grade branca */
+html[data-brilho="escuro"] .ag-areas-opcoes { background: var(--sup, #202b25); color: var(--texto, #e4eee8); border-color: var(--borda, #44564a); }
+html[data-brilho="escuro"] .ag-areas-opcoes a:hover, html[data-brilho="escuro"] .ag-areas-opcoes a:focus-visible,
+html[data-brilho="escuro"] .ag-areas-opcoes a[aria-current="page"] { background: var(--sup-2, #2b3a31); color: var(--texto, #e4eee8); }

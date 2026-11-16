@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+{% block titulo %}Usuários e perfis{% endblock %}
+{% block conteudo %}
+<div class="cabecalho">
+  <div><h1>{{ 'Perfis arquivados' if arquivados else 'Usuários e perfis' }}</h1><p class="sub">Crie acessos e escolha quais módulos cada usuário enxerga. Administradores veem tudo. Cada usuário troca a própria senha em “Alterar senha”.</p></div>
+  <div class="acoes">{% if arquivados %}<a class="btn sec" href="{{ url_for('admin.usuarios') }}">← Usuários ativos</a>{% else %}<a class="btn sec" href="{{ url_for('admin.usuarios', arquivados=1) }}">📁 Ver arquivados</a><a class="btn" href="{{ url_for('admin.usuario_editar') }}">+ Novo usuário</a>{% endif %}</div>
+</div>
+<div class="tabela-wrap"><table class="tabela">
+  <thead><tr><th>Usuário</th><th>Perfil</th><th>Módulos liberados</th><th>Último acesso</th><th class="num">Ações</th><th></th></tr></thead>
+  <tbody>
+  {% for it in lista %}{% set u = it.u %}
+    <tr {% if not u.ativo %}style="opacity:.55"{% endif %}>
+      <td><strong>{{ u.usuario }}</strong>{% if not u.ativo %} <span class="etiqueta">desativado</span>{% endif %}<br>
+        {% if situacao.get(u.id) %}<small class="situacao-usuario"><span class="chat-bolinha{{ ' online' if situacao[u.id].online }}" data-presenca="{{ u.id }}"></span>
+          <span data-presenca-texto="{{ u.id }}">{{ 'Online agora' if situacao[u.id].online else 'Offline' }}</span></small>{% endif %}
+        <br><small>{% if u.criado_por %}criado por {{ u.criado_por }}{% endif %}</small></td>
+      <td>{{ it.nivel }}</td>
+      <td style="max-width:420px">{% if u.admin %}<span class="etiqueta pago">Todos os módulos</span>{% else %}
+        {% for m in it.modulos[:6] %}<span class="etiqueta" style="margin:1px">{{ nomes[m] }}</span>{% endfor %}
+        {% if it.modulos|length > 6 %}<span class="etiqueta aberto" title="{{ it.modulos[6:]|map('string')|join(', ') }}">+{{ it.modulos|length - 6 }}</span>{% endif %}
+        {% if not it.modulos %}<span class="etiqueta cancelado">nenhum</span>{% endif %}{% endif %}</td>
+      <td>{% if u.ultimo %}{{ u.ultimo[:10]|data_br }} {{ u.ultimo[11:16] }}{% else %}—{% endif %}</td>
+      <td class="num">{{ u.n_acoes }}</td>
+      <td class="num" style="white-space:nowrap">
+        {% if not it.pode %}<span class="etiqueta" title="Este perfil está acima do seu nível na hierarquia (Desenvolvedor > Gestão > Usuários)">Protegido</span>{% else %}
+        <a class="btn sec peq" href="{{ url_for('admin.usuario_editar', uid=u.id) }}">Editar perfil</a>
+        <button class="btn sec peq" type="button" data-dialogo="dlg-senha" data-uid="{{ u.id }}" data-nome="{{ u.usuario }}">Redefinir senha</button>
+        {% if arquivados %}
+        <form method="post" action="{{ url_for('admin.usuario_desarquivar', uid=u.id) }}" style="display:inline">{{ csrf_input }}<button class="btn sec peq" type="submit">Desarquivar</button></form>
+        {% elif u.id != usuario.id %}
+        <form method="post" action="{{ url_for('admin.usuario_status', uid=u.id) }}" style="display:inline" data-confirmar="{{ 'Desativar' if u.ativo else 'Reativar' }} o usuário {{ u.usuario }}?">{{ csrf_input }}
+          <button class="btn {{ 'perigo' if u.ativo else 'sec' }} peq" type="submit">{{ 'Desativar' if u.ativo else 'Reativar' }}</button></form>
+        {% if u.bh_funcionario_id %}
+        <form method="post" action="{{ url_for('admin.usuario_desligar', uid=u.id) }}" style="display:inline" data-confirmar="Desligar o funcionário {{ u.usuario }} da empresa? O cadastro dele no Banco de Horas fica inativo e arquivado (o histórico do ponto é mantido) e o perfil de acesso é arquivado. Você poderá consultar tudo em Ver arquivados.">{{ csrf_input }}
+          <button class="btn perigo peq" type="submit" title="Encerra o funcionário no Banco de Horas e arquiva o perfil de acesso">Desligar funcionário</button></form>
+        {% endif %}
+        <form method="post" action="{{ url_for('admin.usuario_arquivar', uid=u.id) }}" style="display:inline" data-confirmar="Arquivar o perfil de {{ u.usuario }}? Ele sai da lista e fica sem acesso, mas continua disponível em Ver arquivados.">{{ csrf_input }}
+          <button class="btn sec peq" type="submit">Arquivar</button></form>
+        {% endif %}{% endif %}
+      </td></tr>
+  {% else %}<tr><td colspan="6" class="vazio">{{ 'Nenhum perfil arquivado.' if arquivados else 'Nenhum usuário.' }}</td></tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+<p class="ajuda" style="margin-top:8px">A coluna “Ações” conta quantos registros o usuário tem em <a href="{{ url_for('reg.registros') }}">Registros de atividades</a>.</p>
+<dialog id="dlg-senha">
+  <form method="post" id="form-senha">{{ csrf_input }}<input type="hidden" data-campo="uid" id="senha-uid">
+    <h2 style="margin-top:0">Redefinir senha de <span data-campo="nome"></span></h2>
+    <label class="obrig">Nova senha</label><input type="password" name="senha" required autocomplete="new-password">
+    <div class="acoes"><button class="btn" type="submit">Salvar</button><button class="btn sec" type="button" data-fechar>Cancelar</button></div>
+  </form>
+</dialog>
+{% endblock %}
+{% block scripts %}
+<script>document.getElementById('form-senha').addEventListener('submit', function () { this.action = '/usuarios/' + document.getElementById('senha-uid').value + '/senha'; });</script>
+{% endblock %}

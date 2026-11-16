@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+{% block titulo %}Relatório ONA{% endblock %}
+{% block conteudo %}
+<div class="cabecalho">
+  <div><h1>Relatório ONA</h1><p class="sub">Indicadores de qualidade calculados com os dados do sistema, para o período escolhido.</p></div>
+  <div class="acoes">
+    <a class="btn" href="{{ url_for('ona.pdf') }}?de={{ de }}&ate={{ ate }}" target="_blank" rel="noopener" title="Capa, sumário, todas as seções com gráficos explicados, validação e contracapa">PDF completo (dossiê)</a>
+    <a class="btn sec" href="{{ url_for('ona.pdf') }}?de={{ de }}&ate={{ ate }}&baixar=1">⬇ Baixar PDF completo</a>
+    <a class="btn sec" href="{{ url_for('ona.pdf_resumido') }}?de={{ de }}&ate={{ ate }}">⬇ PDF resumido</a>
+    <a class="btn sec" href="{{ url_for('ona.xlsx') }}?de={{ de }}&ate={{ ate }}">⬇ Excel</a>
+  </div>
+</div>
+
+<form class="cartao filtros" method="get">
+  <div><label for="de">De</label><input type="date" id="de" name="de" value="{{ de }}"></div>
+  <div><label for="ate">Até</label><input type="date" id="ate" name="ate" value="{{ ate }}"></div>
+  <div><button class="btn" type="submit">Gerar</button></div>
+  <div class="ajuda" style="align-self:center">{{ r.total_exames }} exame(s) realizados no período.</div>
+</form>
+
+<h2>Indicadores</h2>
+<div class="tabela-wrap" style="margin-bottom:18px"><table class="tabela">
+  <thead><tr><th>Indicador</th><th>Critério</th><th class="num">Numerador</th><th class="num">Denominador</th><th class="num">Percentual</th></tr></thead>
+  <tbody>
+  {% for i in r.indicadores %}
+    <tr><td><strong>{{ i.nome }}</strong></td><td>{{ i.criterio }}</td><td class="num">{{ i.numerador }}</td><td class="num">{{ i.denominador }}</td><td class="num">{{ pct(i.percentual) }}</td></tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+
+<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;align-items:start">
+  <div>
+    <h2>Por exame</h2>
+    <div class="tabela-wrap"><table class="tabela"><thead><tr><th>Exame</th><th class="num">Exames</th></tr></thead>
+      <tbody>{% for k, v in r.por_exame %}<tr><td>{{ k }}</td><td class="num">{{ v }}</td></tr>{% else %}<tr><td colspan="2" class="vazio">Sem exames.</td></tr>{% endfor %}</tbody></table></div>
+  </div>
+  <div>
+    <h2>Por convênio</h2>
+    <div class="tabela-wrap"><table class="tabela"><thead><tr><th>Convênio</th><th class="num">Exames</th></tr></thead>
+      <tbody>{% for k, v in r.por_convenio %}<tr><td>{{ k }}</td><td class="num">{{ v }}</td></tr>{% else %}<tr><td colspan="2" class="vazio">Sem exames.</td></tr>{% endfor %}</tbody></table></div>
+  </div>
+  <div>
+    <h2>Por sexo do paciente</h2>
+    <div class="tabela-wrap"><table class="tabela"><thead><tr><th>Sexo</th><th class="num">Exames</th></tr></thead>
+      <tbody>{% for k, v in r.por_sexo %}<tr><td>{{ k }}</td><td class="num">{{ v }}</td></tr>{% else %}<tr><td colspan="2" class="vazio">Sem exames.</td></tr>{% endfor %}</tbody></table></div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+{% block titulo %}Fechamento de caixa{% endblock %}
+{% block conteudo %}
+{% set s = rel.sessao %}
+<div class="cabecalho">
+  <div><h1>Fechamento de caixa</h1><p class="sub">Operador: <strong>{{ s.usuario }}</strong> · dia {{ s.data|data_br }} · {{ 'Aberto' if s.status == 'ABERTO' else 'Fechado' }}</p></div>
+  <div class="acoes">
+    <a class="btn" href="{{ url_for('mov.relatorio_pdf', sessao_id=s.id) }}" target="_blank" rel="noopener">Relatório para assinatura (PDF)</a>
+    <a class="btn sec" href="{{ url_for('mov.pagina') }}">Voltar ao caixa</a>
+  </div>
+</div>
+
+<div class="indicadores">
+  <div class="indicador"><div class="n">R$ {{ rel.dinheiro_liquido|moeda }}</div><div class="t">dinheiro líquido (sem troco)</div></div>
+  <div class="indicador"><div class="n">R$ {{ rel.troco|moeda }}</div><div class="t">troco dado</div></div>
+  <div class="indicador"><div class="n">R$ {{ rel.pix_total|moeda }}</div><div class="t">PIX</div></div>
+  <div class="indicador"><div class="n">R$ {{ rel.esperado_dinheiro|moeda }}</div><div class="t">deve haver em dinheiro (fundo + líquido)</div></div>
+</div>
+
+<h2>Dinheiro (com troco)</h2>
+<div class="tabela-wrap" style="margin-bottom:16px"><table class="tabela">
+  <thead><tr><th>Hora</th><th>Cliente</th><th>Procedimento</th><th>NF</th><th class="num">Valor</th><th class="num">Recebido</th><th class="num">Troco</th></tr></thead>
+  <tbody>
+  {% for i in rel.dinheiro %}
+    <tr><td>{{ (i.pago_em or '')[11:16] }}</td><td>{{ i.cliente }}</td><td>{{ i.procedimento or '' }}</td><td>{{ i.nota_fiscal or '' }}</td>
+      <td class="num">{{ i.valor|moeda }}</td><td class="num">{{ i.valor_recebido|moeda }}</td><td class="num">{{ i.troco|moeda }}</td></tr>
+  {% else %}<tr><td colspan="7" class="vazio">Nenhum recebimento em dinheiro.</td></tr>{% endfor %}
+  </tbody>
+</table></div>
+
+<h2>PIX</h2>
+<div class="tabela-wrap"><table class="tabela">
+  <thead><tr><th>Hora</th><th>Cliente</th><th>Procedimento</th><th>NF</th><th class="num">Valor</th></tr></thead>
+  <tbody>
+  {% for i in rel.pix %}
+    <tr><td>{{ (i.pago_em or '')[11:16] }}</td><td>{{ i.cliente }}</td><td>{{ i.procedimento or '' }}</td><td>{{ i.nota_fiscal or '' }}</td><td class="num">{{ i.valor|moeda }}</td></tr>
+  {% else %}<tr><td colspan="5" class="vazio">Nenhum recebimento em PIX.</td></tr>{% endfor %}
+  </tbody>
+</table></div>
+{% endblock %}

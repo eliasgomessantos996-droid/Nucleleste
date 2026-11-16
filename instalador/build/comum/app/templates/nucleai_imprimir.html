@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Imprimir · Nucleleste</title>
+<style>
+  html, body { height: 100%; margin: 0; font-family: system-ui, Segoe UI, Arial, sans-serif; }
+  .barra { padding: 8px 12px; background: #1f7a4d; color: #fff; display: flex; gap: 10px; align-items: center; }
+  .barra button, .barra a { background: #fff; color: #1f7a4d; border: 0; border-radius: 6px; padding: 7px 14px; font-weight: 700; cursor: pointer; text-decoration: none; }
+  iframe { width: 100%; height: calc(100% - 46px); border: 0; }
+  @media print { .barra { display: none; } iframe { height: 100%; } }
+</style>
+</head>
+<body>
+<div class="barra"><strong>Impressão pedida à NucleAI</strong>
+  <button type="button" id="imprimir">🖨 Imprimir</button>
+  <a href="{{ alvo }}" target="_blank" rel="noopener">Abrir o arquivo</a></div>
+<iframe id="doc" src="{{ alvo }}" title="Documento para imprimir"></iframe>
+<script>
+(function () {
+  const doc = document.getElementById('doc');
+  const imprimir = () => { try { doc.contentWindow.focus(); doc.contentWindow.print(); } catch (e) { window.print(); } };
+  document.getElementById('imprimir').addEventListener('click', imprimir);
+  let feito = false;
+  doc.addEventListener('load', () => { if (feito) return; feito = true; setTimeout(imprimir, 600); });   // abre a janela de impressão sozinha
+})();
+</script>
+</body>
+</html>

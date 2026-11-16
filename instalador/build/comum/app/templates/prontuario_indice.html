@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+{% from '_ic.html' import ic %}
+{% block titulo %}Prontuário do paciente{% endblock %}
+{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/prontuario.css') }}">{% endblock %}
+{% block conteudo %}
+<div class="cartao pr-cabecalho">
+  <div class="pr-arte" aria-hidden="true">
+    <svg viewBox="0 0 120 96" class="pr-svg">
+      <rect x="22" y="14" width="76" height="72" rx="8" class="pr-prancheta"/>
+      <rect x="46" y="6" width="28" height="14" rx="4" class="pr-prendedor"/>
+      <path class="pr-batimento" pathLength="100" d="M30 52H46L52 36L60 66L68 44L72 52H90"/>
+    </svg>
+  </div>
+  <div>
+    <h1>Prontuário do paciente</h1>
+    <p class="sub">Histórico de cada paciente atendido, documentos clínicos e o que falta preencher.</p>
+  </div>
+</div>
+
+<form class="cartao filtros" method="get">
+  <div class="largo"><label>Buscar paciente (nome, CPF, código ou nº do prontuário)</label>
+    <input type="search" name="q" value="{{ q }}" placeholder="Digite pelo menos 2 caracteres" autofocus></div>
+  <div><button class="btn" type="submit">Buscar</button></div>
+</form>
+
+{% if q %}
+<div class="cartao">
+  <h2>Resultado da busca</h2>
+  {% if achados %}
+  <div class="tabela-wrap"><table class="tabela">
+    <thead><tr><th>Prontuário</th><th>Paciente</th><th>CPF</th><th>Convênio</th><th></th></tr></thead>
+    <tbody>
+    {% for c in achados %}
+      <tr><td>{{ c.numero or 'gerado ao abrir' }}</td><td>{{ c.nome }}</td><td>{{ c.cpf or '' }}</td><td>{{ c.convenio or '' }}</td>
+        <td><a class="btn sec peq" href="{{ url_for('pront.paciente', cid=c.id) }}">Abrir prontuário</a></td></tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+  {% else %}
+  <p class="ajuda">Nenhum paciente encontrado.</p>
+  {% endif %}
+</div>
+{% endif %}
+
+<div class="cartao">
+  <h2>Documentos pendentes</h2>
+  <p class="ajuda">Os SBAR de pacientes internos do hospital aparecem destacados: a equipe preenche depois do exame.</p>
+  <div class="tabela-wrap"><table class="tabela">
+    <thead><tr><th>Paciente</th><th>Prontuário</th><th>Documento</th><th>Atendimento</th><th>Situação</th><th></th></tr></thead>
+    <tbody>
+    {% for d in pendencias %}
+      <tr class="{% if d.interno %}pr-destaque{% endif %}">
+        <td>{{ d.cliente_nome or '' }}</td>
+        <td>{{ d.numero or '' }}</td>
+        <td>{{ d.titulo or d.tipo }}{% if d.interno %} <span class="etiqueta">Interno{% if d.interno_local %}: {{ d.interno_local }}{% endif %}</span>{% endif %}</td>
+        <td>{% if d.atendimento_data %}{{ d.atendimento_data|data_br }}{% endif %}{% if d.atendimento_exame %} · {{ d.atendimento_exame }}{% endif %}</td>
+        <td><span class="etiqueta">{{ situacoes[d.situacao] }}</span></td>
+        <td><a class="btn peq" href="{{ url_for('pront.doc', did=d.id) }}">Abrir</a></td>
+      </tr>
+    {% else %}
+      <tr><td colspan="6" class="vazio">Nenhum documento pendente.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+</div>
+
+<div class="cartao">
+  <h2>Últimos documentos concluídos</h2>
+  <div class="tabela-wrap"><table class="tabela">
+    <thead><tr><th>Concluído em</th><th>Paciente</th><th>Prontuário</th><th>Documento</th><th></th></tr></thead>
+    <tbody>
+    {% for d in concluidos %}
+      <tr>
+        <td>{{ d.concluido_em[:10]|data_br if d.concluido_em else '' }}</td>
+        <td>{{ d.cliente_nome or '' }}</td><td>{{ d.numero or '' }}</td><td>{{ d.titulo or d.tipo }}</td>
+        <td><a class="btn sec peq" href="{{ url_for('pront.doc_imprimir', did=d.id) }}">{{ ic('file-down', 14) }} Imprimir</a></td>
+      </tr>
+    {% else %}
+      <tr><td colspan="5" class="vazio">Nenhum documento concluído ainda.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+</div>
+{% endblock %}

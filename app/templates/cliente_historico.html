@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+{% from '_ic.html' import ic %}
+{% block titulo %}Histórico do cliente {{ cliente.id }}{% endblock %}
+{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/historico.css') }}">{% endblock %}
+{% block conteudo %}
+<div class="cabecalho cartao hc-cabecalho">
+  <div class="hc-arte" aria-hidden="true">
+    <svg viewBox="0 0 44 120" class="hc-svg">
+      <path class="hc-linha" d="M22 14V106"/>
+      <circle class="hc-ponto" cx="22" cy="20" r="7"/>
+      <circle class="hc-ponto p2" cx="22" cy="60" r="7"/>
+      <circle class="hc-ponto p3" cx="22" cy="100" r="7"/>
+    </svg>
+  </div>
+  <div>
+    <h1>Histórico do paciente</h1>
+    <p class="sub">{{ cliente.nome }} · Código {{ cliente.id }} · CPF {{ cliente.cpf or 'não informado' }} · Nascimento {{ cliente.data_nasc|data_br or 'não informado' }}</p>
+  </div>
+  <div class="acoes">
+    <a class="btn" href="{{ url_for('cad.cliente_historico_pdf', cid=cliente.id, de=de or '', ate=ate or '') }}">{{ ic('file-down', 16) }} Baixar PDF</a>
+    <a class="btn sec" href="{{ url_for('cad.cliente_editar', cid=cliente.id) }}">Voltar ao cadastro</a>
+  </div>
+</div>
+
+<form class="cartao filtros" method="get">
+  <div><label>Data inicial</label><input type="date" name="de" value="{{ de or '' }}"></div>
+  <div><label>Data final</label><input type="date" name="ate" value="{{ ate or '' }}"></div>
+  <div><button class="btn" type="submit">Filtrar</button></div>
+  {% if de or ate %}<div><a class="btn sec" href="{{ url_for('cad.cliente_historico', cid=cliente.id) }}">Todo o histórico</a></div>{% endif %}
+</form>
+
+<p class="sub">{{ linhas|length }} atendimento(s){% if de or ate %} no período{% endif %}</p>
+<div class="tabela-wrap"><table class="tabela">
+  <thead><tr><th>Data</th><th>Exame</th><th>Médico solicitante</th></tr></thead>
+  <tbody>
+  {% for l in linhas %}
+    <tr><td>{{ l.data|data_br }}</td><td>{{ l.exame or '' }}</td><td>{{ l.medico or 'Não informado' }}</td></tr>
+  {% else %}<tr><td colspan="3" class="vazio">Nenhum atendimento encontrado.</td></tr>{% endfor %}
+  </tbody>
+</table></div>
+{% endblock %}

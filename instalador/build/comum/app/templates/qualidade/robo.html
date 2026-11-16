@@ -1,0 +1,65 @@
+{% extends 'qualidade/_base.html' %}
+{% block titulo %}Robô do PDCA{% endblock %}
+{% block titulo_q %}Robô do PDCA{% endblock %}
+{% block sub_q %}Analisa os indicadores, encontra o que está fora da meta ou piorando, procura onde o problema se concentra e monta o plano (PDCA, Ishikawa, 5 Porquês e 5W2H) como rascunho para a gerência revisar.{% endblock %}
+{% block corpo_q %}
+<form class="cartao filtros q-nao-imprime" method="post" action="{{ url_for('qual.robo_analisar') }}">
+  {{ csrf_input }}
+  <div><label for="de">De</label><input type="date" id="de" name="de" value="{{ de }}"></div>
+  <div><label for="ate">Até</label><input type="date" id="ate" name="ate" value="{{ ate }}"></div>
+  <div><button class="btn" type="submit">🤖 Analisar agora</button></div>
+  <div class="ajuda" style="align-self:center">O robô também roda sozinho uma vez por dia (últimos 30 dias) e avisa a gerência quando encontra problema novo.</div>
+</form>
+
+<div class="cartao q-como">
+  <strong>Como o robô decide</strong>
+  <ol>
+    <li><b>Detecta:</b> compara cada indicador com a meta e com o período anterior. Taxas com menos de 20 casos são ignoradas (é ruído).</li>
+    <li><b>Analisa:</b> usa o Pareto dos dados para achar onde o problema se concentra (exame, convênio, dia da semana, motivo, setor).</li>
+    <li><b>Prioriza:</b> GUT calculado: Gravidade pelo quanto está longe da meta (e mais 1 ponto se envolve a segurança do paciente), Urgência pela piora, Tendência por quantos dos últimos 3 meses ficaram fora da meta.</li>
+    <li><b>Planeja:</b> abre o problema como rascunho com meta, hipótese de causa, Ishikawa, 5 Porquês e ações 5W2H com prazo.</li>
+    <li><b>Você decide:</b> aceite (vira problema aberto no PDCA), edite ou descarte (não volta a ser sugerido por 30 dias).</li>
+  </ol>
+</div>
+
+{% if rascunhos %}
+<h2>Sugestões para revisar</h2>
+<div class="q-lista-cards">
+  {% for p in rascunhos %}
+  <article class="cartao q-sugestao">
+    <header><strong>{{ p.titulo }}</strong><span class="q-gut" title="Gravidade × Urgência × Tendência">GUT {{ p.gut }} ({{ p.gut_g }}·{{ p.gut_u }}·{{ p.gut_t }})</span></header>
+    <p class="sub">{{ p.plan_meta }}</p>
+    <p><small>{{ p.plan_causa }}</small></p>
+    <div class="acoes q-nao-imprime">
+      <a class="btn sec" href="{{ url_for('qual.problema_pagina', pid=p.id) }}">Ver e editar o plano</a>
+      <form method="post" action="{{ url_for('qual.robo_aceitar', pid=p.id) }}" style="display:inline">{{ csrf_input }}<button class="btn" type="submit">✔ Aceitar</button></form>
+      <form method="post" action="{{ url_for('qual.robo_descartar', pid=p.id) }}" style="display:inline" onsubmit="return confirm('Descartar esta sugestão? Ela não volta pelos próximos 30 dias.')">{{ csrf_input }}<button class="btn perigo" type="submit">Descartar</button></form>
+    </div>
+  </article>
+  {% endfor %}
+</div>
+{% endif %}
+
+{% if ultima %}
+{% set res = ultima.resumo_obj %}
+<h2>Última análise ({{ ultima.executado_em[8:10] }}/{{ ultima.executado_em[5:7] }} {{ ultima.executado_em[11:16] }}, período {{ ultima.de|data_br }} a {{ ultima.ate|data_br }})</h2>
+{% if not res.achados %}<p class="cartao">Nenhum indicador fora da meta com volume suficiente no período. 👍</p>{% endif %}
+{% for a in res.achados %}
+<article class="cartao q-achado">
+  <header><strong>{{ a.titulo }}</strong>
+    <span class="q-gut">GUT {{ a.gut.g * a.gut.u * a.gut.t }} · G{{ a.gut.g }} U{{ a.gut.u }} T{{ a.gut.t }} · {{ a.gut.meses_fora }} de 3 meses fora da meta</span>
+    {% if a.descartado %}<span class="q-chip">descartado recentemente</span>{% elif a.novo %}<span class="q-chip atencao">novo</span>{% endif %}
+  </header>
+  <ul>{% for e in a.evidencias %}<li>{{ e }}</li>{% endfor %}{% for c in a.concentracao %}<li><b>Concentração:</b> {{ c }}</li>{% endfor %}</ul>
+  {% if a.problema_id %}<a class="q-ver" href="{{ url_for('qual.problema_pagina', pid=a.problema_id) }}">Abrir o plano →</a>{% endif %}
+</article>
+{% endfor %}
+{% if res.perguntas %}
+<div class="cartao q-perguntas"><strong>O robô precisa de dados para medir melhor</strong>
+  <ul>{% for p in res.perguntas %}<li><b>{{ p.nome }}:</b> {{ p.texto }}</li>{% endfor %}</ul>
+</div>
+{% endif %}
+{% else %}
+<p class="cartao">O robô ainda não rodou. Clique em "Analisar agora".</p>
+{% endif %}
+{% endblock %}

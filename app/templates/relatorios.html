@@ -1,0 +1,43 @@
+{% extends '_lista_impressao.html' if imprimir else 'base.html' %}
+{% block titulo %}Relatório de atendimentos{% endblock %}
+{% block subtitulo %}Período: {{ de|data_br }} a {{ ate|data_br }}{% if exame %} · Exame: {{ exame }}{% endif %}{% if convenio %} · Convênio: {{ convenio }}{% endif %}{% endblock %}
+{% block conteudo %}
+{% if not imprimir %}
+<div class="cabecalho">
+  <div><h1>Relatórios</h1><p class="sub">Atendimentos por período, exame, convênio, médico ou usuário.</p></div>
+  <div class="acoes"><a class="btn" target="_blank" href="{{ url_for('fin.relatorios', de=de, ate=ate, agrupar=agrupar, exame=exame, convenio=convenio, imprimir=1) }}">Imprimir</a></div>
+</div>
+<form class="cartao filtros" method="get">
+  <div><label>De</label><input type="date" name="de" value="{{ de }}"></div>
+  <div><label>Até</label><input type="date" name="ate" value="{{ ate }}"></div>
+  <div><label>Agrupar por</label><select name="agrupar">{% for k, v in agrupamentos.items() %}<option value="{{ k }}" {% if k == agrupar %}selected{% endif %}>{{ v[0] }}</option>{% endfor %}</select></div>
+  <div><label>Exame</label><select name="exame"><option value="">Todos</option>{% for e in exames %}<option {% if e == exame|upper %}selected{% endif %}>{{ e }}</option>{% endfor %}</select></div>
+  <div><label>Convênio</label><select name="convenio"><option value="">Todos</option>{% for c in convenios %}<option {% if c == convenio|upper %}selected{% endif %}>{{ c }}</option>{% endfor %}</select></div>
+  <div><button class="btn" type="submit">Gerar</button></div>
+</form>
+{% endif %}
+
+<h2>Atendimentos por {{ rotulo|lower }} — total {{ total }}</h2>
+<div class="tabela-wrap"><table class="tabela lista">
+  <thead><tr><th>{{ rotulo }}</th><th class="num">Atendimentos</th><th class="num">%</th></tr></thead>
+  <tbody>{% for g in grupos %}<tr><td>{{ (g.grupo|data_br if agrupar == 'dia' else g.grupo) or '(não informado)' }}</td><td class="num">{{ g.qtd }}</td>
+    <td class="num">{{ '%.1f'|format(100 * g.qtd / total) if total else 0 }}</td></tr>
+  {% else %}<tr><td colspan="3" class="vazio">Nenhum atendimento no período.</td></tr>{% endfor %}</tbody>
+  {% if grupos %}<tfoot><tr><td>Total</td><td class="num">{{ total }}</td><td class="num">100</td></tr></tfoot>{% endif %}
+</table></div>
+
+<h2>Exame × convênio</h2>
+<div class="tabela-wrap"><table class="tabela lista">
+  <thead><tr><th>Exame</th><th>Convênio</th><th class="num">Atendimentos</th></tr></thead>
+  <tbody>{% for r in cruzado %}<tr><td>{{ r.exame or '' }}</td><td>{{ r.convenio or '(não informado)' }}</td><td class="num">{{ r.qtd }}</td></tr>{% endfor %}</tbody>
+</table></div>
+
+<div class="grade" style="margin-top:8px">
+  <div class="c6"><h2>Caixa no período</h2>
+    <div class="tabela-wrap"><table class="tabela lista"><thead><tr><th>Status</th><th class="num">Qtd.</th><th class="num">Valor (R$)</th></tr></thead>
+      <tbody>{% for r in caixa %}<tr><td>{{ r.status }}</td><td class="num">{{ r.qtd }}</td><td class="num">{{ r.total|moeda }}</td></tr>{% else %}<tr><td colspan="3" class="vazio">Sem lançamentos.</td></tr>{% endfor %}</tbody></table></div></div>
+  <div class="c6"><h2>Guias por convênio</h2>
+    <div class="tabela-wrap"><table class="tabela lista"><thead><tr><th>Convênio</th><th class="num">Guias</th></tr></thead>
+      <tbody>{% for r in guias %}<tr><td>{{ r.convenio or '(não informado)' }}</td><td class="num">{{ r.qtd }}</td></tr>{% else %}<tr><td colspan="2" class="vazio">Sem guias.</td></tr>{% endfor %}</tbody></table></div></div>
+</div>
+{% endblock %}

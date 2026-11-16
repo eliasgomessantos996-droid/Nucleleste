@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+{% block titulo %}Documentos{% endblock %}
+{% block conteudo %}
+{% set fiscal = aba == 'FISCALIZACAO' %}
+<div class="cabecalho">
+  <div><h1>Documentos</h1><p class="sub">Envie contratos e documentos de fiscalização. Os de fiscalização têm data de vencimento e geram avisos para a gerência.</p></div>
+</div>
+
+<div class="acoes" style="margin-bottom:14px">
+  <a class="btn{{ '' if not fiscal else ' sec' }}" href="{{ url_for('arq.lista', aba='contratos') }}">Documentos e contratos</a>
+  <a class="btn{{ ' sec' if not fiscal }}" href="{{ url_for('arq.lista', aba='fiscalizacao') }}">Documentos de fiscalização</a>
+</div>
+
+<form class="cartao" method="post" action="{{ url_for('arq.novo') }}" enctype="multipart/form-data" style="margin-bottom:18px">
+  {{ csrf_input }}
+  <input type="hidden" name="tipo" value="{{ 'FISCALIZACAO' if fiscal else 'CONTRATO' }}">
+  <h2 style="margin-top:0">{{ tipos[aba] }}: enviar documento</h2>
+  <div class="filtros" style="display:grid;grid-template-columns:2fr {{ '1fr ' if fiscal }}2fr auto;gap:12px;align-items:end">
+    <div><label for="nome">Nome do documento</label><input type="text" id="nome" name="nome" maxlength="120" required placeholder="{{ 'Ex.: Alvará de funcionamento' if fiscal else 'Ex.: Contrato de manutenção do equipamento' }}"></div>
+    {% if fiscal %}
+    <div><label for="vencimento">Vencimento</label><input type="date" id="vencimento" name="vencimento" required></div>
+    {% endif %}
+    <div><label for="arquivo">Arquivo</label><input type="file" id="arquivo" name="arquivo" accept="{{ extensoes }}" required></div>
+    <div><button class="btn" type="submit">Enviar</button></div>
+  </div>
+  <p class="ajuda" style="margin:8px 0 0">Formatos: {{ extensoes }}. Tamanho máximo de {{ max_mb }} MB.</p>
+  {% if fiscal %}
+  <p class="ajuda" style="margin:6px 0 0">Os avisos de vencimento são enviados pelo contato “AVISOS DO SISTEMA”, visível só para a gerência: 60, 30, 15, 7 e 1 dia antes, no dia e depois de vencido.</p>
+  {% endif %}
+</form>
+
+<div class="tabela-wrap"><table class="tabela">
+  <thead><tr>
+    <th>Nome</th><th>Arquivo</th>
+    {% if fiscal %}<th>Vencimento</th><th>Situação</th>{% endif %}
+    <th>Enviado por</th><th></th>
+  </tr></thead>
+  <tbody>
+  {% for d in docs %}
+    <tr>
+      <td>{{ d.nome }}</td>
+      <td>{{ d.arquivo_nome }}</td>
+      {% if fiscal %}
+      <td>{{ d.vencimento|data_br }}</td>
+      <td>
+        {% if d.situacao == 'VENCIDO' %}<span style="color:#b5473a;font-weight:700">VENCIDO há {{ -d.dias }} dia(s)</span>
+        {% elif d.situacao == 'PROXIMO' %}<span style="color:#c77d0a;font-weight:700">vence em {{ d.dias }} dia(s)</span>
+        {% else %}<span style="color:#2c8a4f">em dia ({{ d.dias }} dias)</span>{% endif %}
+      </td>
+      {% endif %}
+      <td>{{ d.criado_por or '' }}<br><small>{{ (d.criado_em or '')[:16] }}</small></td>
+      <td style="white-space:nowrap">
+        <a class="btn sec peq" href="{{ url_for('arq.arquivo', aid=d.id) }}" target="_blank" rel="noopener">Abrir</a>
+        <a class="btn sec peq" href="{{ url_for('arq.arquivo', aid=d.id, baixar=1) }}">Baixar</a>
+        <details style="display:inline-block;vertical-align:middle">
+          <summary class="btn sec peq" style="list-style:none;cursor:pointer">Editar</summary>
+          <form method="post" action="{{ url_for('arq.editar', aid=d.id) }}" style="margin-top:8px;display:grid;gap:6px;min-width:260px">
+            {{ csrf_input }}
+            <input type="text" name="nome" value="{{ d.nome }}" maxlength="120" required>
+            {% if fiscal %}<input type="date" name="vencimento" value="{{ d.vencimento or '' }}" required>{% else %}<input type="hidden" name="vencimento" value="">{% endif %}
+            <button class="btn peq" type="submit">Salvar</button>
+          </form>
+        </details>
+        <form method="post" action="{{ url_for('arq.excluir', aid=d.id) }}" style="display:inline" onsubmit="return confirm('Excluir este documento? O arquivo será apagado.')">
+          {{ csrf_input }}
+          <button class="btn perigo peq" type="submit">Excluir</button>
+        </form>
+      </td>
+    </tr>
+  {% else %}
+    <tr><td colspan="{{ 6 if fiscal else 4 }}" class="vazio">Nenhum documento enviado ainda.</td></tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+{% endblock %}

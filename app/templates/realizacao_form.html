@@ -1,0 +1,144 @@
+{% extends 'base.html' %}
+{% block titulo %}{{ 'Editar exame realizado' if r else 'Lançar exame realizado' }}{% endblock %}
+{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/exames.css') }}">{% endblock %}
+{% macro fnum(x) %}{{ '%g'|format(x) if x is number else (x or '') }}{% endmacro %}
+{% block conteudo %}
+<h1>{{ 'Editar exame realizado' if r else 'Lançar exame realizado' }}</h1>
+<p class="sub">Escolha o paciente já cadastrado (ele preenche nome, nascimento e convênio) e informe os dados da realização do exame, como na planilha.{% if r and r.origem %} <span class="etiqueta">veio da planilha ({{ r.origem[9:] }})</span>{% endif %}</p>
+<form method="post" id="form-ex" autocomplete="off">
+  {{ csrf_input }}
+  {% if atendimento_id %}<input type="hidden" name="atendimento_id" value="{{ atendimento_id }}">{% endif %}
+  <div class="cartao">
+    <h2>Paciente</h2>
+    <div class="seletor" id="seletor-cliente">
+      <label>Pesquisar paciente cadastrado (nome, código ou CPF)</label>
+      <input type="search" placeholder="Digite pelo menos 2 letras..." {% if not r %}autofocus{% endif %}>
+      <input type="hidden" name="cliente_id" value="{{ v.cliente_id }}">
+      <div class="resultados"></div>
+    </div>
+    <div class="ajuda">Não está cadastrado? Digite o nome abaixo mesmo assim, ou <a href="{{ url_for('cad.cliente_novo') }}" target="_blank">cadastre o cliente</a>.</div>
+    <div class="grade" style="margin-top:10px">
+      <div class="c5"><label class="obrig">Nome do paciente</label><input type="text" name="paciente" id="paciente" value="{{ v.paciente }}" required data-maiusculas></div>
+            <div class="c3"><label>Data de nascimento</label><input type="date" name="data_nasc" id="data_nasc" value="{{ v.data_nasc }}"></div>
+      <div class="c2"><label for="idade" id="rotulo-idade">Idade (se não souber o nascimento)</label><input type="text" name="idade" id="idade" value="{{ v.idade }}" inputmode="numeric" {% if v.data_nasc %}readonly{% endif %}
+        title="Com a data de nascimento, a idade é calculada na data do exame. Digite a idade só se não souber o nascimento."></div>
+      <div class="c2"><label>Peso (kg)</label><input type="text" name="peso" value="{{ fnum(v.peso) }}" inputmode="decimal"></div>
+      <div class="c2"><label>Altura (m)</label><input type="text" name="altura" value="{{ fnum(v.altura) }}" inputmode="decimal"></div>
+      <div class="c4"><label>Convênio</label><input type="text" name="convenio" id="convenio" list="lista-conv" value="{{ v.convenio }}" data-maiusculas>
+        <datalist id="lista-conv">{% for c in convenios %}<option value="{{ c }}">{% endfor %}</datalist></div>
+      <div class="c4"><label>Médico solicitante</label><input type="text" name="medico" id="medico" list="lista-med" value="{{ v.medico }}" data-maiusculas>
+        <datalist id="lista-med">{% for m in medicos %}<option value="{{ m }}">{% endfor %}</datalist></div>
+      <div class="c2"><label>CID</label><input type="text" name="cid" value="{{ v.cid }}" data-maiusculas></div>
+    </div>
+  </div>
+
+  <div class="cartao">
+    <h2>Exame <span class="ex-previa-cor ex-form-previa" id="previa-tipo" style="margin-left:8px">—</span></h2>
+    <div class="grade">
+      <div class="c2"><label>Nº</label><input type="number" name="numero" value="{{ v.numero }}" min="1"></div>
+      <div class="c3"><label class="obrig">Data do exame</label><input type="date" name="data" value="{{ v.data }}" required></div>
+      <div class="c3"><label>Código (registro)</label><input type="text" name="codigo" value="{{ v.codigo }}"></div>
+      <div class="c4"><label class="obrig">Exame</label><input type="text" name="exame" id="exame" list="lista-exames" value="{{ v.exame }}" required data-maiusculas>
+        <datalist id="lista-exames">{% for e in exames %}<option value="{{ e }}">{% endfor %}</datalist></div>
+
+      <div class="c2"><label>Rádio</label><input type="text" name="radio" id="radio" value="{{ v.radio }}" data-maiusculas placeholder="TC99"></div>
+      <div class="c2"><label>Eluição</label><input type="text" name="eluicao" id="eluicao" value="{{ v.eluicao }}"></div>
+      <div class="c3"><label>Fármaco</label><input type="text" name="farmaco" id="farmaco" value="{{ v.farmaco }}" data-maiusculas></div>
+      <div class="c3"><label>Lote</label><input type="text" name="lote" id="lote" value="{{ v.lote }}" data-maiusculas></div>
+      <div class="c2"><label>Ativ. prescrita</label><input type="text" name="ativ_prescrita" id="ativ_prescrita" value="{{ v.ativ_prescrita }}"></div>
+
+      <div class="c2"><label>Ativ. administrada</label><input type="text" name="ativ_administrada" id="ativ_administrada" value="{{ v.ativ_administrada }}"></div>
+      <div class="c2"><label>Hora da injeção</label><input type="time" name="hora_injecao" value="{{ v.hora_injecao }}"></div>
+      <div class="c2"><label>Hora do exame</label><input type="time" name="hora_exame" value="{{ v.hora_exame }}"></div>
+      <div class="c3"><label>Responsável</label><input type="text" name="responsavel" id="responsavel" value="{{ v.responsavel }}" data-maiusculas></div>
+      <div class="c3"><label>Observação</label><input type="text" name="obs" value="{{ v.obs }}"></div>
+    </div>
+    <p class="ajuda" style="margin-top:8px">Ao escolher o exame, rádio, fármaco, lote, eluição, atividade e responsável são sugeridos a partir do último exame do mesmo tipo (só preenche o que estiver vazio).</p>
+  </div>
+  <div class="acoes">
+    <button class="btn" type="submit">Salvar</button>
+    {% if not r %}<button class="btn sec" type="submit" name="continuar" value="1">Salvar e lançar outro</button>{% endif %}
+    <a class="btn sec" href="{{ url_for('lanc.lista') }}">Voltar</a>
+  </div>
+</form>
+{% if r %}
+<form method="post" action="{{ url_for('lanc.excluir', rid=r.id) }}" data-confirmar="Excluir este lançamento?" style="margin-top:12px">{{ csrf_input }}<button class="btn perigo peq" type="submit">Excluir lançamento</button></form>
+<p class="ajuda">Lançado por {{ r.criado_por or '—' }}{% if r.criado_em %} em {{ r.criado_em[:10]|data_br }}{% endif %}{% if r.atualizado_por %} · última alteração por {{ r.atualizado_por }} em {{ r.atualizado_em[:10]|data_br }}{% endif %}.</p>
+{% endif %}
+{% endblock %}
+{% block scripts %}
+<script>
+(function () {
+  const cats = {{ cats|tojson }};
+  const norm = (s) => (s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().replace(/\s+/g, ' ').trim();
+  const combina = (p, t) => p.length <= 4 ? new RegExp('(^|[^A-Z0-9])' + p.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '($|[^A-Z0-9])').test(t) : t.includes(p);
+  function tipo(exame) {
+    const t = norm(exame);
+    return cats.find((c) => c.palavras.some((p) => combina(p, t)));
+  }
+  const previa = document.getElementById('previa-tipo'), exame = document.getElementById('exame');
+  function pintar() {
+    const c = exame.value.trim() ? tipo(exame.value) : null;
+    if (c) { previa.style.setProperty('--c', c.cor); previa.style.setProperty('--t', c.texto); previa.textContent = c.rotulo; }
+    else { previa.style.removeProperty('--c'); previa.style.removeProperty('--t'); previa.textContent = exame.value.trim() ? 'Outros (sem cor)' : '—'; }
+  }
+  async function sugerir() {
+    pintar();
+    if (!exame.value.trim()) return;
+    try {
+      const r = await (await fetch('{{ url_for("lanc.sugestao") }}?exame=' + encodeURIComponent(exame.value))).json();
+      ['radio', 'eluicao', 'farmaco', 'lote', 'ativ_prescrita', 'ativ_administrada', 'responsavel'].forEach((k) => {
+        const el = document.getElementById(k);
+        if (el && !el.value && r[k]) el.value = r[k];
+      });
+    } catch (e) { /* sem sugestão */ }
+  }
+  exame.addEventListener('input', pintar);
+  exame.addEventListener('change', sugerir);
+  pintar();
+
+  // idade: calculada pela data de nascimento (na data do exame); só é digitada quando não há nascimento
+  const campoNasc = document.getElementById('data_nasc');
+  const campoData = document.querySelector('input[name=data]');
+  const campoIdade = document.getElementById('idade');
+  const rotuloIdade = document.getElementById('rotulo-idade');
+  const partes = (s) => { const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s || ''); return m ? m.slice(1).map(Number) : null; };
+  let idadeAuto = !!campoNasc.value;   // ao abrir com nascimento, o campo já vem calculado pelo servidor
+  function calcularIdade() {
+    const n = partes(campoNasc.value);
+    const hoje = new Date();
+    const d = partes(campoData.value) || [hoje.getFullYear(), hoje.getMonth() + 1, hoje.getDate()];
+    const anos = n ? d[0] - n[0] - ((d[1] < n[1] || (d[1] === n[1] && d[2] < n[2])) ? 1 : 0) : -1;
+    if (!n || anos < 0 || anos > 130) {
+      if (idadeAuto) campoIdade.value = '';
+      idadeAuto = false;
+      campoIdade.readOnly = false;
+      rotuloIdade.textContent = 'Idade (se não souber o nascimento)';
+      return;
+    }
+    campoIdade.value = anos + (anos === 1 ? ' ano' : ' anos');
+    campoIdade.readOnly = true;
+    idadeAuto = true;
+    rotuloIdade.textContent = 'Idade (calculada pelo nascimento)';
+  }
+  ['input', 'change'].forEach((ev) => { campoNasc.addEventListener(ev, calcularIdade); campoData.addEventListener(ev, calcularIdade); });
+  calcularIdade();
+
+  // paciente cadastrado -> preenche os dados conhecidos
+  const iso = (br) => { const m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(br || ''); return m ? m[3] + '-' + m[2] + '-' + m[1] : ''; };
+  // ao abrir um rascunho (atendimento) ou uma edição, o paciente já vem escolhido: não sobrescreve o que já está na tela
+  let jaVeioEscolhido = !!document.querySelector('#seletor-cliente input[name=cliente_id]').value;
+  SeletorCliente(document.getElementById('seletor-cliente'), (c) => {
+    if (!c) return;
+    if (jaVeioEscolhido) { jaVeioEscolhido = false; return; }
+    document.getElementById('paciente').value = c.nome;
+    const nasc = iso(c.data_nasc); if (nasc) document.getElementById('data_nasc').value = nasc;
+    calcularIdade();
+    if (c.convenio) document.getElementById('convenio').value = c.convenio.toUpperCase();
+    // médico solicitante do atendimento mais recente do paciente (só preenche se estiver vazio)
+    const med = document.getElementById('medico');
+    if (med && !med.value && c.anteriores && c.anteriores.length && c.anteriores[0].medico) med.value = c.anteriores[0].medico.toUpperCase();
+  });
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,247 @@
+{% extends 'base.html' %}
+{% block titulo %}Pedido de exame{% endblock %}
+{% block conteudo %}
+<h1>Pedido de exame</h1>
+<p class="sub">Selecione um cliente para preencher o paciente, informe a indicação e os exames solicitados e imprima o pedido.</p>
+<form class="cartao" id="form-pedido-exame" method="post" target="_blank" autocomplete="off">
+  {{ csrf_input }}
+  <div class="seletor" id="seletor-cliente" style="margin-bottom:14px">
+    <label>Buscar cliente (opcional)</label>
+    <input type="search" placeholder="Nome, código ou CPF..." autocomplete="off">
+    <input type="hidden" name="cliente_id" id="campo-cliente-id" value="{{ v.cliente_id }}">
+    <div class="resultados"></div>
+  </div>
+  <div class="grade">
+    <div class="c6">
+      <label for="campo-paciente">Paciente</label>
+      <input type="text" name="paciente" id="campo-paciente" value="{{ v.paciente }}" data-maiusculas autocomplete="off" required>
+    </div>
+    <div class="c3">
+      <label for="campo-data">Data</label>
+      <input type="date" name="data" id="campo-data" value="{{ v.data }}">
+    </div>
+    <div class="c3">
+      <label for="campo-convenio">Convênio</label>
+      <input type="text" name="convenio" id="campo-convenio" value="{{ v.convenio }}" list="lista-convenios" data-lembrar="convenio" placeholder="Ex.: PARTICULAR, UNIMED...">
+      <datalist id="lista-convenios">{% for c in convenios %}{% if c %}<option value="{{ c }}"></option>{% endif %}{% endfor %}</datalist>
+    </div>
+
+    <div class="c12">
+      <label for="campo-hipotese">Hipótese diagnóstica / Indicação clínica</label>
+      <input type="text" name="hipotese" id="campo-hipotese" value="{{ v.hipotese }}" list="lista-hipoteses" data-lembrar="hipotese" placeholder="Indicação clínica, suspeita diagnóstica ou CID...">
+      <datalist id="lista-hipoteses">{% for h in hipoteses %}{% if h %}<option value="{{ h }}"></option>{% endif %}{% endfor %}</datalist>
+    </div>
+
+    <div class="c12">
+      <label for="busca-exame">Adicionar exame cadastrado</label>
+      <div style="display:flex;gap:8px;align-items:center">
+        <input type="text" id="busca-exame" list="lista-exames" placeholder="Digite ou escolha um exame para incluir na lista..." style="flex:1">
+        <button class="btn sec peq" type="button" id="btn-adicionar-exame">Adicionar</button>
+      </div>
+      <datalist id="lista-exames">{% for e in exames %}<option value="{{ e }}"></option>{% endfor %}</datalist>
+    </div>
+
+    <div class="c12">
+      <label for="campo-exames">Exames solicitados <small>(Um exame por linha)</small></label>
+      <textarea name="exames" id="campo-exames" rows="5" style="width:100%" required>{{ v.exames }}</textarea>
+    </div>
+
+    <div class="c12">
+      <label for="campo-observacoes">Observações <small>(Opcional — orientações, preparo ou informações complementares)</small></label>
+      <textarea name="observacoes" id="campo-observacoes" rows="3" style="width:100%" data-lembrar="observacoes">{{ v.observacoes }}</textarea>
+    </div>
+
+    <div class="c5">
+      <label for="campo-medico">Médico solicitante</label>
+      <input type="text" name="medico" id="campo-medico" value="{{ v.medico }}" list="lista-medicos" data-lembrar="medico">
+      <datalist id="lista-medicos">{% for m in medicos %}{% if m.medico %}<option value="{{ m.medico }}"></option>{% endif %}{% endfor %}</datalist>
+    </div>
+    <div class="c4">
+      <label for="campo-especialidade">Especialidade</label>
+      <input type="text" name="especialidade" id="campo-especialidade" value="{{ v.especialidade }}" list="lista-especialidades" data-lembrar="especialidade">
+      <datalist id="lista-especialidades">{% for m in medicos %}{% if m.especialidade %}<option value="{{ m.especialidade }}"></option>{% endif %}{% endfor %}</datalist>
+    </div>
+    <div class="c3">
+      <label for="campo-registro">Registro (CRM/UF nº)</label>
+      <input type="text" name="registro" id="campo-registro" value="{{ v.registro }}" list="lista-registros" data-lembrar="registro">
+      <datalist id="lista-registros">{% for m in medicos %}{% if m.registro %}<option value="{{ m.registro }}"></option>{% endif %}{% endfor %}</datalist>
+    </div>
+  </div>
+  <p class="ajuda" style="margin:10px 0 0">Os últimos valores de médico, especialidade, registro, convênio, indicação clínica e observações ficam salvos automaticamente neste computador (dados do paciente nunca são salvos).</p>
+  <div class="acoes">
+    <button class="btn" type="submit">Gerar e imprimir</button>
+    <a class="btn sec" href="{{ url_for('doc.indice') }}">Voltar</a>
+  </div>
+</form>
+
+<h2 style="margin-top:28px">Últimos pedidos</h2>
+{% if recentes %}
+<table class="tabela">
+  <thead><tr><th>Data</th><th>Paciente</th><th>Convênio</th><th>Médico</th><th>Primeiro exame</th><th></th></tr></thead>
+  <tbody>
+  {% for p in recentes %}
+    <tr>
+      <td>{{ p.data|data_br }}</td>
+      <td>{{ p.paciente }}</td>
+      <td>{{ p.convenio or '—' }}</td>
+      <td>{{ p.medico or '—' }}</td>
+      <td>{{ p.primeiro }}</td>
+      <td><a href="{{ url_for('doc.pedido_exame_imprimir', pid=p.id) }}" target="_blank">Reimprimir</a></td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p class="ajuda">Nenhum pedido emitido ainda.</p>
+{% endif %}
+{% endblock %}
+{% block scripts %}
+<script>
+const MEDICOS = {{ medicos|tojson }};
+const CHAVE_STORAGE = 'nucleleste.pedido_exame';
+const CHAVE_HISTORICO = 'nucleleste.pedido_exame.historico';
+const CAMPOS_LEMBRADOS = ['medico', 'especialidade', 'registro', 'convenio', 'hipotese', 'observacoes'];
+const LISTAS_LEMBRADAS = {
+  medico: 'lista-medicos',
+  especialidade: 'lista-especialidades',
+  registro: 'lista-registros',
+  convenio: 'lista-convenios',
+  hipotese: 'lista-hipoteses'
+};
+const TEM_CLIENTE_INICIAL = {{ (v.cliente_id != '' and v.cliente_id is not none)|tojson }};
+
+function _adicionarOpcaoDatalist(idLista, valor) {
+  if (!idLista || !valor) return;
+  const dl = document.getElementById(idLista);
+  if (!dl) return;
+  const norm = valor.trim().toUpperCase();
+  if (!norm) return;
+  for (const opt of dl.querySelectorAll('option')) {
+    if ((opt.value || '').trim().toUpperCase() === norm) return;
+  }
+  const o = document.createElement('option');
+  o.value = valor.trim();
+  dl.appendChild(o);
+}
+
+function carregarLembradosPedido() {
+  try {
+    localStorage.removeItem('nucleleste.pedido.paciente');
+    localStorage.removeItem('nucleleste.pedido.cpf');
+    const bruto = localStorage.getItem(CHAVE_STORAGE);
+    if (bruto) {
+      const salvo = JSON.parse(bruto);
+      delete salvo.paciente;
+      delete salvo.cpf;
+      delete salvo.cliente_id;
+      CAMPOS_LEMBRADOS.forEach((k) => {
+        if (k === 'convenio' && TEM_CLIENTE_INICIAL) return;
+        const el = document.querySelector('[data-lembrar="' + k + '"]');
+        if (el && typeof salvo[k] === 'string' && salvo[k] !== '') {
+          el.value = salvo[k];
+        }
+      });
+    } else {
+      CAMPOS_LEMBRADOS.forEach((k) => {
+        if (k === 'convenio' && TEM_CLIENTE_INICIAL) return;
+        const val = localStorage.getItem('nucleleste.pedido.' + k);
+        const el = document.querySelector('[data-lembrar="' + k + '"]');
+        if (el && val) el.value = val;
+      });
+    }
+    const histBruto = localStorage.getItem(CHAVE_HISTORICO);
+    if (histBruto) {
+      const hist = JSON.parse(histBruto);
+      Object.entries(LISTAS_LEMBRADAS).forEach(([k, idLista]) => {
+        (hist[k] || []).forEach((item) => _adicionarOpcaoDatalist(idLista, item));
+      });
+      (hist.medicos_completos || []).forEach((m) => {
+        if (m && m.medico && !MEDICOS.some((x) => (x.medico || '').toUpperCase() === m.medico.toUpperCase())) {
+          MEDICOS.push(m);
+        }
+      });
+    }
+  } catch (e) {}
+}
+
+function salvarLembradosPedido() {
+  try {
+    const atual = {};
+    CAMPOS_LEMBRADOS.forEach((k) => {
+      const el = document.querySelector('[data-lembrar="' + k + '"]');
+      const val = el ? el.value.trim() : '';
+      atual[k] = val;
+      localStorage.setItem('nucleleste.pedido.' + k, val);
+    });
+    localStorage.setItem(CHAVE_STORAGE, JSON.stringify(atual));
+
+    let hist = {};
+    try { hist = JSON.parse(localStorage.getItem(CHAVE_HISTORICO) || '{}') || {}; } catch (e) { hist = {}; }
+    Object.entries(LISTAS_LEMBRADAS).forEach(([k, idLista]) => {
+      const v = atual[k];
+      if (!v) return;
+      const arr = Array.isArray(hist[k]) ? hist[k].filter((x) => (x || '').toUpperCase() !== v.toUpperCase()) : [];
+      arr.unshift(v);
+      hist[k] = arr.slice(0, 12);
+      _adicionarOpcaoDatalist(idLista, v);
+    });
+    if (atual.medico) {
+      const novoMed = { medico: atual.medico, especialidade: atual.especialidade || '', registro: atual.registro || '' };
+      const mArr = Array.isArray(hist.medicos_completos)
+        ? hist.medicos_completos.filter((x) => (x.medico || '').toUpperCase() !== atual.medico.toUpperCase())
+        : [];
+      mArr.unshift(novoMed);
+      hist.medicos_completos = mArr.slice(0, 20);
+      const idx = MEDICOS.findIndex((x) => (x.medico || '').toUpperCase() === atual.medico.toUpperCase());
+      if (idx >= 0) MEDICOS[idx] = novoMed; else MEDICOS.unshift(novoMed);
+    }
+    localStorage.setItem(CHAVE_HISTORICO, JSON.stringify(hist));
+  } catch (e) {}
+}
+
+carregarLembradosPedido();
+
+CAMPOS_LEMBRADOS.forEach((k) => {
+  const el = document.querySelector('[data-lembrar="' + k + '"]');
+  if (el) el.addEventListener('change', salvarLembradosPedido);
+});
+document.getElementById('form-pedido-exame').addEventListener('submit', salvarLembradosPedido);
+
+SeletorCliente(document.getElementById('seletor-cliente'), (c) => {
+  if (!c) return;
+  const paciente = document.getElementById('campo-paciente');
+  if (paciente) paciente.value = (c.nome || '').toUpperCase();
+  const convenio = document.getElementById('campo-convenio');
+  if (convenio && c.convenio) convenio.value = c.convenio;
+});
+
+function adicionarExameDaBusca() {
+  const busca = document.getElementById('busca-exame');
+  const nome = busca.value.trim();
+  if (!nome) return;
+  const exames = document.getElementById('campo-exames');
+  const atual = exames.value.replace(/\s+$/, '');
+  exames.value = (atual ? atual + '\n' : '') + nome.toUpperCase();
+  busca.value = '';
+  busca.focus();
+}
+
+document.getElementById('btn-adicionar-exame').addEventListener('click', adicionarExameDaBusca);
+document.getElementById('busca-exame').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    adicionarExameDaBusca();
+  }
+});
+
+document.getElementById('campo-medico').addEventListener('change', (e) => {
+  const nome = e.target.value.trim().toUpperCase();
+  const m = MEDICOS.find((x) => (x.medico || '').toUpperCase() === nome);
+  if (m) {
+    if (m.especialidade) document.getElementById('campo-especialidade').value = m.especialidade;
+    if (m.registro) document.getElementById('campo-registro').value = m.registro;
+  }
+  salvarLembradosPedido();
+});
+</script>
+{% endblock %}

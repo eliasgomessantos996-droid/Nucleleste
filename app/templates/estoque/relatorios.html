@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+{% from '_ic.html' import ic %}
+{% block titulo %}Relatórios · Estoque{% endblock %}
+{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/estoque.css') }}">{% endblock %}
+{% block conteudo %}
+<div class="cabecalho">
+  <div><h1>{{ ic('file-chart-column', 22) }} Relatórios do estoque</h1>
+    <p class="sub">Valor em estoque: R$ {{ rel.valor_total|moeda }} · {{ rel.abaixo|length }} item(ns) abaixo do mínimo · {{ rel.validades|length }} lote(s) com validade no prazo</p></div>
+  <div class="acoes">
+    <a class="btn sec" href="{{ url_for('est.relatorios_xlsx', de=rel.de, ate=rel.ate, tipo=rel.tipo) }}">Excel</a>
+    <a class="btn" href="{{ url_for('est.relatorios_pdf', de=rel.de, ate=rel.ate, tipo=rel.tipo) }}" target="_blank">PDF</a>
+  </div>
+</div>
+
+<form class="cartao filtros" method="get">
+  <div><label for="r-de">De</label><input id="r-de" type="date" name="de" value="{{ rel.de }}"></div>
+  <div><label for="r-ate">Até</label><input id="r-ate" type="date" name="ate" value="{{ rel.ate }}"></div>
+  <div><label for="r-tipo">Tipo</label><select id="r-tipo" name="tipo"><option value="">Todos</option>
+    {% for t in tipos %}<option value="{{ t }}" {% if rel.tipo == t %}selected{% endif %}>{{ t|capitalize }}</option>{% endfor %}</select></div>
+  <div><button class="btn" type="submit">Filtrar</button></div>
+</form>
+
+<h2 class="est-secao">Posição atual do estoque</h2>
+<div class="tabela-wrap"><table class="tabela">
+  <thead><tr><th>Item</th><th>Tipo</th><th>Unid.</th><th class="num">Saldo</th><th class="num">Último valor (R$)</th><th class="num">Valor em estoque (R$)</th><th>Situação</th></tr></thead>
+  <tbody>
+  {% for i in rel.posicao %}
+    <tr>
+      <td><a href="{{ url_for('est.historico', iid=i.id) }}">{{ i.nome }}</a></td>
+      <td>{{ i.tipo|capitalize }}</td>
+      <td>{{ i.unidade }}</td>
+      <td class="num">{{ i.saldo|est_qtd }}</td>
+      <td class="num">{{ i.ultimo_valor|moeda or '-' }}</td>
+      <td class="num">{{ i.valor|moeda }}</td>
+      <td><span class="etiqueta {{ {'ok': 'pago', 'abaixo': 'aberto', 'zerado': 'cancelado'}[i.situacao] }}">{{ {'ok': 'OK', 'abaixo': 'Abaixo do mínimo', 'zerado': 'Zerado'}[i.situacao] }}</span></td>
+    </tr>
+  {% else %}
+    <tr><td colspan="7" class="vazio">Nenhum item cadastrado neste tipo.</td></tr>
+  {% endfor %}
+  </tbody>
+  <tfoot><tr><th colspan="5">Total em estoque</th><th class="num">{{ rel.valor_total|moeda }}</th><th></th></tr></tfoot>
+</table></div>
+
+<h2 class="est-secao">Itens abaixo do mínimo</h2>
+<div class="tabela-wrap"><table class="tabela">
+  <thead><tr><th>Item</th><th>Tipo</th><th>Unid.</th><th class="num">Saldo</th><th class="num">Mínimo</th><th class="num">Falta para o mínimo</th></tr></thead>
+  <tbody>
+  {% for i in rel.abaixo %}
+    <tr><td>{{ i.nome }}</td><td>{{ i.tipo|capitalize }}</td><td>{{ i.unidade }}</td><td class="num">{{ i.saldo|est_qtd }}</td>
+      <td class="num">{{ i.estoque_minimo|est_qtd }}</td><td class="num">{{ i.falta|est_qtd }}</td></tr>
+  {% else %}
+    <tr><td colspan="6" class="vazio">Nenhum item abaixo do mínimo.</td></tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+
+<h2 class="est-secao">Movimentação do período</h2>
+<div class="tabela-wrap"><table class="tabela">
+  <thead><tr><th>Item</th><th>Unid.</th><th class="num">Entradas</th><th class="num">Saídas</th><th class="num">Ajustes (+/-)</th><th class="num">Saldo do período</th></tr></thead>
+  <tbody>
+  {% for i in rel.mov['itens'] %}
+    <tr><td>{{ i.nome }}</td><td>{{ i.unidade }}</td><td class="num">{{ i.entradas|est_qtd }}</td><td class="num">{{ i.saidas|est_qtd }}</td>
+      <td class="num">{{ '+' if i.ajustes > 0 }}{{ i.ajustes|est_qtd if i.ajustes else '0' }}</td><td class="num">{{ i.saldo|est_qtd if i.saldo else '0' }}</td></tr>
+  {% else %}
+    <tr><td colspan="6" class="vazio">Nenhuma movimentação neste período.</td></tr>
+  {% endfor %}
+  </tbody>
+  {% if rel.mov['itens'] %}
+  <tfoot><tr><th>Total</th><th></th><th class="num">{{ rel.mov.totais.entradas|est_qtd }}</th><th class="num">{{ rel.mov.totais.saidas|est_qtd }}</th>
+    <th class="num">{{ rel.mov.totais.ajustes|est_qtd if rel.mov.totais.ajustes else '0' }}</th><th class="num">{{ rel.mov.totais.saldo|est_qtd if rel.mov.totais.saldo else '0' }}</th></tr></tfoot>
+  {% endif %}
+</table></div>
+
+<h2 class="est-secao">Saídas agrupadas por motivo</h2>
+<div class="tabela-wrap"><table class="tabela">
+  <thead><tr><th>Item</th>{% for m in motivos %}<th class="num">{{ m }}</th>{% endfor %}<th class="num">Total</th></tr></thead>
+  <tbody>
+  {% for i in rel.mov['itens'] if i.saidas %}
+    <tr><td>{{ i.nome }}</td>{% for m in motivos %}<td class="num">{{ i.motivos[m]|est_qtd if i.motivos[m] else '' }}</td>{% endfor %}<td class="num">{{ i.saidas|est_qtd }}</td></tr>
+  {% else %}
+    <tr><td colspan="{{ motivos|length + 2 }}" class="vazio">Nenhuma saída no período.</td></tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+
+<h2 class="est-secao">Validades a vencer (até {{ dias }} dias ou já vencidas)</h2>
+<div class="tabela-wrap"><table class="tabela">
+  <thead><tr><th>Item</th><th>Lote</th><th>Validade</th><th class="num">Saldo</th><th>Situação</th></tr></thead>
+  <tbody>
+  {% for v in rel.validades %}
+    <tr><td>{{ v.nome }}</td><td>{{ v.lote }}</td><td>{{ v.validade|data_br }}</td><td class="num">{{ v.saldo|est_qtd }}</td>
+      <td><span class="etiqueta {{ 'cancelado' if v.vencido else 'aberto' }}">{{ 'Vencida' if v.vencido else 'Vence em %d dia(s)' % v.dias }}</span></td></tr>
+  {% else %}
+    <tr><td colspan="5" class="vazio">Nenhum lote vencido ou perto de vencer.</td></tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+{% endblock %}

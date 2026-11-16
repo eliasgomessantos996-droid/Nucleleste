@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% block titulo %}NucleAI: chamados{% endblock %}
+{% block conteudo %}
+{% include '_nucleai_abas.html' %}
+
+<form class="cartao filtros" method="get">
+  <div><label for="de">De</label><input type="date" id="de" name="de" value="{{ de }}"></div>
+  <div><label for="ate">Até</label><input type="date" id="ate" name="ate" value="{{ ate }}"></div>
+  <div><label for="status">Situação</label>
+    <select id="status" name="status"><option value="">Todas</option>
+      {% for k, v in status_rotulos.items() %}<option value="{{ k }}" {{ 'selected' if status == k }}>{{ v }}</option>{% endfor %}</select></div>
+  <div><button class="btn" type="submit">Filtrar</button></div>
+  <div class="ajuda" style="align-self:center">{{ rows|length }} chamado(s) · {{ resumo.chamados_sem_gerencia_online }} com a gerência offline na hora do pedido</div>
+</form>
+
+<div class="tabela-wrap"><table class="tabela">
+  <thead><tr><th>Data</th><th>Usuário</th><th>Assunto</th><th>Dúvida escrita</th><th>Confirmou</th><th>Situação</th><th>Avisados</th><th></th></tr></thead>
+  <tbody>
+  {% for c in rows %}
+    <tr>
+      <td>{{ c.criado_em[8:10] }}/{{ c.criado_em[5:7] }} {{ c.criado_em[11:16] }}</td>
+      <td><strong>{{ c.usuario }}</strong></td>
+      <td>{{ c.tema }}{% if c.modulo %} › {{ c.modulo }}{% endif %}{% if c.area %} › {{ c.area }}{% endif %}</td>
+      <td>{{ c.duvida or '—' }}</td>
+      <td>{% if c.confirmou == 'SIM' %}✔ Sim{% elif c.confirmou == 'NAO' %}✖ Não{% else %}—{% endif %}</td>
+      <td><span class="nai-tag {{ 'nova' if c.status == 'EM_ATENDIMENTO' else ('editada' if c.status == 'ABERTO' else '') }}">{{ status_rotulos.get(c.status, c.status) }}</span>
+        {% if c.atendido_por %}<br><small class="ajuda">por {{ c.atendido_por }}</small>{% endif %}</td>
+      <td class="num">{{ c.avisados }}{% if not c.gerencia_online %} <span title="Ninguém estava online">💤</span>{% endif %}</td>
+      <td>{% if c.status != 'RESOLVIDO' %}
+        <form method="post" action="{{ url_for('nucleai.resolver', cid=c.id) }}">{{ csrf_input }}<input type="hidden" name="voltar" value="{{ request.full_path }}">
+          <button class="btn sec peq" type="submit">Marcar resolvido</button></form>{% endif %}</td>
+    </tr>
+  {% else %}<tr><td colspan="8" class="vazio">Nenhum chamado no período.</td></tr>{% endfor %}
+  </tbody>
+</table></div>
+<p class="ajuda" style="margin-top:12px">Quem recebe o aviso vê, na mensagem da NucleAI, o botão “Falar com o usuário”: ele abre a conversa com uma pergunta pronta
+  (“sua dúvida é sobre isso mesmo?”) e, quando a pessoa confirma, a NucleAI envia à gerência o detalhamento da área.</p>
+{% endblock %}

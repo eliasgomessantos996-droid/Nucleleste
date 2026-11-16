@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+{% from '_campanha.html' import laco, selo %}
+{% block titulo %}Início{% endblock %}
+{% block conteudo %}
+<h1>Olá, {{ usuario.usuario|title }}</h1>
+<p class="sub">{{ hoje|data_br }}</p>
+
+{% if campanha %}{% set cp = campanha.principal %}
+<section class="camp-cartao" style="--camp-cor:{{ cp.cor|e }};--camp-laco:{{ cp.laco|e }}">
+  {{ laco(cp, 76) }}
+  <div class="camp-cartao-txt">
+    <small>Campanha do mês · {{ campanha.mes }}</small>
+    <h2>{{ cp.nome }}</h2>
+    <p class="camp-tema">{{ cp.tema }}</p>
+    <p>{{ cp.mensagem }}</p>
+    {% if cp.clinica %}<p class="camp-clinica">{{ cp.clinica }}</p>{% endif %}
+    {% if campanha.outras %}
+    <div class="camp-outras">
+      {% for c in campanha.outras %}<span class="camp-outra">{{ selo(c) }}<span>{{ c.tema }}</span></span>{% endfor %}
+    </div>
+    {% endif %}
+  </div>
+</section>
+{% endif %}
+
+<div class="atalhos">
+  {% if pode('atendimentos') %}<a href="{{ url_for('atend.novo') }}">Lançar atendimento<small>Exame + fichas de impressão</small></a>{% endif %}
+  {% if pode('clientes') %}<a href="{{ url_for('cad.cliente_novo') }}">Novo cliente<small>Cadastro com busca de CEP</small></a>{% endif %}
+  {% if pode('medicamentos') %}<a href="{{ url_for('med.editar') }}">Agendar medicamento<small>Iodo, Gálio ou PCI</small></a>{% endif %}
+  {% if pode('guias') %}<a href="{{ url_for('atend.guias') }}">Protocolo de guias<small>Guias de convênio do período</small></a>{% endif %}
+  {% if pode('caixa') %}<a href="{{ url_for('atend.caixa') }}">Caixa<small>Particular, SMS e Mais Med</small></a>{% endif %}
+  {% if pode('faturamento') %}<a href="{{ url_for('fat.lista') }}">Faturamento<small>Notas e recebimentos</small></a>{% endif %}
+</div>
+
+<div class="indicadores">
+  {% if pode('atendimentos') %}<div class="indicador"><div class="n">{{ resumo.atend_hoje }}</div><div class="t">atendimentos hoje</div></div>{% endif %}
+  {% if pode('clientes') %}<div class="indicador"><div class="n">{{ resumo.clientes }}</div><div class="t">clientes cadastrados</div></div>{% endif %}
+  {% if pode('caixa') %}<div class="indicador"><div class="n">{{ resumo.caixa_aberto }}</div><div class="t">lançamentos de caixa em aberto</div></div>{% endif %}
+  {% if pode('contas') %}<div class="indicador"><div class="n">{{ resumo.contas_abertas[0] }}</div><div class="t">contas a pagar em aberto (R$ {{ resumo.contas_abertas[1]|moeda }})</div></div>{% endif %}
+</div>
+
+{% if pode('atendimentos') %}
+<h2>Atendimentos de hoje</h2>
+<div class="tabela-wrap"><table class="tabela">
+  <thead><tr><th>Cliente</th><th>Exame</th><th>Convênio</th><th>Médico</th><th>Usuário</th><th></th></tr></thead>
+  <tbody>
+  {% for a in atend %}
+    <tr><td>{{ a.cliente_nome }}</td><td>{{ a.exame }}</td><td>{{ a.convenio }}</td><td>{{ a.medico }}</td><td>{{ a.usuario or '' }}</td>
+      <td class="num"><a class="btn sec peq" href="{{ url_for('atend.imprimir', aid=a.id) }}">Fichas</a></td></tr>
+  {% else %}<tr><td colspan="6" class="vazio">Nenhum atendimento lançado hoje.</td></tr>{% endfor %}
+  </tbody>
+</table></div>
+{% endif %}
+
+{% if pode('medicamentos') %}
+<h2>Doses agendadas (próximos 7 dias)</h2>
+<div class="tabela-wrap"><table class="tabela">
+  <thead><tr><th>Data</th><th>Paciente</th><th>Medicamento</th><th>MCI</th><th>Contato</th></tr></thead>
+  <tbody>
+  {% for d in doses %}
+    <tr><td>{{ d.data_dose|data_br }}</td><td>{{ d.paciente }}</td><td>{{ d.medicamento }}</td><td>{{ d.mci or '' }}</td><td>{{ d.contato or '' }}</td></tr>
+  {% else %}<tr><td colspan="5" class="vazio">Nenhuma dose agendada para os próximos dias.</td></tr>{% endfor %}
+  </tbody>
+</table></div>
+{% endif %}
+
+{% if pode('contas') %}
+<h2>Contas vencidas ou vencendo em 7 dias</h2>
+<div class="tabela-wrap"><table class="tabela">
+  <thead><tr><th>Vencimento</th><th>Descrição</th><th>Categoria</th><th class="num">Valor (R$)</th></tr></thead>
+  <tbody>
+  {% for c in contas[:30] %}
+    <tr><td>{{ c.vencimento|data_br }}{% if c.vencimento < hoje %} <span class="etiqueta cancelado">vencida</span>{% endif %}</td>
+      <td>{{ c.descricao }}</td><td>{{ c.categoria or '' }}</td><td class="num">{{ c.valor|moeda }}</td></tr>
+  {% else %}<tr><td colspan="4" class="vazio">Nenhuma conta próxima do vencimento.</td></tr>{% endfor %}
+  </tbody>
+</table></div>
+{% if contas|length > 30 %}<p class="ajuda">Mostrando as 30 mais antigas. <a href="{{ url_for('fin.contas') }}">Ver todas em Contas a pagar</a>.</p>{% endif %}
+{% endif %}
+{% if not menu or menu|length < 2 %}<div class="cartao">Seu usuário ainda não tem módulos liberados. Peça ao administrador para configurar o seu perfil.</div>{% endif %}
+{% endblock %}

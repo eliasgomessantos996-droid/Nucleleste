@@ -1,0 +1,46 @@
+{% extends 'qualidade/_base.html' %}
+{% from 'qualidade/_modelos.html' import pdf_botoes with context %}
+{% block titulo %}Indicadores da qualidade{% endblock %}
+{% block titulo_q %}Indicadores (KPI){% endblock %}
+{% block sub_q %}Calculados com os dados do sistema no período. A situação compara com a meta; a linha mostra os últimos seis meses. Os números são recalculados a cada minuto.{% endblock %}
+{% block acoes_q %}
+{{ pdf_botoes(url_for('qual.kpi_arquivo', tipo='pdf') ~ '?de=' ~ de ~ '&ate=' ~ ate) }}
+<a class="btn sec" href="{{ url_for('qual.kpi_arquivo', tipo='xlsx') }}?de={{ de }}&ate={{ ate }}">⬇ Excel</a>
+{% endblock %}
+{% block corpo_q %}
+<form class="cartao filtros q-nao-imprime" method="get">
+  <div><label for="de">De</label><input type="date" id="de" name="de" value="{{ de }}"></div>
+  <div><label for="ate">Até</label><input type="date" id="ate" name="ate" value="{{ ate }}"></div>
+  <div><button class="btn" type="submit">Atualizar</button></div>
+</form>
+{% set r = painel.resumo %}
+<div class="q-cartoes-resumo">
+  <div class="q-num ok"><strong>{{ r.ok }}</strong><span>na meta</span></div>
+  <div class="q-num atencao"><strong>{{ r.atencao }}</strong><span>em atenção</span></div>
+  <div class="q-num critico"><strong>{{ r.critico }}</strong><span>críticos</span></div>
+  <div class="q-num"><strong>{{ r.sem_dado }}</strong><span>sem dado no período</span></div>
+</div>
+<div class="q-kpis">
+  {% for i in painel.indicadores %}
+  <article class="q-kpi {{ i.situacao }}">
+    <header><span class="q-sem" aria-hidden="true"></span><h3>{{ i.nome }}</h3></header>
+    <div class="q-kpi-valor">{{ fmt_kpi(i.valor, i.unidade) }}</div>
+    <div class="q-kpi-meta">Meta {{ '≥' if i.sentido == 'min' else '≤' }} {{ fmt_kpi(i.meta, i.unidade) }} · {{ {'ok': 'Na meta', 'atencao': 'Atenção', 'critico': 'Crítico', 'sem_dado': 'Sem dado'}[i.situacao] }}</div>
+    <div class="q-spark" data-serie='{{ i.serie|tojson }}' data-meta="{{ i.meta }}" data-unidade="{{ i.unidade }}"></div>
+    {% if i.falta %}<p class="q-falta">{{ i.falta }}</p>{% endif %}
+    {% if i.link %}<a class="q-ver" href="{{ i.link }}">Ver a origem dos dados →</a>{% endif %}
+  </article>
+  {% endfor %}
+</div>
+<details class="cartao q-nao-imprime">
+  <summary><strong>Metas dos indicadores</strong> (a gerência define o alvo de cada um)</summary>
+  <form method="post" action="{{ url_for('qual.kpi_metas') }}" class="q-metas">
+    {{ csrf_input }}
+    {% for i in painel.indicadores %}
+    <label>{{ i.nome }} ({{ 'mínimo' if i.sentido == 'min' else 'máximo' }}, {{ i.unidade }})
+      <input type="text" inputmode="decimal" name="meta_{{ i.chave }}" value="{{ '%g'|format(i.meta) }}"></label>
+    {% endfor %}
+    <div><button class="btn" type="submit">Gravar metas</button></div>
+  </form>
+</details>
+{% endblock %}
